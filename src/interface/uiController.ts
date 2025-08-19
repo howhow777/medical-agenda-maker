@@ -244,51 +244,13 @@ export class UIController {
     if (btnDownload) {
       btnDownload.addEventListener('click', () => this.downloadPoster());
     }
-
-    // 檔案儲存/載入事件
-    this.bindFileEvents();
   }
 
   /**
    * 綁定檔案相關事件
    */
   private bindFileEvents(): void {
-    const btnTempSave = document.getElementById('btnTempSave');
-    const btnTempLoad = document.getElementById('btnTempLoad');
-    const btnExport = document.getElementById('btnExport');
-    const btnImport = document.getElementById('btnImport');
-    const openJson = document.getElementById('openJson') as HTMLInputElement;
-
-    if (btnTempSave) {
-      btnTempSave.addEventListener('click', () => this.dataManager.tempSave(this.appState));
-    }
-    
-    if (btnTempLoad) {
-      btnTempLoad.addEventListener('click', () => {
-        this.dataManager.tempLoad();
-        this.updatePoster();
-      });
-    }
-    
-    if (btnExport) {
-      btnExport.addEventListener('click', () => this.dataManager.exportJson(this.appState));
-    }
-    
-    if (btnImport) {
-      btnImport.addEventListener('click', () => openJson?.click());
-    }
-    
-    if (openJson) {
-      openJson.addEventListener('change', (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-          this.dataManager.importJson(file, () => {
-            this.updatePoster();
-          });
-        }
-        openJson.value = '';
-      });
-    }
+    // 檔案相關事件已移除，保留此方法以防未來需要
   }
 
   /**
