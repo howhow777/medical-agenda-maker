@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>圖片處理核心算法測試</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", Arial, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f7fa;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+    .preview {
+      max-width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .params {
+      background: #f8fafc;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 12px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>圖片處理核心算法測試</h1>
+  <p>這個頁面用來測試從 PNG Cropper 抽取的核心算法</p>
+
+  <div class="card">
+    <h2>圖片載入</h2>
+    <input id="fileInput" type="file" accept="image/*" />
+    <div class="controls">
+      <button id="loadBtn" class="btn primary">載入圖片</button>
+      <button id="resetBtn" class="btn">重設參數</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>變形控制</h2>
+    <div class="controls">
+      <label>X位移: <input id="tx" type="range" min="-200" max="200" value="0" /></label>
+      <label>Y位移: <input id="ty" type="range" min="-200" max="200" value="0" /></label>
+      <label>縮放: <input id="scale" type="range" min="0.5" max="3" step="0.1" value="1" /></label>
+      <label>旋轉: <input id="rot" type="range" min="-180" max="180" value="0" /></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>裁切控制</h2>
+    <div class="controls">
+      <label>X: <input id="cropX" type="number" value="50" /></label>
+      <label>Y: <input id="cropY" type="number" value="50" /></label>
+      <label>寬: <input id="cropW" type="number" value="200" /></label>
+      <label>高: <input id="cropH" type="number" value="200" /></label>
+      <select id="aspectRatio">
+        <option value="free">自由比例</option>
+        <option value="1">1:1 正方形</option>
+        <option value="1.333">4:3 橫向</option>
+        <option value="0.75">3:4 直向</option>
+        <option value="1.778">16:9 寬螢幕</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>處理控制</h2>
+    <div class="controls">
+      <button id="processBtn" class="btn primary">處理圖片</button>
+      <select id="outputFormat">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPEG</option>
+        <option value="webp">WebP</option>
+      </select>
+      <button id="downloadBtn" class="btn">下載結果</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>參數資訊</h2>
+    <div id="paramsDisplay" class="params">請先載入圖片...</div>
+  </div>
+
+  <div class="card">
+    <h2>處理結果</h2>
+    <div id="resultArea">
+      <p>處理完成後會在這裡顯示結果圖片</p>
+    </div>
+  </div>
+
+  <div id="errorDisplay" class="error" style="display:none;"></div>
+
+  <script type="module">
+    // 模擬導入抽取的模組（實際使用時會是 import）
+    console.log('圖片處理核心算法測試頁面已載入');
+    console.log('在實際專案中，您可以這樣使用：');
+    console.log(`
+import { 
+  TransformCropEngine, 
+  CoordinateUtils, 
+  CropCalculator,
+  imageProcessor 
+} from './src/logic/image-processor';
+
+// 快速處理
+const result = await imageProcessor.quickProcess(file, {
+  transform: { scale: 1.2, rot: 0.5 },
+  outputFormat: 'png'
+});
+
+// 或者使用核心引擎
+const params = {
+  transform: { tx: 0, ty: 0, scale: 1.2, rot: 0.5 },
+  cropRect: { x: 100, y: 100, w: 300, h: 200 },
+  naturalSize: { w: 800, h: 600 },
+  displaySize: { w: 400, h: 300 },
+  displayOffset: { x: 50, y: 50 }
+};
+
+const result = await TransformCropEngine.process(image, params);
+    `);
+
+    // 示範介面邏輯
+    let currentImage = null;
+    let currentBlob = null;
+
+    const elements = {
+      fileInput: document.getElementById('fileInput'),
+      loadBtn: document.getElementById('loadBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      processBtn: document.getElementById('processBtn'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      paramsDisplay: document.getElementById('paramsDisplay'),
+      resultArea: document.getElementById('resultArea'),
+      errorDisplay: document.getElementById('errorDisplay')
+    };
+
+    // 模擬參數更新
+    function updateParams() {
+      if (!currentImage) return;
+      
+      const params = {
+        transform: {
+          tx: parseInt(document.getElementById('tx').value),
+          ty: parseInt(document.getElementById('ty').value),
+          scale: parseFloat(document.getElementById('scale').value),
+          rot: parseFloat(document.getElementById('rot').value) * Math.PI / 180
+        },
+        cropRect: {
+          x: parseInt(document.getElementById('cropX').value),
+          y: parseInt(document.getElementById('cropY').value),
+          w: parseInt(document.getElementById('cropW').value),
+          h: parseInt(document.getElementById('cropH').value)
+        },
+        naturalSize: {
+          w: currentImage.naturalWidth,
+          h: currentImage.naturalHeight
+        },
+        outputFormat: document.getElementById('outputFormat').value
+      };
+
+      elements.paramsDisplay.textContent = `當前參數：
+圖片尺寸: ${params.naturalSize.w} × ${params.naturalSize.h}
+變形: 位移(${params.transform.tx}, ${params.transform.ty}) 縮放${params.transform.scale} 旋轉${Math.round(params.transform.rot * 180 / Math.PI)}°
+裁切: (${params.cropRect.x}, ${params.cropRect.y}) ${params.cropRect.w} × ${params.cropRect.h}
+輸出格式: ${params.outputFormat.toUpperCase()}
+
+在實際專案中，這些參數會傳給 TransformCropEngine.process() 方法`;
+    }
+
+    // 載入圖片
+    elements.loadBtn.addEventListener('click', () => {
+      const file = elements.fileInput.files?.[0];
+      if (!file) {
+        showError('請選擇圖片檔案');
+        return;
+      }
+
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        currentImage = img;
+        URL.revokeObjectURL(url);
+        updateParams();
+        hideError();
+        console.log('圖片載入成功:', img.naturalWidth, '×', img.naturalHeight);
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        showError('圖片載入失敗');
+      };
+      
+      img.src = url;
+    });
+
+    // 重設參數
+    elements.resetBtn.addEventListener('click', () => {
+      document.getElementById('tx').value = 0;
+      document.getElementById('ty').value = 0;
+      document.getElementById('scale').value = 1;
+      document.getElementById('rot').value = 0;
+      updateParams();
+    });
+
+    // 模擬處理
+    elements.processBtn.addEventListener('click', async () => {
+      if (!currentImage) {
+        showError('請先載入圖片');
+        return;
+      }
+
+      try {
+        // 這裡模擬處理過程
+        console.log('開始處理圖片...');
+        console.log('在實際專案中，這裡會調用 TransformCropEngine.process()');
+        
+        // 創建簡單的處理結果展示
+        const canvas = document.createElement('canvas');
+        canvas.width = 300;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#f0f9ff';
+        ctx.fillRect(0, 0, 300, 200);
+        ctx.fillStyle = '#2563eb';
+        ctx.font = '16px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('處理結果模擬', 150, 100);
+        ctx.fillText('(實際會套用變形+裁切)', 150, 130);
+        
+        currentBlob = await new Promise(resolve => 
+          canvas.toBlob(resolve, 'image/png')
+        );
+        
+        const resultImg = document.createElement('img');
+        resultImg.src = URL.createObjectURL(currentBlob);
+        resultImg.className = 'preview';
+        
+        elements.resultArea.innerHTML = '';
+        elements.resultArea.appendChild(resultImg);
+        
+        hideError();
+        console.log('處理完成');
+        
+      } catch (error) {
+        showError('處理失敗: ' + error.message);
+      }
+    });
+
+    // 下載結果
+    elements.downloadBtn.addEventListener('click', () => {
+      if (!currentBlob) {
+        showError('請先處理圖片');
+        return;
+      }
+      
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(currentBlob);
+      a.download = 'processed-image.png';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    // 參數更新監聽
+    ['tx', 'ty', 'scale', 'rot', 'cropX', 'cropY', 'cropW', 'cropH', 'outputFormat'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateParams);
+    });
+
+    function showError(message) {
+      elements.errorDisplay.textContent = message;
+      elements.errorDisplay.style.display = 'block';
+    }
+
+    function hideError() {
+      elements.errorDisplay.style.display = 'none';
+    }
+
+    // 初始化
+    updateParams();
+  </script>
+</body>
+</html>

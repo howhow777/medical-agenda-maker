@@ -1,0 +1,26 @@
+{
+  "name": "medical-agenda-maker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "npm run clean && npm run build && npm run serve",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "dev:serve": "npm run build && npm run serve & npm run dev",
+    "clean": "rmdir /s /q dist 2>nul || echo \"Clean completed\"",
+    "serve": "npx http-server . -p 3001 -o public/index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
