@@ -6,7 +6,7 @@ yarn-error.log*
 package-lock.json
 
 # 編譯輸出
-dist/
+# dist/  # 註解掉，讓 GitHub Pages 可以讀取編譯後的檔案
 build/
 *.tsbuildinfo
 
