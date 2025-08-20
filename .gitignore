@@ -43,14 +43,13 @@ coverage/
 
 # 醫療議程製作器專用
 *.backup
-formControls_temp_backup.ts
 
-# 編譯測試檔案
-test-compile.ts
-type-check-test.ts
-compile-*.bat
-fix-and-start.bat
+# 開發工具臨時檔案
+dev-tools/temp-files/*.ts
+dev-tools/temp-files/*.txt
+dev-tools/scripts/*.log
 
-# 報告文件（開發過程產生的）
+# 開發文檔（現已整理到 docs/ 資料夾）
+# 以下規則保留備用，實際檔案已移動
 *_REPORT.md
 *_COMPLETE.md
