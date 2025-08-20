@@ -2,7 +2,7 @@ import { PosterRenderer } from './posterRenderer.js';
 import { Overlay, AgendaItem, CustomColors } from '../assets/types.js';
 /**
  * 增強版海報渲染器
- * 在原有功能基礎上整合高品質圖片處理
+ * 在原有功能基礎上整合基本的高品質圖片處理
  */
 export declare class EnhancedPosterRenderer extends PosterRenderer {
     private highQualityMode;
@@ -44,13 +44,13 @@ export declare class EnhancedPosterRenderer extends PosterRenderer {
         location: string;
     }, showFooter: boolean, footerText: string, overlays?: Overlay[], options?: {
         preprocess?: boolean;
-        onProgress?: (processed: number, total: number, stage: string) => void;
+        onProgress?: (processed: number, total: number, currentLayer?: string) => void;
     }): Promise<void>;
     /**
-     * 導出高品質海報（覆寫基類方法）
+     * 導出高品質海報
      * @param format - 輸出格式
-     * @param quality - 品質（0-1）
-     * @param scaleFactor - 解析度倍數
+     * @param quality - 品質設定
+     * @param scaleFactor - 縮放係數（保持與父類兼容）
      */
     exportHighQuality(format?: 'png' | 'jpeg' | 'webp', quality?: number, scaleFactor?: number): Promise<{
         blob: Blob;
@@ -65,18 +65,19 @@ export declare class EnhancedPosterRenderer extends PosterRenderer {
         };
     }>;
     /**
-     * 導出高品質海報並指定檔名
-     * @param format - 輸出格式
-     * @param quality - 品質（0-1）
-     * @param filename - 檔案名稱
+     * 清除處理快取
      */
-    exportHighQualityWithFilename(format?: 'png' | 'jpeg' | 'webp', quality?: number, filename?: string): Promise<{
-        blob: Blob;
-        dataURL: string;
-        filename: string;
-    }>;
+    clearProcessingCache(): void;
     /**
-     * 獲取處理統計資訊
+     * 取得快取資訊
+     */
+    getCacheInfo(): {
+        size: number;
+        overlayIds: number[];
+        memoryUsage: string;
+    };
+    /**
+     * 取得處理統計
      * @param overlays - 圖層陣列
      */
     getProcessingStats(overlays: Overlay[]): {
@@ -86,22 +87,4 @@ export declare class EnhancedPosterRenderer extends PosterRenderer {
         simple: number;
         complex: number;
     };
-    /**
-     * 清除處理快取
-     */
-    clearProcessingCache(): void;
-    /**
-     * 獲取快取狀態
-     */
-    getCacheInfo(): {
-        size: number;
-        overlayIds: number[];
-        memoryUsage: string;
-    };
-    /**
-     * 創建圖層預覽
-     * @param overlay - 要預覽的圖層
-     * @param size - 預覽尺寸
-     */
-    createOverlayPreview(overlay: Overlay, size?: number): HTMLCanvasElement;
 }

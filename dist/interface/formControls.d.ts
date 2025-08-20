@@ -11,8 +11,6 @@ export declare class FormControls {
     private showFooterNote;
     private fileUploadHandler?;
     private eventsAlreadyBound;
-    private isCropMode;
-    private cropBackup;
     constructor(updateCallback: () => void, overlayManager?: OverlayManager | undefined);
     setOverlayManager(overlayManager: OverlayManager): void;
     private bindPngControls;
@@ -21,7 +19,6 @@ export declare class FormControls {
     private bindOverlayControls;
     private initializeForm;
     bindEvents(): void;
-    private toggleCropMode;
     private setInitialCropArea;
     private bindTemplateButtons;
     private bindColorSchemeControls;
@@ -58,14 +55,8 @@ export declare class FormControls {
     syncOverlayControls(): void;
     getOverlays(): Overlay[];
     getSelectedOverlayIndex(): number;
-    getCropMode(): boolean;
-    private openCropper;
-    private applyCrop;
-    private cancelCrop;
-    private resetCrop;
     updateAgendaList(): void;
     updateCustomColorInputs(): void;
-    private showCropControls;
 }
 declare global {
     interface Window {

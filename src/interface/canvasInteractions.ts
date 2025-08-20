@@ -9,8 +9,7 @@ export class CanvasInteractions {
     start: { x: 0, y: 0 },
     startOv: null,
     handle: null,
-    startAngle: 0,
-    cropMode: false
+    startAngle: 0
   };
 
   constructor(
@@ -43,7 +42,6 @@ export class CanvasInteractions {
     this.drag.idx = hitResult.idx;
     this.drag.handle = hitResult.handle || null;
     this.drag.start = point;
-    this.drag.cropMode = (hitResult.hit === 'crop');
     
     if (hitResult.idx >= 0) {
       this.overlayManager.setSelectedIndex(hitResult.idx);
@@ -75,25 +73,19 @@ export class CanvasInteractions {
     const overlay = this.overlayManager.getOverlays()[this.drag.idx];
     if (!overlay || !this.drag.startOv) return;
     
-    if (this.drag.cropMode) {
-      // 裁切模式：處理裁切拖拽
-      this.handleCropping(overlay, point);
-    } else {
-      // 正常模式：原有的拖拽邏輯
-      if (this.drag.mode === 'move') {
-        overlay.x += (point.x - this.drag.start.x);
-        overlay.y += (point.y - this.drag.start.y);
-        this.drag.start = point;
-        this.updateCallback();
-      } 
-      else if (this.drag.mode === 'rotate') {
-        const angle = Math.atan2(point.y - overlay.y, point.x - overlay.x);
-        overlay.rotation = this.drag.startOv.rotation + (angle - this.drag.startAngle);
-        this.updateCallback();
-      }
-      else if (this.drag.mode === 'scale' && this.drag.handle) {
-        this.handleScaling(overlay, point);
-      }
+    if (this.drag.mode === 'move') {
+      overlay.x += (point.x - this.drag.start.x);
+      overlay.y += (point.y - this.drag.start.y);
+      this.drag.start = point;
+      this.updateCallback();
+    } 
+    else if (this.drag.mode === 'rotate') {
+      const angle = Math.atan2(point.y - overlay.y, point.x - overlay.x);
+      overlay.rotation = this.drag.startOv.rotation + (angle - this.drag.startAngle);
+      this.updateCallback();
+    }
+    else if (this.drag.mode === 'scale' && this.drag.handle) {
+      this.handleScaling(overlay, point);
     }
   }
 
@@ -163,33 +155,6 @@ export class CanvasInteractions {
     this.drag.idx = -1;
     this.drag.startOv = null;
     this.drag.handle = null;
-    this.drag.cropMode = false;
-  }
-
-  // 處理裁切拖拽
-  private handleCropping(overlay: Overlay, point: { x: number; y: number }): void {
-    if (!this.drag.handle || !this.drag.startOv) return;
-    
-    console.log('🎯 處理裁切拖拽');
-    console.log('   控制點:', this.drag.handle);
-    console.log('   滑鼠位置:', point);
-    console.log('   開始裁切區域:', this.drag.startOv.crop);
-    
-    // 暫時使用更簡單的邏輯來測試
-    const startCrop = this.drag.startOv.crop;
-    let newCrop = { ...startCrop };
-    
-    // 先使用最簡單的測試邏輯
-    switch (this.drag.handle) {
-      case 'e': // 右邊
-        newCrop.w = Math.max(10, startCrop.w - 50); // 測試：每次減少50像素
-        break;
-    }
-    
-    console.log('   新裁切區域:', newCrop);
-    
-    overlay.crop = newCrop;
-    this.updateCallback();
   }
 
   // 滾輪縮放

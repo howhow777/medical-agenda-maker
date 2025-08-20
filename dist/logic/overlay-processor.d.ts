@@ -1,10 +1,10 @@
 import { Overlay } from '../assets/types.js';
 /**
- * 圖層處理器 - 專門處理 Overlay 的高品質渲染
+ * 圖層處理器 - 專門處理 Overlay 的基本處理
  */
 export declare class OverlayProcessor {
     /**
-     * 將 Overlay 轉換為高品質處理的圖片
+     * 簡化版圖層處理（無裁切功能）
      * @param overlay - 要處理的圖層
      * @param options - 處理選項
      */
@@ -26,7 +26,7 @@ export declare class OverlayProcessor {
         quality?: number;
         smoothing?: boolean;
         maxSize?: number;
-        onProgress?: (index: number, total: number, currentLayer?: string) => void;
+        onProgress?: (processed: number, total: number, currentLayer?: string) => void;
     }): Promise<Array<{
         overlay: Overlay;
         result: {
@@ -41,13 +41,13 @@ export declare class OverlayProcessor {
      */
     static needsHighQualityProcessing(overlay: Overlay): boolean;
     /**
-     * 創建圖層預覽（低品質，用於即時預覽）
-     * @param overlay - 要預覽的圖層
-     * @param previewSize - 預覽尺寸限制
+     * 創建圖層預覽
+     * @param overlay - 圖層
+     * @param previewSize - 預覽尺寸
      */
     static createPreview(overlay: Overlay, previewSize?: number): HTMLCanvasElement;
     /**
-     * 獲取圖層處理統計
+     * 取得處理統計
      */
     static getProcessingStats(overlays: Overlay[]): {
         total: number;

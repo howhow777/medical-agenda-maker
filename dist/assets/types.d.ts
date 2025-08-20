@@ -37,12 +37,6 @@ export interface Overlay {
     opacity: number;
     visible: boolean;
     lockAspect: boolean;
-    crop: {
-        x: number;
-        y: number;
-        w: number;
-        h: number;
-    };
 }
 export interface CustomColors {
     headerC1: string;
@@ -61,26 +55,6 @@ export interface GradientDirection {
     x2: number;
     y2: number;
 }
-export interface CropperState {
-    open: boolean;
-    scale: number;
-    offsetX: number;
-    offsetY: number;
-    imgW: number;
-    imgH: number;
-    rect: {
-        x: number;
-        y: number;
-        w: number;
-        h: number;
-    };
-    mode: string;
-    start: {
-        x: number;
-        y: number;
-    };
-    hit: string;
-}
 export interface DragState {
     mode: string;
     idx: number;
@@ -91,7 +65,6 @@ export interface DragState {
     startOv: Overlay | null;
     handle: string | null;
     startAngle: number;
-    cropMode: boolean;
 }
 export interface TemplateData {
     form: Record<string, any>;
@@ -121,12 +94,6 @@ export interface OverlayData {
     opacity: number;
     visible: boolean;
     lockAspect: boolean;
-    crop: {
-        x: number;
-        y: number;
-        w: number;
-        h: number;
-    };
 }
 export interface AppState {
     agendaItems: AgendaItem[];
@@ -136,5 +103,4 @@ export interface AppState {
     overlays: Overlay[];
     selectedOverlayIndex: number;
     customColors: CustomColors;
-    isCropMode: boolean;
 }

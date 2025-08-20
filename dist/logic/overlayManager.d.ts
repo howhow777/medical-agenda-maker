@@ -3,14 +3,11 @@ export declare class OverlayManager {
     private overlays;
     private selectedIndex;
     private canvas;
-    private isCropMode;
     constructor(canvas: HTMLCanvasElement);
     getOverlays(): Overlay[];
     getSelectedIndex(): number;
     setSelectedIndex(index: number): void;
     getSelectedOverlay(): Overlay | null;
-    setCropMode(cropMode: boolean): void;
-    getCropMode(): boolean;
     addOverlay(img: HTMLImageElement, name: string, src: string): Overlay;
     removeOverlay(index: number): void;
     removeSelectedOverlay(): void;
@@ -21,7 +18,6 @@ export declare class OverlayManager {
     sendToBack(index: number): void;
     centerSelectedOverlay(): void;
     resetSelectedOverlay(): void;
-    resetCrop(index: number): void;
     getOverlaySize(overlay: Overlay): {
         w: number;
         h: number;
@@ -50,11 +46,6 @@ export declare class OverlayManager {
         x: number;
         y: number;
     };
-    getCropHandlePositions(overlay: Overlay): Array<{
-        name: string;
-        x: number;
-        y: number;
-    }>;
     hitTest(point: {
         x: number;
         y: number;
@@ -64,10 +55,8 @@ export declare class OverlayManager {
         handle?: string;
     };
     drawOverlay(ctx: CanvasRenderingContext2D, overlay: Overlay, isSelected: boolean): void;
-    private drawCropMask;
     drawAllOverlays(ctx: CanvasRenderingContext2D): void;
     private drawOverlayControls;
-    private drawCropControls;
     scaleOverlay(index: number, scaleX: number, scaleY: number): void;
     moveOverlay(index: number, x: number, y: number): void;
     rotateOverlay(index: number, rotation: number): void;

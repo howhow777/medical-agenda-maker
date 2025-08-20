@@ -12,7 +12,6 @@ export declare class CanvasInteractions {
     private onPointerMove;
     private handleScaling;
     private onPointerUp;
-    private handleCropping;
     private onWheel;
     private canvasPoint;
 }

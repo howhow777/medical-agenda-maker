@@ -1,11 +1,10 @@
-import { Overlay, CropperState } from '../assets/types.js';
+import { Overlay } from '../assets/types.js';
 import { OverlayProcessor } from './overlay-processor.js';
 
 export class OverlayManager {
   private overlays: Overlay[] = [];
   private selectedIndex: number = -1;
   private canvas: HTMLCanvasElement;
-  private isCropMode: boolean = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -31,16 +30,6 @@ export class OverlayManager {
     return this.selectedIndex >= 0 ? this.overlays[this.selectedIndex] : null;
   }
 
-  // 設定裁切模式
-  setCropMode(cropMode: boolean): void {
-    this.isCropMode = cropMode;
-  }
-  
-  // 取得裁切模式狀態
-  getCropMode(): boolean {
-    return this.isCropMode;
-  }
-
   // 新增圖層
   addOverlay(img: HTMLImageElement, name: string, src: string): Overlay {
     const overlay: Overlay = {
@@ -57,13 +46,7 @@ export class OverlayManager {
       rotation: 0,
       opacity: 1,
       visible: true,
-      lockAspect: true,
-      crop: {
-        x: 0,
-        y: 0,
-        w: img.naturalWidth || img.width,
-        h: img.naturalHeight || img.height
-      }
+      lockAspect: true
     };
     this.overlays.push(overlay);
     this.selectedIndex = this.overlays.length - 1;
@@ -147,14 +130,6 @@ export class OverlayManager {
     }
   }
 
-  // 重設裁切
-  resetCrop(index: number): void {
-    const overlay = this.overlays[index];
-    if (overlay) {
-      overlay.crop = { x: 0, y: 0, w: overlay.w, h: overlay.h };
-    }
-  }
-
   // 取得圖層尺寸
   getOverlaySize(overlay: Overlay): { w: number; h: number } {
     return { w: overlay.w * overlay.scaleX, h: overlay.h * overlay.scaleY };
@@ -197,29 +172,6 @@ export class OverlayManager {
     return { name: 'rot', x: 0, y: -(size.h / 2) - 30 };
   }
 
-  // 取得裁切控制點位置
-  getCropHandlePositions(overlay: Overlay): Array<{ name: string; x: number; y: number }> {
-    const size = this.getOverlaySize(overlay);
-    const crop = overlay.crop;
-    
-    // 計算裁切區域在顯示尺寸中的位置
-    const cropX = (crop.x / overlay.w - 0.5) * size.w;
-    const cropY = (crop.y / overlay.h - 0.5) * size.h;
-    const cropW = (crop.w / overlay.w) * size.w;
-    const cropH = (crop.h / overlay.h) * size.h;
-    
-    return [
-      { name: 'nw', x: cropX, y: cropY },
-      { name: 'n', x: cropX + cropW/2, y: cropY },
-      { name: 'ne', x: cropX + cropW, y: cropY },
-      { name: 'e', x: cropX + cropW, y: cropY + cropH/2 },
-      { name: 'se', x: cropX + cropW, y: cropY + cropH },
-      { name: 's', x: cropX + cropW/2, y: cropY + cropH },
-      { name: 'sw', x: cropX, y: cropY + cropH },
-      { name: 'w', x: cropX, y: cropY + cropH/2 }
-    ];
-  }
-
   // 碰撞檢測
   hitTest(point: { x: number; y: number }): { idx: number; hit: string; handle?: string } {
     for (let i = this.overlays.length - 1; i >= 0; i--) {
@@ -231,37 +183,17 @@ export class OverlayManager {
       const hw = size.w / 2;
       const hh = size.h / 2;
 
-      if (this.isCropMode) {
-        // 裁切模式：只檢測選中圖層的裁切控制點
-        if (i !== this.selectedIndex) {
-          // 非選中圖層，只檢測移動
-          if (Math.abs(localPoint.x) <= hw && Math.abs(localPoint.y) <= hh) {
-            return { idx: i, hit: 'move' };
-          }
-          continue;
-        }
-        
-        const cropHandles = this.getCropHandlePositions(overlay);
-        for (const handle of cropHandles) {
-          const globalHandle = this.toGlobal(overlay, handle);
-          if (Math.hypot(point.x - globalHandle.x, point.y - globalHandle.y) <= 15) {
-            return { idx: i, hit: 'crop', handle: handle.name };
-          }
-        }
-      } else {
-        // 正常模式：原有的控制點檢測
-        // 旋轉把手
-        const rotHandle = this.toGlobal(overlay, this.getRotateHandle(overlay));
-        const rotDist = Math.hypot(point.x - rotHandle.x, point.y - rotHandle.y);
-        if (rotDist <= 12) return { idx: i, hit: 'rotate' };
+      // 旋轉把手
+      const rotHandle = this.toGlobal(overlay, this.getRotateHandle(overlay));
+      const rotDist = Math.hypot(point.x - rotHandle.x, point.y - rotHandle.y);
+      if (rotDist <= 12) return { idx: i, hit: 'rotate' };
 
-        // 縮放把手
-        const handles = this.getHandlePositions(overlay);
-        for (const handle of handles) {
-          const globalHandle = this.toGlobal(overlay, handle);
-          if (Math.abs(point.x - globalHandle.x) <= 10 && Math.abs(point.y - globalHandle.y) <= 10) {
-            return { idx: i, hit: 'scale', handle: handle.name };
-          }
+      // 縮放把手
+      const handles = this.getHandlePositions(overlay);
+      for (const handle of handles) {
+        const globalHandle = this.toGlobal(overlay, handle);
+        if (Math.abs(point.x - globalHandle.x) <= 10 && Math.abs(point.y - globalHandle.y) <= 10) {
+          return { idx: i, hit: 'scale', handle: handle.name };
         }
       }
 
@@ -296,37 +228,6 @@ export class OverlayManager {
     }
   }
 
-  // 繪製裁切遮罩
-  private drawCropMask(ctx: CanvasRenderingContext2D, overlay: Overlay, size: { w: number; h: number }): void {
-    const crop = overlay.crop;
-    
-    // 計算裁切區域在顯示尺寸中的位置
-    const cropX = (crop.x / overlay.w - 0.5) * size.w;
-    const cropY = (crop.y / overlay.h - 0.5) * size.h;
-    const cropW = (crop.w / overlay.w) * size.w;
-    const cropH = (crop.h / overlay.h) * size.h;
-    
-    // 繪製半透明遮罩遮蓋被裁切的區域
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    
-    // 上邊遮罩
-    if (cropY > -size.h / 2) {
-      ctx.fillRect(-size.w / 2, -size.h / 2, size.w, cropY + size.h / 2);
-    }
-    // 下邊遮罩
-    if (cropY + cropH < size.h / 2) {
-      ctx.fillRect(-size.w / 2, cropY + cropH, size.w, size.h / 2 - (cropY + cropH));
-    }
-    // 左邊遮罩
-    if (cropX > -size.w / 2) {
-      ctx.fillRect(-size.w / 2, cropY, cropX + size.w / 2, cropH);
-    }
-    // 右邊遮罩
-    if (cropX + cropW < size.w / 2) {
-      ctx.fillRect(cropX + cropW, cropY, size.w / 2 - (cropX + cropW), cropH);
-    }
-  }
-
   // 繪製所有圖層
   drawAllOverlays(ctx: CanvasRenderingContext2D): void {
     this.overlays.forEach((overlay, idx) => {
@@ -338,105 +239,41 @@ export class OverlayManager {
   private drawOverlayControls(ctx: CanvasRenderingContext2D, overlay: Overlay): void {
     const size = this.getOverlaySize(overlay);
     
-    console.log('🎯 繪製控制項 - 裁切模式:', this.isCropMode, '選中索引:', this.selectedIndex);
-    
     ctx.save();
     ctx.translate(overlay.x, overlay.y);
     ctx.rotate(overlay.rotation);
 
-    if (this.isCropMode) {
-      // 裁切模式：顯示裁切範圍和控制點
-      this.drawCropControls(ctx, overlay, size);
-    } else {
-      // 正常模式：顯示縮放和旋轉控制點
-      // 邊框
-      ctx.strokeStyle = 'rgba(0,0,0,.7)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([6, 4]);
-      ctx.strokeRect(-size.w / 2, -size.h / 2, size.w, size.h);
-      ctx.setLineDash([]);
-
-      // 八個縮放把手  
-      const handles = this.getHandlePositions(overlay);
-      ctx.fillStyle = '#fff';
-      ctx.strokeStyle = 'rgba(0,0,0,.85)';
-      handles.forEach(handle => {
-        ctx.beginPath();
-        ctx.rect(handle.x - 6, handle.y - 6, 12, 12);
-        ctx.fill();
-        ctx.stroke();
-      });
-
-      // 旋轉把手
-      const rotHandle = this.getRotateHandle(overlay);
-      ctx.beginPath();
-      ctx.moveTo(0, -size.h / 2);
-      ctx.lineTo(0, rotHandle.y + 12);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(rotHandle.x, rotHandle.y, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-    
-    ctx.restore();
-  }
-
-  // 繪製裁切控制項
-  private drawCropControls(ctx: CanvasRenderingContext2D, overlay: Overlay, size: { w: number; h: number }): void {
-    const crop = overlay.crop;
-    
-    console.log('🎯 繪製裁切控制項 - 裁切區域:', crop, '圖片尺寸:', overlay.w, 'x', overlay.h);
-    
-    // 計算裁切區域在顯示尺寸中的位置
-    const cropX = (crop.x / overlay.w - 0.5) * size.w;
-    const cropY = (crop.y / overlay.h - 0.5) * size.h;
-    const cropW = (crop.w / overlay.w) * size.w;
-    const cropH = (crop.h / overlay.h) * size.h;
-    
-    // 繪製完整圖片的邊框
-    ctx.strokeStyle = 'rgba(100,100,100,.5)';
+    // 顯示縮放和旋轉控制點
+    // 邊框
+    ctx.strokeStyle = 'rgba(0,0,0,.7)';
     ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
+    ctx.setLineDash([6, 4]);
     ctx.strokeRect(-size.w / 2, -size.h / 2, size.w, size.h);
     ctx.setLineDash([]);
-    
-    // 繪製裁切框邊界
-    ctx.strokeStyle = '#ff0000';  // 紅色邊框，更醒目
-    ctx.lineWidth = 4;
-    ctx.strokeRect(cropX, cropY, cropW, cropH);
-    
-    // 繪製裁切控制點（箭頭符號）
-    console.log('🎯 繪製裁切控制點，裁切區域:', { cropX, cropY, cropW, cropH });
-    const cropHandles = [
-      { name: 'nw', x: cropX, y: cropY, symbol: '↖' },
-      { name: 'n', x: cropX + cropW/2, y: cropY, symbol: '↑' },
-      { name: 'ne', x: cropX + cropW, y: cropY, symbol: '↗' },
-      { name: 'e', x: cropX + cropW, y: cropY + cropH/2, symbol: '→' },
-      { name: 'se', x: cropX + cropW, y: cropY + cropH, symbol: '↘' },
-      { name: 's', x: cropX + cropW/2, y: cropY + cropH, symbol: '↓' },
-      { name: 'sw', x: cropX, y: cropY + cropH, symbol: '↙' },
-      { name: 'w', x: cropX, y: cropY + cropH/2, symbol: '←' }
-    ];
-    
+
+    // 八個縮放把手  
+    const handles = this.getHandlePositions(overlay);
     ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#ff0000';  // 紅色邊框，更醒目
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    cropHandles.forEach(handle => {
-      // 背景圓圈 - 更大更明顯
+    ctx.strokeStyle = 'rgba(0,0,0,.85)';
+    handles.forEach(handle => {
       ctx.beginPath();
-      ctx.arc(handle.x, handle.y, 15, 0, Math.PI * 2);
+      ctx.rect(handle.x - 6, handle.y - 6, 12, 12);
       ctx.fill();
       ctx.stroke();
-      
-      // 箭頭符號
-      ctx.fillStyle = '#ff0000';
-      ctx.fillText(handle.symbol, handle.x, handle.y);
-      ctx.fillStyle = '#fff';
     });
+
+    // 旋轉把手
+    const rotHandle = this.getRotateHandle(overlay);
+    ctx.beginPath();
+    ctx.moveTo(0, -size.h / 2);
+    ctx.lineTo(0, rotHandle.y + 12);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(rotHandle.x, rotHandle.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.restore();
   }
 
   // 調整圖層大小

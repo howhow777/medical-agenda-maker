@@ -29,8 +29,7 @@ export class UIController {
                 bgC1: '#ffffff',
                 bgC2: '#f8f9fa',
                 bgGradientDir: 'none'
-            },
-            isCropMode: false
+            }
         };
         this.dragState = {
             mode: 'none',
@@ -38,20 +37,7 @@ export class UIController {
             start: { x: 0, y: 0 },
             startOv: null,
             handle: null,
-            startAngle: 0,
-            cropMode: false
-        };
-        this.cropperState = {
-            open: false,
-            scale: 1,
-            offsetX: 0,
-            offsetY: 0,
-            imgW: 0,
-            imgH: 0,
-            rect: { x: 0, y: 0, w: 0, h: 0 },
-            mode: 'none',
-            start: { x: 0, y: 0 },
-            hit: ''
+            startAngle: 0
         };
     }
     /**
@@ -118,8 +104,7 @@ export class UIController {
                     rotation: overlay.rotation,
                     opacity: overlay.opacity,
                     visible: overlay.visible,
-                    lockAspect: overlay.lockAspect,
-                    crop: overlay.crop
+                    lockAspect: overlay.lockAspect
                 })),
                 customColors: this.appState.customColors
             };
@@ -233,7 +218,6 @@ export class UIController {
             this.appState.customColors = this.formControls.getCustomColors();
             this.appState.overlays = this.overlayManager.getOverlays();
             this.appState.selectedOverlayIndex = this.overlayManager.getSelectedIndex();
-            this.appState.isCropMode = this.formControls.getCropMode();
             // 取得會議資料
             const conferenceData = this.getConferenceData();
             const showFooter = this.formControls.getShowFooterNote();

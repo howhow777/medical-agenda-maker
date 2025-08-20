@@ -44,12 +44,6 @@ export interface Overlay {
   opacity: number;
   visible: boolean;
   lockAspect: boolean;
-  crop: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  };
 }
 
 // 自訂配色
@@ -73,28 +67,6 @@ export interface GradientDirection {
   y2: number;
 }
 
-// 裁切器狀態
-export interface CropperState {
-  open: boolean;
-  scale: number;
-  offsetX: number;
-  offsetY: number;
-  imgW: number;
-  imgH: number;
-  rect: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  };
-  mode: string;
-  start: {
-    x: number;
-    y: number;
-  };
-  hit: string;
-}
-
 // 拖拽狀態
 export interface DragState {
   mode: string;
@@ -106,7 +78,6 @@ export interface DragState {
   startOv: Overlay | null;
   handle: string | null;
   startAngle: number;
-  cropMode: boolean;
 }
 
 // 範本系統相關類型
@@ -140,12 +111,6 @@ export interface OverlayData {
   opacity: number;
   visible: boolean;
   lockAspect: boolean;
-  crop: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  };
 }
 
 // 應用程式狀態
@@ -157,5 +122,4 @@ export interface AppState {
   overlays: Overlay[];
   selectedOverlayIndex: number;
   customColors: CustomColors;
-  isCropMode: boolean;
 }

@@ -550,7 +550,7 @@ export class PosterRenderer {
         const drawW = overlay.w * overlay.scaleX;
         const drawH = overlay.h * overlay.scaleY;
         
-        this.ctx.drawImage(overlay.img, overlay.crop.x, overlay.crop.y, overlay.crop.w, overlay.crop.h, drawX, drawY, drawW, drawH);
+        this.ctx.drawImage(overlay.img, drawX, drawY, drawW, drawH);
       }
       
       this.ctx.restore();

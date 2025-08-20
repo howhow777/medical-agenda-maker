@@ -20,8 +20,6 @@ export class FormControls {
         };
         this.showFooterNote = true;
         this.eventsAlreadyBound = false;
-        this.isCropMode = false;
-        this.cropBackup = null;
         this.initializeForm();
         this.bindEvents();
     }
@@ -127,31 +125,31 @@ export class FormControls {
                 this.setOverlayLockAspect(checked);
             });
         }
-        // 裁切按鈕
-        const openCropper = document.getElementById('openCropper');
-        const resetCrop = document.getElementById('resetCrop');
-        const applyCrop = document.getElementById('applyCrop');
-        const cancelCrop = document.getElementById('cancelCrop');
-        if (openCropper) {
-            openCropper.addEventListener('click', () => {
-                this.openCropper();
-            });
-        }
-        if (resetCrop) {
-            resetCrop.addEventListener('click', () => {
-                this.resetCrop();
-            });
-        }
-        if (applyCrop) {
-            applyCrop.addEventListener('click', () => {
-                this.applyCrop();
-            });
-        }
-        if (cancelCrop) {
-            cancelCrop.addEventListener('click', () => {
-                this.cancelCrop();
-            });
-        }
+        // 移除裁切功能相關按鈕處理
+        // const openCropper = document.getElementById('openCropper');
+        // const resetCrop = document.getElementById('resetCrop');
+        // const applyCrop = document.getElementById('applyCrop');
+        // const cancelCrop = document.getElementById('cancelCrop');
+        // if (openCropper) {
+        //   openCropper.addEventListener('click', () => {
+        //     console.log('裁切功能已移除');
+        //   });
+        // }
+        // if (resetCrop) {
+        //   resetCrop.addEventListener('click', () => {
+        //     console.log('裁切功能已移除');
+        //   });
+        // }
+        // if (applyCrop) {
+        //   applyCrop.addEventListener('click', () => {
+        //     console.log('裁切功能已移除');
+        //   });
+        // }
+        // if (cancelCrop) {
+        //   cancelCrop.addEventListener('click', () => {
+        //     console.log('裁切功能已移除');
+        //   });
+        // }
         console.log('✅ 圖層控制按鈕綁定完成');
     }
     // 初始化表單
@@ -186,21 +184,18 @@ export class FormControls {
         this.eventsAlreadyBound = true;
         console.log('✅ 所有事件綁定完成');
     }
-    // 切換裁切模式
-    toggleCropMode() {
-        this.isCropMode = !this.isCropMode;
-        console.log('🎯 切換裁切模式:', this.isCropMode ? '開啟' : '關閉');
-        const btn = document.getElementById('openCropper');
-        if (btn) {
-            btn.textContent = this.isCropMode ? '✅ 完成裁切' : '✂️ 裁切';
-            btn.className = this.isCropMode ? 'btn btn-success' : 'btn btn-primary';
-        }
-        // 設置裁切模式到 overlayManager
-        if (this.overlayManager) {
-            this.overlayManager.setCropMode(this.isCropMode);
-        }
-        this.updateCallback();
-    }
+    // 移除裁切模式相關功能
+    // private toggleCropMode(): void {
+    //   console.log('⚠️ 裁切功能已移除');
+    //   console.log('🎯 裁切功能已移除，此方法無效');
+    //   const btn = document.getElementById('openCropper');
+    //   if (btn) {
+    //     btn.textContent = '❌ 已停用';
+    //     btn.className = 'btn btn-secondary';
+    //   }
+    //   // overlayManager 已移除 setCropMode 方法
+    //   this.updateCallback();
+    // }
     // 設置初始裁切區域
     setInitialCropArea() {
         // 暫時移除自動設置，讓用戶先看到控制點
@@ -602,54 +597,6 @@ export class FormControls {
     getSelectedOverlayIndex() {
         return this.overlayManager ? this.overlayManager.getSelectedIndex() : -1;
     }
-    // 取得裁切模式狀態
-    getCropMode() {
-        return this.isCropMode;
-    }
-    // 開始裁切模式
-    openCropper() {
-        if (this.overlayManager) {
-            const overlay = this.overlayManager.getSelectedOverlay();
-            if (overlay) {
-                this.isCropMode = true;
-                this.cropBackup = JSON.parse(JSON.stringify(overlay.crop || {}));
-                this.showCropControls(true);
-                console.log('✂️ 開始裁切模式');
-            }
-        }
-    }
-    // 確認裁切
-    applyCrop() {
-        this.isCropMode = false;
-        this.cropBackup = null;
-        this.showCropControls(false);
-        this.updateCallback();
-        console.log('✅ 裁切已套用');
-    }
-    // 取消裁切
-    cancelCrop() {
-        if (this.overlayManager && this.cropBackup) {
-            const overlay = this.overlayManager.getSelectedOverlay();
-            if (overlay) {
-                overlay.crop = this.cropBackup;
-            }
-        }
-        this.isCropMode = false;
-        this.cropBackup = null;
-        this.showCropControls(false);
-        this.updateCallback();
-        console.log('❌ 裁切已取消');
-    }
-    // 重設裁切
-    resetCrop() {
-        if (this.overlayManager) {
-            const index = this.overlayManager.getSelectedIndex();
-            if (index >= 0) {
-                this.overlayManager.resetCrop(index);
-                this.updateCallback();
-            }
-        }
-    }
     // 更新議程列表顯示
     updateAgendaList() {
         this.refreshAgendaList();
@@ -668,13 +615,6 @@ export class FormControls {
         const bgGradientDir = document.getElementById('bgGradientDir');
         if (bgGradientDir) {
             bgGradientDir.value = this.customColors.bgGradientDir;
-        }
-    }
-    // 顯示/隱藏裁切控制按鈕
-    showCropControls(show) {
-        const cropControls = document.getElementById('cropControls');
-        if (cropControls) {
-            cropControls.style.display = show ? 'flex' : 'none';
         }
     }
 }

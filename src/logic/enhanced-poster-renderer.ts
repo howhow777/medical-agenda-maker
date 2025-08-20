@@ -1,5 +1,5 @@
-// 增強版海報渲染器
-// 整合高品質圖片處理算法的海報渲染器
+// 增強版海報渲染器 - 簡化版
+// 保留基本的高品質渲染功能，移除裁切功能
 
 import { PosterRenderer } from './posterRenderer.js';
 import { OverlayProcessor } from './overlay-processor.js';
@@ -8,7 +8,7 @@ import { Overlay, AgendaItem, CustomColors } from '../assets/types.js';
 
 /**
  * 增強版海報渲染器
- * 在原有功能基礎上整合高品質圖片處理
+ * 在原有功能基礎上整合基本的高品質圖片處理
  */
 export class EnhancedPosterRenderer extends PosterRenderer {
   private highQualityMode: boolean = false;
@@ -101,23 +101,23 @@ export class EnhancedPosterRenderer extends PosterRenderer {
     if (this.highQualityMode && processedCanvas) {
       // 使用預處理的高品質版本
       ctx.translate(overlay.x, overlay.y);
-      // 預處理的圖片已經包含旋轉和裁切，只需要定位
+      // 預處理的圖片已經包含縮放，只需要定位
       ctx.drawImage(
         processedCanvas,
         -processedCanvas.width / 2,
         -processedCanvas.height / 2
       );
     } else {
-      // 使用標準渲染（保持向後兼容）
+      // 使用標準渲染（無裁切功能）
       ctx.translate(overlay.x, overlay.y);
       ctx.rotate(overlay.rotation);
       
       const drawW = overlay.w * overlay.scaleX;
       const drawH = overlay.h * overlay.scaleY;
       
+      // 簡化：使用整個圖片，不進行裁切
       ctx.drawImage(
         overlay.img,
-        overlay.crop.x, overlay.crop.y, overlay.crop.w, overlay.crop.h,
         -drawW / 2, -drawH / 2, drawW, drawH
       );
     }
@@ -155,31 +155,17 @@ export class EnhancedPosterRenderer extends PosterRenderer {
     footerText: string,
     overlays: Overlay[] = [],
     options: {
-      preprocess?: boolean; // 是否預處理圖層
-      onProgress?: (processed: number, total: number, stage: string) => void;
+      preprocess?: boolean;
+      onProgress?: (processed: number, total: number, currentLayer?: string) => void;
     } = {}
   ): Promise<void> {
     
-    const { preprocess = this.highQualityMode, onProgress } = options;
-    
-    // 1. 預處理圖層（如果需要）
-    if (preprocess && overlays.length > 0) {
-      if (onProgress) {
-        onProgress(0, overlays.length, '預處理圖層中...');
-      }
-      
-      await this.preprocessOverlays(overlays, (processed, total, currentLayer) => {
-        if (onProgress) {
-          onProgress(processed, total, `處理中: ${currentLayer}`);
-        }
-      });
+    // 如果需要預處理且啟用高品質模式
+    if (options.preprocess && this.highQualityMode) {
+      await this.preprocessOverlays(overlays, options.onProgress);
     }
     
-    // 2. 執行標準海報繪製
-    if (onProgress) {
-      onProgress(overlays.length, overlays.length, '繪製海報中...');
-    }
-    
+    // 使用父類的標準渲染方法
     this.drawPoster(
       agendaItems,
       currentTemplate,
@@ -191,22 +177,18 @@ export class EnhancedPosterRenderer extends PosterRenderer {
       footerText,
       overlays
     );
-    
-    if (onProgress) {
-      onProgress(overlays.length, overlays.length, '完成');
-    }
   }
   
   /**
-   * 導出高品質海報（覆寫基類方法）
+   * 導出高品質海報
    * @param format - 輸出格式
-   * @param quality - 品質（0-1）
-   * @param scaleFactor - 解析度倍數
+   * @param quality - 品質設定
+   * @param scaleFactor - 縮放係數（保持與父類兼容）
    */
   async exportHighQuality(
-    format?: 'png' | 'jpeg' | 'webp',
-    quality?: number,
-    scaleFactor?: number
+    format: 'png' | 'jpeg' | 'webp' = 'png',
+    quality: number = 0.95,
+    scaleFactor: number = 1
   ): Promise<{
     blob: Blob;
     dataURL: string;
@@ -214,66 +196,20 @@ export class EnhancedPosterRenderer extends PosterRenderer {
     highQualitySize: { width: number; height: number };
   }> {
     
-    // 確保使用高品質模式
-    const wasHighQuality = this.highQualityMode;
-    this.setHighQualityMode(true);
-    
-    try {
-      // 呼叫父類的高品質導出方法
-      return await super.exportHighQuality(format, quality, scaleFactor);
-      
-    } finally {
-      // 恢復原始設定
-      this.setHighQualityMode(wasHighQuality);
-    }
-  }
-  
-  /**
-   * 導出高品質海報並指定檔名
-   * @param format - 輸出格式
-   * @param quality - 品質（0-1）
-   * @param filename - 檔案名稱
-   */
-  async exportHighQualityWithFilename(
-    format: 'png' | 'jpeg' | 'webp' = 'png',
-    quality: number = 0.95,
-    filename?: string
-  ): Promise<{
-    blob: Blob;
-    dataURL: string;
-    filename: string;
-  }> {
-    
-    const result = await this.exportHighQuality(format, quality, 2);
-    const exportFilename = filename || `poster-hq-${Date.now()}.${format}`;
-    
-    return {
-      blob: result.blob,
-      dataURL: result.dataURL,
-      filename: exportFilename
+    const originalSize = { width: this.canvas.width, height: this.canvas.height };
+    const highQualitySize = { 
+      width: Math.round(this.canvas.width * scaleFactor), 
+      height: Math.round(this.canvas.height * scaleFactor) 
     };
-  }
-  
-  /**
-   * 獲取處理統計資訊
-   * @param overlays - 圖層陣列
-   */
-  getProcessingStats(overlays: Overlay[]): {
-    total: number;
-    needsProcessing: number;
-    processed: number;
-    simple: number;
-    complex: number;
-  } {
     
-    const stats = OverlayProcessor.getProcessingStats(overlays);
-    const processed = overlays.filter(overlay => 
-      this.processedOverlays.has(overlay.id)
-    ).length;
+    const blob = await CanvasUtils.canvasToBlob(this.canvas, format, quality);
+    const dataURL = this.canvas.toDataURL(`image/${format}`, quality);
     
     return {
-      ...stats,
-      processed
+      blob,
+      dataURL,
+      originalSize,
+      highQualitySize
     };
   }
   
@@ -285,38 +221,40 @@ export class EnhancedPosterRenderer extends PosterRenderer {
   }
   
   /**
-   * 獲取快取狀態
+   * 取得快取資訊
    */
   getCacheInfo(): {
     size: number;
     overlayIds: number[];
     memoryUsage: string;
   } {
-    
-    let totalPixels = 0;
-    const overlayIds = Array.from(this.processedOverlays.keys());
-    
-    this.processedOverlays.forEach(canvas => {
-      totalPixels += canvas.width * canvas.height;
-    });
-    
-    // 估算記憶體使用量（RGBA = 4 bytes per pixel）
-    const memoryBytes = totalPixels * 4;
-    const memoryMB = (memoryBytes / (1024 * 1024)).toFixed(2);
-    
     return {
       size: this.processedOverlays.size,
-      overlayIds,
-      memoryUsage: `${memoryMB} MB`
+      overlayIds: Array.from(this.processedOverlays.keys()),
+      memoryUsage: `${this.processedOverlays.size} 個快取項目`
     };
   }
   
   /**
-   * 創建圖層預覽
-   * @param overlay - 要預覽的圖層
-   * @param size - 預覽尺寸
+   * 取得處理統計
+   * @param overlays - 圖層陣列
    */
-  createOverlayPreview(overlay: Overlay, size: number = 150): HTMLCanvasElement {
-    return OverlayProcessor.createPreview(overlay, size);
+  getProcessingStats(overlays: Overlay[]): {
+    total: number;
+    needsProcessing: number;
+    processed: number;
+    simple: number;
+    complex: number;
+  } {
+    const baseStats = OverlayProcessor.getProcessingStats(overlays);
+    
+    const processed = overlays.filter(overlay => 
+      this.processedOverlays.has(overlay.id)
+    ).length;
+    
+    return {
+      ...baseStats,
+      processed
+    };
   }
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎗️ 癌症專科會議議程海報製作器（多PNG、可調層級、解鎖比例、裁切）</title>
+  <title>🎗️ 癌症專科會議議程海報製作器（多PNG、可調層級、解鎖比例）</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -157,14 +157,6 @@
           <button class="btn btn-secondary" id="resetOverlay">重設大小/角度</button>
           <button class="btn btn-danger" id="removeOverlay">移除</button>
         </div>
-        <div class="row" style="margin-top:6px;">
-          <button class="btn btn-primary" id="openCropper">✂️ 裁切</button>
-          <button class="btn btn-ghost" id="resetCrop">還原裁切</button>
-        </div>
-        <div class="row crop-controls" id="cropControls" style="margin-top:6px; display:none;">
-          <button class="btn btn-success" id="applyCrop">✅ 確認裁切</button>
-          <button class="btn btn-danger" id="cancelCrop">❌ 取消</button>
-        </div>
 
         <!-- 頁尾註解 -->
         <h2 class="section-title">📝 頁尾註解</h2>
@@ -186,8 +178,6 @@
         <div style="display:flex; gap:10px; margin-top:16px; justify-content:center;">
           <button class="btn btn-primary" id="btnUpdate">🔄 更新海報</button>
           <button class="btn btn-secondary" id="btnDownload">💾 下載海報</button>
-          <button class="btn btn-primary" id="btnHighQuality" style="background:#e67e22;">✨ 高品質下載</button>
-          <button class="btn btn-ghost" id="btnToggleMode">🎯 切換品質模式</button>
         </div>
       </div>
     </div>

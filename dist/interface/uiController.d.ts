@@ -5,7 +5,6 @@ import { AppState } from '../assets/types.js';
 export declare class UIController {
     private appState;
     private dragState;
-    private cropperState;
     private canvasInteractions;
     private formControls;
     private overlayManager;
