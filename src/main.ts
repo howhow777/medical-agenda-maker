@@ -3,6 +3,7 @@
  */
 
 import { UIController } from './interface/uiController.js';
+import { AccordionController } from './interface/accordionController.js';
 import { FileUploader } from './interface/fileUploader.js';
 import { AgendaData } from './assets/agendaTypes.js';
 
@@ -23,6 +24,9 @@ async function initApp(): Promise<void> {
       
       controller.loadAgendaData(agendaData);
     });
+    
+    // 初始化摺疊面板控制器
+    new AccordionController();
     
     console.log('✅ 應用程式初始化完成');
   } catch (error) {

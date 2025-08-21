@@ -92,4 +92,12 @@ export declare class UIController {
      * 取得應用狀態（供外部存取）
      */
     getAppState(): AppState;
+    /**
+     * 初始化下載按鈕動態定位
+     */
+    private initializeDownloadButtonPosition;
+    /**
+     * 更新下載按鈕位置 - 固定在白色框下緣上方
+     */
+    private updateDownloadButtonPosition;
 }

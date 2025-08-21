@@ -48,6 +48,7 @@ body {
 }
 
 .canvas-container {
+  position: relative; /* 支援懸浮按鈕定位 */
   flex: 1;
   padding: 30px;
   display: flex;
@@ -65,6 +66,107 @@ canvas {
   border-radius: 10px;
   background: #fff;
   touch-action: none;
+}
+
+/* 懸浮下載按鈕 - Canvas 中央下方 */
+.floating-download-center {
+  position: fixed;
+  /* bottom 值由 JavaScript 動態設定 */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  z-index: 100;
+  font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+}
+
+.floating-download-center:hover {
+  transform: translateX(-50%) scale(1.05);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* === 摺疊面板系統 === */
+.accordion-section {
+  margin-bottom: 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.accordion-section:hover {
+  border-color: #c0c0c0;
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.accordion-header:hover {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.accordion-icon {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+  color: #666;
+}
+
+.section-title-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding: 0 20px;
+}
+
+.accordion-section.active .accordion-content {
+  max-height: 2000px; /* 足夠大的值確保內容完全顯示 */
+  padding: 20px;
+}
+
+.accordion-section.active .accordion-icon {
+  transform: rotate(0deg); /* ▼ 狀態 */
+}
+
+.accordion-section:not(.active) .accordion-icon {
+  transform: rotate(-90deg); /* ▶ 狀態 */
+}
+
+/* 子標題樣式調整 */
+.sub-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+  margin: 16px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sub-section-title:first-child {
+  margin-top: 0;
 }
 
 /* === 表單元素 === */
@@ -741,77 +843,6 @@ input:focus, select:focus, textarea:focus {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-/* 議程預覽樣式 */
-.parsed-preview {
-  margin-top: 20px;
-  background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.agenda-preview h3 {
-  margin: 0 0 15px 0;
-  color: #495057;
-  font-size: 1.1em;
-}
-
-.agenda-preview h4 {
-  margin: 15px 0 10px 0;
-  color: #6c757d;
-  font-size: 1em;
-  font-weight: 600;
-}
-
-.basic-info p {
-  margin: 8px 0;
-  font-size: 0.95em;
-  line-height: 1.4;
-}
-
-.basic-info strong {
-  color: #495057;
-  min-width: 60px;
-  display: inline-block;
-}
-
-.items-list {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.item-preview {
-  display: flex;
-  gap: 15px;
-  padding: 8px 0;
-  border-bottom: 1px solid #f1f3f4;
-  font-size: 0.9em;
-}
-
-.item-preview:last-child {
-  border-bottom: none;
-}
-
-.item-preview .time {
-  font-weight: 600;
-  color: #007bff;
-  min-width: 100px;
-  flex-shrink: 0;
-}
-
-.item-preview .content {
-  color: #495057;
-  line-height: 1.4;
-}
-
-.more-items {
-  text-align: center;
-  color: #6c757d;
-  font-style: italic;
-  padding: 10px 0;
-  font-size: 0.9em;
 }
 
 /* 集合地點區域樣式 */

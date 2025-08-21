@@ -2,6 +2,7 @@
  * 醫學會議海報製作器 - 主程式入口
  */
 import { UIController } from './interface/uiController.js';
+import { AccordionController } from './interface/accordionController.js';
 import { FileUploader } from './interface/fileUploader.js';
 /**
  * 應用程式初始化
@@ -17,6 +18,8 @@ async function initApp() {
             console.log('📋 議程資料解析完成:', agendaData);
             controller.loadAgendaData(agendaData);
         });
+        // 初始化摺疊面板控制器
+        new AccordionController();
         console.log('✅ 應用程式初始化完成');
     }
     catch (error) {

@@ -58,6 +58,8 @@ export class UIController {
             this.initializeModules();
             // 綁定事件
             this.bindEvents();
+            // 初始化下載按鈕動態定位
+            this.initializeDownloadButtonPosition();
             // 載入初始資料
             this.loadInitialData();
             // 首次渲染
@@ -462,6 +464,45 @@ export class UIController {
      */
     getAppState() {
         return this.appState;
+    }
+    /**
+     * 初始化下載按鈕動態定位
+     */
+    initializeDownloadButtonPosition() {
+        // 初始定位
+        this.updateDownloadButtonPosition();
+        // 監聽滾動事件
+        window.addEventListener('scroll', () => {
+            this.updateDownloadButtonPosition();
+        });
+        // 監聽視窗大小變化
+        window.addEventListener('resize', () => {
+            this.updateDownloadButtonPosition();
+        });
+        console.log('🎯 下載按鈕動態定位系統已啟動');
+    }
+    /**
+     * 更新下載按鈕位置 - 固定在白色框下緣上方
+     */
+    updateDownloadButtonPosition() {
+        const canvasContainer = document.querySelector('.canvas-container');
+        const downloadBtn = document.getElementById('btnDownload');
+        if (!canvasContainer || !downloadBtn) {
+            console.warn('🔍 找不到 Canvas 容器或下載按鈕');
+            return;
+        }
+        try {
+            const rect = canvasContainer.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            // 計算距離視窗底部的距離，在白色框下緣上方 15px
+            const bottomOffset = Math.max(15, windowHeight - rect.bottom + 15);
+            downloadBtn.style.bottom = `${bottomOffset}px`;
+            // 除錯用 console（生產環境可移除）
+            // console.log('🎯 按鈕位置更新:', { bottom: bottomOffset, rectBottom: rect.bottom, windowHeight });
+        }
+        catch (error) {
+            console.error('❌ 更新下載按鈕位置時發生錯誤:', error);
+        }
     }
 }
 //# sourceMappingURL=uiController.js.map

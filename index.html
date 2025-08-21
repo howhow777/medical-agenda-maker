@@ -20,179 +20,219 @@
     <div class="main-content">
       <!-- 左側控制面板 -->
       <div class="control-panel">
-        <!-- 基本資訊 -->
-        <h2 class="section-title">📋 基本資訊</h2>
-        <div class="form-group">
-          <label>會議標題</label>
-          <input id="conferenceTitle" type="text" placeholder="例：2025年度癌症醫學研討會" />
-        </div>
-        <div class="form-group">
-          <label>副標題</label>
-          <input id="conferenceSubtitle" type="text" value="癌症治療醫學研討會" />
-        </div>
-        <div class="form-group">
-          <label>日期</label>
-          <input id="conferenceDate" type="text" placeholder="例：2025年8月15日" />
-        </div>
-        <div class="form-group">
-          <label>時間</label>
-          <input id="conferenceTime" type="text" placeholder="例：14:30 - 18:15" />
-        </div>
-        <div class="form-group">
-          <label>地點</label>
-          <input id="conferenceLocation" type="text" value="台北國際會議中心" />
-        </div>
-        <div class="form-group">
-          <label style="display:flex;align-items:center; gap:8px; font-weight:600;">
-            <input type="checkbox" id="showMeetupPoint" style="width:auto;"/>顯示集合地點資訊
-          </label>
-        </div>
-        <div id="meetupPointSection" class="meetup-section" style="display:none; margin-left:20px; border-left:3px solid #ddd; padding-left:15px;">
-          <div style="margin-bottom:8px;">
-            <label style="display:flex;align-items:center; gap:8px;">
-              <input type="radio" name="meetupType" value="same" id="meetupSame" checked style="width:auto;"/>同會議地點
-            </label>
+        <!-- 🚀 快速開始區塊 -->
+        <div class="accordion-section active" data-section="quickstart">
+          <div class="accordion-header">
+            <span class="accordion-icon">▼</span>
+            <span class="section-title-text">🚀 快速開始</span>
           </div>
-          <div style="margin-bottom:8px;">
-            <label style="display:flex;align-items:center; gap:8px;">
-              <input type="radio" name="meetupType" value="other" id="meetupOther" style="width:auto;"/>其他：
-            </label>
-            <input id="meetupCustomText" type="text" placeholder="請輸入集合地點" style="margin-top:5px;" disabled />
-          </div>
-        </div>
+          <div class="accordion-content">
+            <!-- Excel 匯入 -->
+            <h3 class="sub-section-title">📁 Excel 議程匯入</h3>
+            <div class="excel-upload-area">
+              <div class="upload-zone" id="upload-zone">
+                <div class="upload-content">
+                  <div class="upload-icon">📁</div>
+                  <div class="upload-text">拖拽 Excel 檔案到此處<br>或點擊選擇檔案</div>
+                  <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display: none;">
+                </div>
+              </div>
+              <div class="upload-status" id="upload-status"></div>
+            </div>
 
-        <!-- 範本管理 -->
-        <h2 class="section-title">📋 範本管理</h2>
-        <div class="template-selector">
-          <!-- 範本按鈕將由 templateController.ts 動態生成 -->
-        </div>
-        <div class="template-actions">
-          <div class="storage-info" id="storageInfo" style="margin-top: 8px; font-size: 12px; color: #666; text-align: center;">
-            儲存使用：0 KB / 10 MB (0%)
-          </div>
-        </div>
-
-        <!-- 配色方案 -->
-        <h2 class="section-title">🎨 配色方案</h2>
-        <div class="row">
-          <select id="colorScheme">
-            <option value="medical_green">經典醫療綠</option>
-            <option value="business_green">專業商務綠</option>
-            <option value="tech_green">現代科技綠</option>
-            <option value="custom">自訂配色</option>
-          </select>
-          <select id="gradientDir">
-            <option value="horizontal">水平</option>
-            <option value="vertical">垂直</option>
-            <option value="diagonal">對角</option>
-          </select>
-        </div>
-
-        <!-- 自訂配色專區 -->
-        <div id="customColorsSection" class="custom-colors-section">
-          <div class="color-group">
-            <label>🌟 標題漸層色彩（三色）</label>
-            <div class="three-color-row">
-              <input type="color" id="headerC1" value="#1B4D3E" title="標題色1">
-              <input type="color" id="headerC2" value="#2D8659" title="標題色2">
-              <input type="color" id="headerC3" value="#4CAF85" title="標題色3">
+            <!-- 範本管理 -->
+            <h3 class="sub-section-title">📋 範本管理</h3>
+            <div class="template-selector">
+              <!-- 範本按鈕將由 templateController.ts 動態生成 -->
+            </div>
+            <div class="template-actions">
+              <div class="storage-info" id="storageInfo" style="margin-top: 8px; font-size: 12px; color: #666; text-align: center;">
+                儲存使用：0 KB / 10 MB (0%)
+              </div>
             </div>
           </div>
-          <div class="color-group">
-            <label>📄 議程區域配色（三色）</label>
-            <div class="three-color-row">
-              <input type="color" id="agendaBg" value="#E8F5E8" title="議程背景色">
-              <input type="color" id="agendaBorder" value="#1B4D3E" title="議程邊框色">
-              <input type="color" id="agendaAccent" value="#2D8659" title="議程重點色">
+        </div>
+
+        <!-- 📝 內容編輯區塊 -->
+        <div class="accordion-section" data-section="content">
+          <div class="accordion-header">
+            <span class="accordion-icon">▶</span>
+            <span class="section-title-text">📝 內容編輯</span>
+          </div>
+          <div class="accordion-content">
+            <!-- 基本資訊 -->
+            <h3 class="sub-section-title">📋 基本資訊</h3>
+            <div class="form-group">
+              <label>會議標題</label>
+              <input id="conferenceTitle" type="text" placeholder="例：2025年度癌症醫學研討會" />
+            </div>
+            <div class="form-group">
+              <label>副標題</label>
+              <input id="conferenceSubtitle" type="text" value="癌症治療醫學研討會" />
+            </div>
+            <div class="form-group">
+              <label>日期</label>
+              <input id="conferenceDate" type="text" placeholder="例：2025年8月15日" />
+            </div>
+            <div class="form-group">
+              <label>時間</label>
+              <input id="conferenceTime" type="text" placeholder="例：14:30 - 18:15" />
+            </div>
+            <div class="form-group">
+              <label>地點</label>
+              <input id="conferenceLocation" type="text" value="台北國際會議中心" />
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center; gap:8px; font-weight:600;">
+                <input type="checkbox" id="showMeetupPoint" style="width:auto;"/>顯示集合地點資訊
+              </label>
+            </div>
+            <div id="meetupPointSection" class="meetup-section" style="display:none; margin-left:20px; border-left:3px solid #ddd; padding-left:15px;">
+              <div style="margin-bottom:8px;">
+                <label style="display:flex;align-items:center; gap:8px;">
+                  <input type="radio" name="meetupType" value="same" id="meetupSame" checked style="width:auto;"/>同會議地點
+                </label>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="display:flex;align-items:center; gap:8px;">
+                  <input type="radio" name="meetupType" value="other" id="meetupOther" style="width:auto;"/>其他：
+                </label>
+                <input id="meetupCustomText" type="text" placeholder="請輸入集合地點" style="margin-top:5px;" disabled />
+              </div>
+            </div>
+
+            <!-- 議程項目 -->
+            <h3 class="sub-section-title">📅 議程項目</h3>
+            <div class="form-group">
+              <label>時間</label>
+              <input id="agendaTime" placeholder="例：09:00-09:30" type="text" />
+            </div>
+            <div class="form-group">
+              <label>主題（可按Enter換行）</label>
+              <textarea id="agendaTopic" placeholder="例：開幕致詞" class="multiline-input"></textarea>
+            </div>
+            <div class="form-group">
+              <label>講者（可按Enter換行）</label>
+              <textarea id="agendaSpeaker" placeholder="例：王教授" class="multiline-input"></textarea>
+            </div>
+            <div class="form-group">
+              <label>主持人（可按Enter換行）</label>
+              <textarea id="agendaModerator" placeholder="例：李醫師" class="multiline-input"></textarea>
+            </div>
+            <div class="row">
+              <button class="btn btn-primary" id="agendaAdd">➕ 新增</button>
+              <button class="btn btn-secondary" id="agendaSample">📋 載入範例</button>
+              <button class="btn btn-secondary" id="agendaClear">🗑️ 清空</button>
+            </div>
+            <div id="agendaList" class="agenda-items"></div>
+
+            <!-- 頁尾註解 -->
+            <h3 class="sub-section-title">📝 頁尾註解</h3>
+            <div class="form-group">
+              <label style="display:flex;align-items:center; gap:8px; font-weight:600;">
+                <input type="checkbox" id="showFooterNote" checked style="width:auto;"/>顯示頁尾註解
+              </label>
+            </div>
+            <div class="form-group">
+              <textarea id="footerNoteContent" rows="6" style="resize:vertical; font-size:12px; line-height:1.4;">本會議是醫藥學術會議,與會者皆是醫療專業人員,眷屬不適合參加,本公司亦不會支付眷屬費用。此外,為使與會醫療專業人員享有高質量專業的學術會議。當需要時,本公司會安排特約廠商到場協助接待及做會議紀錄。廠商與默沙東公司簽有服務保密條款,並承諾廠商代表在執行服務時,會議仍順暢進行。如有不便之處,敬請見諒。</textarea>
             </div>
           </div>
-          <div class="color-group">
-            <label>🖼️ 海報底色漸層（雙色）</label>
-            <div class="two-color-row">
-              <input type="color" id="bgC1" value="#ffffff" title="底色1">
-              <input type="color" id="bgC2" value="#f8f9fa" title="底色2">
+        </div>
+
+        <!-- 🎨 視覺設計區塊 -->
+        <div class="accordion-section" data-section="design">
+          <div class="accordion-header">
+            <span class="accordion-icon">▶</span>
+            <span class="section-title-text">🎨 視覺設計</span>
+          </div>
+          <div class="accordion-content">
+            <!-- 配色方案 -->
+            <h3 class="sub-section-title">🎨 配色方案</h3>
+            <div class="row">
+              <select id="colorScheme">
+                <option value="medical_green">經典醫療綠</option>
+                <option value="business_green">專業商務綠</option>
+                <option value="tech_green">現代科技綠</option>
+                <option value="custom">自訂配色</option>
+              </select>
+              <select id="gradientDir">
+                <option value="horizontal">水平</option>
+                <option value="vertical">垂直</option>
+                <option value="diagonal">對角</option>
+              </select>
+            </div>
+
+            <!-- 自訂配色專區 -->
+            <div id="customColorsSection" class="custom-colors-section">
+              <div class="color-group">
+                <label>🌟 標題漸層色彩（三色）</label>
+                <div class="three-color-row">
+                  <input type="color" id="headerC1" value="#1B4D3E" title="標題色1">
+                  <input type="color" id="headerC2" value="#2D8659" title="標題色2">
+                  <input type="color" id="headerC3" value="#4CAF85" title="標題色3">
+                </div>
+              </div>
+              <div class="color-group">
+                <label>📄 議程區域配色（三色）</label>
+                <div class="three-color-row">
+                  <input type="color" id="agendaBg" value="#E8F5E8" title="議程背景色">
+                  <input type="color" id="agendaBorder" value="#1B4D3E" title="議程邊框色">
+                  <input type="color" id="agendaAccent" value="#2D8659" title="議程重點色">
+                </div>
+              </div>
+              <div class="color-group">
+                <label>🖼️ 海報底色漸層（雙色）</label>
+                <div class="two-color-row">
+                  <input type="color" id="bgC1" value="#ffffff" title="底色1">
+                  <input type="color" id="bgC2" value="#f8f9fa" title="底色2">
+                </div>
+              </div>
+              <div class="row">
+                <label>底色漸層方向</label>
+                <select id="bgGradientDir">
+                  <option value="horizontal">水平</option>
+                  <option value="vertical">垂直</option>
+                  <option value="diagonal">對角</option>
+                  <option value="radial">放射狀</option>
+                  <option value="none">無漸層</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="applyCustomColors" style="width:100%; margin-top:10px;">🎨 套用自訂配色</button>
+              <button class="btn btn-primary" id="btnUpdate" style="width:100%; margin-top:10px;">🔄 更新海報</button>
+            </div>
+
+            <!-- PNG 圖層 -->
+            <h3 class="sub-section-title">🖼️ PNG 圖層</h3>
+            <div class="form-group">
+              <label>選擇 PNG 檔（可多選，透明背景最佳）</label>
+              <input id="overlayFile" type="file" accept="image/png" multiple />
+              <div class="mini-hint">點擊清單選取；拖曳畫布移動；角落縮放；上方圓點旋轉。支援多物件與層級調整。</div>
+            </div>
+            <div id="overlayList" class="overlay-list"></div>
+            <div class="row" style="margin-top:6px;">
+              <button class="btn btn-secondary" id="bringFront" title="移到最上層">⬆️ 最上</button>
+              <button class="btn btn-secondary" id="bringForward" title="上移一層">🔼 上移</button>
+              <button class="btn btn-secondary" id="sendBackward" title="下移一層">🔽 下移</button>
+              <button class="btn btn-secondary" id="sendBack" title="移到最下層">⬇️ 最下</button>
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <label style="flex:none; width:88px;">透明度</label>
+              <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="1" />
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <label style="display:flex; align-items:center; gap:6px; flex:1;">
+                <input id="overlayVisible" type="checkbox" checked style="width:auto;"> 顯示
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; flex:1;">
+                <input id="overlayLockAspect" type="checkbox" checked style="width:auto;"> 鎖定比例
+              </label>
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <button class="btn btn-secondary" id="centerOverlay">置中</button>
+              <button class="btn btn-secondary" id="resetOverlay">重設大小/角度</button>
+              <button class="btn btn-danger" id="removeOverlay">移除</button>
             </div>
           </div>
-          <div class="row">
-            <label>底色漸層方向</label>
-            <select id="bgGradientDir">
-              <option value="horizontal">水平</option>
-              <option value="vertical">垂直</option>
-              <option value="diagonal">對角</option>
-              <option value="radial">放射狀</option>
-              <option value="none">無漸層</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" id="applyCustomColors" style="width:100%; margin-top:10px;">🎨 套用自訂配色</button>
-        </div>
-
-        <!-- 議程項目 -->
-        <h2 class="section-title">📅 議程項目</h2>
-        <div class="form-group">
-          <label>時間</label>
-          <input id="agendaTime" placeholder="例：09:00-09:30" type="text" />
-        </div>
-        <div class="form-group">
-          <label>主題（可按Enter換行）</label>
-          <textarea id="agendaTopic" placeholder="例：開幕致詞" class="multiline-input"></textarea>
-        </div>
-        <div class="form-group">
-          <label>講者（可按Enter換行）</label>
-          <textarea id="agendaSpeaker" placeholder="例：王教授" class="multiline-input"></textarea>
-        </div>
-        <div class="form-group">
-          <label>主持人（可按Enter換行）</label>
-          <textarea id="agendaModerator" placeholder="例：李醫師" class="multiline-input"></textarea>
-        </div>
-        <div class="row">
-          <button class="btn btn-primary" id="agendaAdd">➕ 新增</button>
-          <button class="btn btn-secondary" id="agendaSample">📋 載入範例</button>
-          <button class="btn btn-secondary" id="agendaClear">🗑️ 清空</button>
-        </div>
-        
-        <div id="agendaList" class="agenda-items"></div>
-
-        <!-- PNG 圖層 -->
-        <h2 class="section-title">🖼️ PNG 圖層</h2>
-        <div class="form-group">
-          <label>選擇 PNG 檔（可多選，透明背景最佳）</label>
-          <input id="overlayFile" type="file" accept="image/png" multiple />
-          <div class="mini-hint">點擊清單選取；拖曳畫布移動；角落縮放；上方圓點旋轉。支援多物件與層級調整。</div>
-        </div>
-        <div id="overlayList" class="overlay-list"></div>
-        <div class="row" style="margin-top:6px;">
-          <button class="btn btn-secondary" id="bringFront" title="移到最上層">⬆️ 最上</button>
-          <button class="btn btn-secondary" id="bringForward" title="上移一層">🔼 上移</button>
-          <button class="btn btn-secondary" id="sendBackward" title="下移一層">🔽 下移</button>
-          <button class="btn btn-secondary" id="sendBack" title="移到最下層">⬇️ 最下</button>
-        </div>
-        <div class="row" style="margin-top:6px;">
-          <label style="flex:none; width:88px;">透明度</label>
-          <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="1" />
-        </div>
-        <div class="row" style="margin-top:6px;">
-          <label style="display:flex; align-items:center; gap:6px; flex:1;">
-            <input id="overlayVisible" type="checkbox" checked style="width:auto;"> 顯示
-          </label>
-          <label style="display:flex; align-items:center; gap:6px; flex:1;">
-            <input id="overlayLockAspect" type="checkbox" checked style="width:auto;"> 鎖定比例
-          </label>
-        </div>
-        <div class="row" style="margin-top:6px;">
-          <button class="btn btn-secondary" id="centerOverlay">置中</button>
-          <button class="btn btn-secondary" id="resetOverlay">重設大小/角度</button>
-          <button class="btn btn-danger" id="removeOverlay">移除</button>
-        </div>
-
-        <!-- 頁尾註解 -->
-        <h2 class="section-title">📝 頁尾註解</h2>
-        <div class="form-group">
-          <label style="display:flex;align-items:center; gap:8px; font-weight:600;">
-            <input type="checkbox" id="showFooterNote" checked style="width:auto;"/>顯示頁尾註解
-          </label>
-        </div>
-        <div class="form-group">
-          <textarea id="footerNoteContent" rows="6" style="resize:vertical; font-size:12px; line-height:1.4;">本會議是醫藥學術會議,與會者皆是醫療專業人員,眷屬不適合參加,本公司亦不會支付眷屬費用。此外,為使與會醫療專業人員享有高質量專業的學術會議。當需要時,本公司會安排特約廠商到場協助接待及做會議紀錄。廠商與默沙東公司簽有服務保密條款,並承諾廠商代表在執行服務時,會議仍順暢進行。如有不便之處,敬請見諒。</textarea>
         </div>
       </div>
 
@@ -201,10 +241,7 @@
         <div class="canvas-area">
           <canvas id="posterCanvas" width="800" height="600"></canvas>
         </div>
-        <div style="display:flex; gap:10px; margin-top:16px; justify-content:center;">
-          <button class="btn btn-primary" id="btnUpdate">🔄 更新海報</button>
-          <button class="btn btn-secondary" id="btnDownload">💾 下載海報</button>
-        </div>
+        <button id="btnDownload" class="floating-download-center">⬇️ 下載海報</button>
       </div>
     </div>
   </div>
