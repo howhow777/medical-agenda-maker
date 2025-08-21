@@ -192,29 +192,15 @@ export class EnhancedPosterRenderer extends PosterRenderer {
   async exportHighQuality(
     format: 'png' | 'jpeg' | 'webp' = 'png',
     quality: number = 0.95,
-    scaleFactor: number = 1
+    scaleFactor: number = 2
   ): Promise<{
     blob: Blob;
     dataURL: string;
     originalSize: { width: number; height: number };
     highQualitySize: { width: number; height: number };
   }> {
-    
-    const originalSize = { width: this.canvas.width, height: this.canvas.height };
-    const highQualitySize = { 
-      width: Math.round(this.canvas.width * scaleFactor), 
-      height: Math.round(this.canvas.height * scaleFactor) 
-    };
-    
-    const blob = await CanvasUtils.canvasToBlob(this.canvas, format, quality);
-    const dataURL = this.canvas.toDataURL(`image/${format}`, quality);
-    
-    return {
-      blob,
-      dataURL,
-      originalSize,
-      highQualitySize
-    };
+    // 使用父類的真正高解析度實現
+    return super.exportHighQuality(format, quality, scaleFactor);
   }
   
   /**

@@ -11,7 +11,6 @@ export declare class UIController {
     private overlayManager;
     private posterRenderer;
     private dataManager;
-    private highQualityTest;
     private templateController;
     private canvas;
     private ctx;
@@ -72,7 +71,7 @@ export declare class UIController {
     /**
      * 下載海報
      */
-    downloadPoster(): void;
+    downloadPoster(): Promise<void>;
     /**
      * 重新整理圖層列表
      */

@@ -116,7 +116,7 @@ export class HighQualityTestController {
             // 等待一點時間讓渲染完成
             await new Promise(resolve => setTimeout(resolve, 100));
             // 導出高品質版本
-            const { blob, dataURL, originalSize, highQualitySize } = await this.posterRenderer.exportHighQuality('png', 0.95);
+            const { blob, dataURL, originalSize, highQualitySize } = await this.posterRenderer.exportHighQuality('png', 0.95, 3);
             console.log(`📊 解析度提升: ${originalSize.width}x${originalSize.height} → ${highQualitySize.width}x${highQualitySize.height}`);
             // 下載
             const url = URL.createObjectURL(blob);

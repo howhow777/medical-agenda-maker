@@ -2,7 +2,6 @@
 // 保留基本的高品質渲染功能，移除裁切功能
 import { PosterRenderer } from './posterRenderer.js';
 import { OverlayProcessor } from './overlay-processor.js';
-import { CanvasUtils } from './canvas-utils.js';
 /**
  * 增強版海報渲染器
  * 在原有功能基礎上整合基本的高品質圖片處理
@@ -122,20 +121,9 @@ export class EnhancedPosterRenderer extends PosterRenderer {
      * @param quality - 品質設定
      * @param scaleFactor - 縮放係數（保持與父類兼容）
      */
-    async exportHighQuality(format = 'png', quality = 0.95, scaleFactor = 1) {
-        const originalSize = { width: this.canvas.width, height: this.canvas.height };
-        const highQualitySize = {
-            width: Math.round(this.canvas.width * scaleFactor),
-            height: Math.round(this.canvas.height * scaleFactor)
-        };
-        const blob = await CanvasUtils.canvasToBlob(this.canvas, format, quality);
-        const dataURL = this.canvas.toDataURL(`image/${format}`, quality);
-        return {
-            blob,
-            dataURL,
-            originalSize,
-            highQualitySize
-        };
+    async exportHighQuality(format = 'png', quality = 0.95, scaleFactor = 2) {
+        // 使用父類的真正高解析度實現
+        return super.exportHighQuality(format, quality, scaleFactor);
     }
     /**
      * 清除處理快取

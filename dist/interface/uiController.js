@@ -3,7 +3,6 @@
  */
 import { CanvasInteractions } from './canvasInteractions.js';
 import { FormControls } from './formControls.js';
-import { HighQualityTestController } from './high-quality-test.js';
 import { TemplateController } from './templateController.js';
 import { templates } from '../logic/templates.js';
 import { DataConverter } from '../logic/dataConverter.js';
@@ -166,8 +165,6 @@ export class UIController {
         this.canvasInteractions = new CanvasInteractions(this.canvas, this.overlayManager, () => this.updatePoster(), () => this.syncOverlayControls(), () => this.refreshOverlayList());
         this.formControls = new FormControls(() => this.updatePoster());
         this.formControls.setOverlayManager(this.overlayManager);
-        // 初始化高品質測試控制器
-        this.highQualityTest = new HighQualityTestController(this.posterRenderer, this.overlayManager);
         // 初始化範本控制器
         this.templateController = new TemplateController();
         // 設定範本系統的狀態收集器
@@ -374,16 +371,21 @@ export class UIController {
     /**
      * 下載海報
      */
-    downloadPoster() {
+    async downloadPoster() {
         try {
             // 先更新海報確保最新內容
             this.updatePoster();
+            // 使用高解析度渲染（3倍高品質，適合所有用途）
+            const { blob } = await this.posterRenderer.exportHighQuality('png', 0.95, 3);
             // 創建下載連結
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.download = `醫學會議海報_${new Date().toISOString().split('T')[0]}.png`;
-            link.href = this.canvas.toDataURL('image/png');
+            link.href = url;
             link.click();
-            console.log('✅ 海報下載成功');
+            // 清理 URL 對象
+            URL.revokeObjectURL(url);
+            console.log('✅ 海報下載成功（高品質3倍解析度）');
         }
         catch (error) {
             console.error('❌ 下載海報失敗:', error);
