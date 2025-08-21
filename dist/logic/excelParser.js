@@ -198,10 +198,9 @@ export class ExcelAgendaParser {
         else if (lowerContent.includes('discussion') || lowerContent.includes('討論')) {
             type = 'discussion';
         }
-        // 🔧 修復：Moderator 在 row[4] 而不是 row[3]
-        const speaker = row[2] ? String(row[2]).trim() : undefined;
-        const moderator = row[4] ? String(row[4]).trim() : undefined;
-        console.log(`  最終結果: Speaker="${speaker}", Moderator="${moderator}"`);
+        // 🎯 智能欄位檢測：處理不同的 Excel 欄位結構
+        const { speaker, moderator } = this.smartFieldDetection(row);
+        console.log(`  智能檢測結果: Speaker="${speaker}", Moderator="${moderator}"`);
         return {
             time: timeStr,
             content: contentStr,
@@ -230,6 +229,74 @@ export class ExcelAgendaParser {
         const firstTime = items[0].time;
         const lastTime = items[items.length - 1].time;
         return `${firstTime} - ${lastTime}`;
+    }
+    /**
+     * 🎯 智能欄位檢測：處理不同的 Excel 欄位結構
+     */
+    smartFieldDetection(row) {
+        const rowLength = row.length;
+        let speaker;
+        let moderator;
+        // 檢查第2欄位（Speaker 常見位置）
+        const speakerCandidate = String(row[2] || '').trim();
+        if (speakerCandidate && speakerCandidate !== '') {
+            speaker = speakerCandidate;
+        }
+        // 🔍 智能檢測 Moderator 位置
+        if (rowLength <= 5) {
+            // === 短欄結構 (5欄) ===
+            // 格式：Time | Content | Speaker | Moderator | Extra
+            // 有時 Moderator 在第3或第4位置
+            const pos3 = String(row[3] || '').trim();
+            const pos4 = String(row[4] || '').trim();
+            // 如果第3位置有內容且第2位置是空的或者內容很短，可能是 Moderator
+            if (pos3 && (!speaker || speaker.length < 3)) {
+                if (!speaker)
+                    speaker = pos3; // 第3位置可能是 Speaker
+                moderator = pos4 || undefined;
+            }
+            else if (pos3 && speaker) {
+                moderator = pos3; // 第3位置是 Moderator
+            }
+            else if (pos4) {
+                moderator = pos4; // 第4位置是 Moderator
+            }
+        }
+        else {
+            // === 長欄結構 (11欄等) ===
+            // 格式：Time | Content | Speaker | Empty | Moderator | ... | Extra
+            // Moderator 可能在第4位置或更遠的位置
+            // 檢查第4位置（標準 Moderator 位置）
+            const pos4 = String(row[4] || '').trim();
+            if (pos4) {
+                moderator = pos4;
+            }
+            else {
+                // 如果第4位置是空的，檢查後面的位置（例如第7、8位置）
+                for (let i = 5; i < Math.min(rowLength, 10); i++) {
+                    const candidate = String(row[i] || '').trim();
+                    if (candidate && candidate.length > 3) {
+                        // 檢查是否像是人名（包含「醫師」、「教授」等關鍵字）
+                        if (candidate.includes('醫師') || candidate.includes('教授') ||
+                            candidate.includes('主任') || candidate.includes('院長')) {
+                            moderator = candidate;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // 🧹 清理：如果 Speaker 和 Moderator 相同，清空 Moderator
+        if (speaker && moderator && speaker === moderator) {
+            moderator = undefined;
+        }
+        // 🧹 清理：如果是 "All" 這種通用值，通常不是 Moderator
+        if (moderator === 'All' || moderator === 'all') {
+            moderator = undefined;
+        }
+        console.log(`    智能檢測詳細: 欄位數=${rowLength}, Speaker位置=2, Moderator搜尋範圍=${rowLength <= 5 ? '3-4' : '4-9'}`);
+        console.log(`    候選值: pos3="${row[3] || ''}", pos4="${row[4] || ''}", pos7="${row[7] || ''}"`);
+        return { speaker, moderator };
     }
 }
 //# sourceMappingURL=excelParser.js.map

@@ -27,4 +27,8 @@ export declare class ExcelAgendaParser {
      * 計算總時長
      */
     private calculateTotalDuration;
+    /**
+     * 🎯 智能欄位檢測：處理不同的 Excel 欄位結構
+     */
+    private smartFieldDetection;
 }

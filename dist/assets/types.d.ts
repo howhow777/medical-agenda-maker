@@ -71,6 +71,22 @@ export interface TemplateData {
     agendaItems: AgendaItem[];
     overlays: OverlayData[];
     customColors: CustomColors;
+    meetupSettings: {
+        showMeetupPoint: boolean;
+        meetupType: 'same' | 'other';
+        meetupCustomText: string;
+    };
+    footerSettings: {
+        showFooterNote: boolean;
+        footerContent: string;
+    };
+    basicInfo: {
+        title: string;
+        subtitle: string;
+        date: string;
+        time: string;
+        location: string;
+    };
 }
 export interface Template {
     id: string;

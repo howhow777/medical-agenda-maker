@@ -242,7 +242,23 @@ export class UIController {
           visible: overlay.visible,
           lockAspect: overlay.lockAspect
         })),
-        customColors: this.appState.customColors
+        customColors: this.appState.customColors,
+        meetupSettings: {
+          showMeetupPoint: this.formControls.getShowMeetupPoint(),
+          meetupType: this.formControls.getMeetupType(),
+          meetupCustomText: this.formControls.getMeetupCustomText()
+        },
+        footerSettings: {
+          showFooterNote: this.formControls.getShowFooterNote(),
+          footerContent: this.getFooterText()
+        },
+        basicInfo: {
+          title: (document.getElementById('conferenceTitle') as HTMLInputElement)?.value || '',
+          subtitle: (document.getElementById('conferenceSubtitle') as HTMLInputElement)?.value || '',
+          date: (document.getElementById('conferenceDate') as HTMLInputElement)?.value || '',
+          time: (document.getElementById('conferenceTime') as HTMLInputElement)?.value || '',
+          location: (document.getElementById('conferenceLocation') as HTMLInputElement)?.value || ''
+        }
       };
     });
     
@@ -278,6 +294,21 @@ export class UIController {
       if (customState.customColors) {
         this.appState.customColors = customState.customColors;
         this.formControls.setCustomColors(customState.customColors);
+      }
+      
+      // 🆕 還原集合地點設定
+      if (customState.meetupSettings) {
+        this.formControls.setMeetupSettings(customState.meetupSettings);
+      }
+      
+      // 🆕 還原頁尾設定
+      if (customState.footerSettings) {
+        this.formControls.setFooterSettings(customState.footerSettings);
+      }
+      
+      // 🆕 還原基本資訊
+      if (customState.basicInfo) {
+        this.restoreBasicInfo(customState.basicInfo);
       }
       
       // 更新海報
@@ -628,5 +659,25 @@ export class UIController {
     } catch (error) {
       console.error('❌ 更新下載按鈕位置時發生錯誤:', error);
     }
+  }
+
+
+  /**
+   * 還原基本資訊到表單（範本載入時使用）
+   */
+  private restoreBasicInfo(basicInfo: any): void {
+    const titleInput = document.getElementById('conferenceTitle') as HTMLInputElement;
+    const subtitleInput = document.getElementById('conferenceSubtitle') as HTMLInputElement;
+    const dateInput = document.getElementById('conferenceDate') as HTMLInputElement;
+    const timeInput = document.getElementById('conferenceTime') as HTMLInputElement;
+    const locationInput = document.getElementById('conferenceLocation') as HTMLInputElement;
+    
+    if (titleInput && basicInfo.title) titleInput.value = basicInfo.title;
+    if (subtitleInput && basicInfo.subtitle) subtitleInput.value = basicInfo.subtitle;
+    if (dateInput && basicInfo.date) dateInput.value = basicInfo.date;
+    if (timeInput && basicInfo.time) timeInput.value = basicInfo.time;
+    if (locationInput && basicInfo.location) locationInput.value = basicInfo.location;
+    
+    console.log('✅ 基本資訊已從範本還原');
   }
 }

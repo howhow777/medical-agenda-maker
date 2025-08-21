@@ -100,4 +100,8 @@ export declare class UIController {
      * 更新下載按鈕位置 - 固定在白色框下緣上方
      */
     private updateDownloadButtonPosition;
+    /**
+     * 還原基本資訊到表單（範本載入時使用）
+     */
+    private restoreBasicInfo;
 }

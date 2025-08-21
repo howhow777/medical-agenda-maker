@@ -49,6 +49,21 @@ export declare class FormControls {
     getMeetupType(): 'same' | 'other';
     getMeetupCustomText(): string;
     getUserModifiedTime(): boolean;
+    /**
+     * 設定集合地點相關設定（範本載入時使用）
+     */
+    setMeetupSettings(settings: {
+        showMeetupPoint: boolean;
+        meetupType: 'same' | 'other';
+        meetupCustomText: string;
+    }): void;
+    /**
+     * 設定頁尾相關設定（範本載入時使用）
+     */
+    setFooterSettings(settings: {
+        showFooterNote: boolean;
+        footerContent: string;
+    }): void;
     private bringToFront;
     private bringForward;
     private sendBackward;

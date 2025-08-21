@@ -31,9 +31,18 @@ export class TemplateManager {
       const safeName = name.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '_');
       const filename = `${safeName}_${timestamp}.json`;
 
+      // 嘗試序列化範本資料
+      let jsonString;
+      try {
+        jsonString = JSON.stringify(template, null, 2);
+      } catch (stringifyError) {
+        console.error('JSON 序列化失敗:', stringifyError);
+        throw new Error(`範本資料序列化失敗: ${stringifyError instanceof Error ? stringifyError.message : '未知錯誤'}`);
+      }
+
       // 下載檔案
       this.downloadFile(
-        JSON.stringify(template, null, 2),
+        jsonString,
         filename,
         'application/json'
       );
@@ -52,7 +61,9 @@ export class TemplateManager {
       
       reader.onload = (e) => {
         try {
+          console.log('🔍 開始解析範本檔案...');
           const template: FileTemplate = JSON.parse(e.target?.result as string);
+          console.log('✅ JSON 解析成功:', template.name);
           
           if (!this.validateTemplate(template)) {
             reject(new Error('無效的範本檔案格式'));
@@ -68,7 +79,10 @@ export class TemplateManager {
             customState: {
               agendaItems: template.data.agendaItems,
               overlays: template.data.overlays, // 恢復完整圖層，包含PNG資料
-              customColors: template.data.customColors
+              customColors: template.data.customColors,
+              meetupSettings: template.data.meetupSettings, // 🆕 恢復集合地點設定
+              footerSettings: template.data.footerSettings, // 🆕 恢復頁尾設定
+              basicInfo: template.data.basicInfo // 🆕 恢復基本資訊
             }
           }, customStateCallback);
 
@@ -76,7 +90,8 @@ export class TemplateManager {
 
           resolve();
         } catch (e) {
-          reject(new Error('解析範本檔案失敗'));
+          console.error('❌ 範本載入失敗:', e);
+          reject(new Error(`解析範本檔案失敗: ${e instanceof Error ? e.message : '未知錯誤'}`));
         }
       };
       
@@ -101,11 +116,39 @@ export class TemplateManager {
   private collectCurrentState(customState?: any): TemplateData {
     const formState = this.dataManager.collectFormState();
     
+    // 安全處理圖層資料
+    let safeOverlays = [];
+    try {
+      safeOverlays = customState?.overlays || [];
+      // 檢查圖層資料是否可序列化
+      JSON.stringify(safeOverlays);
+      console.log('✅ 圖層資料序列化測試通過');
+    } catch (e) {
+      console.warn('⚠️ 圖層資料序列化失敗，使用空陣列:', e);
+      safeOverlays = [];
+    }
+    
     return {
       form: formState,
       agendaItems: customState?.agendaItems || [],
-      overlays: customState?.overlays || [], // 恢復完整儲存，包含PNG圖片資料
-      customColors: customState?.customColors || {}
+      overlays: safeOverlays, // 使用安全處理的圖層資料
+      customColors: customState?.customColors || {},
+      meetupSettings: customState?.meetupSettings || {
+        showMeetupPoint: false,
+        meetupType: 'same',
+        meetupCustomText: ''
+      },
+      footerSettings: customState?.footerSettings || {
+        showFooterNote: true,
+        footerContent: ''
+      },
+      basicInfo: customState?.basicInfo || {
+        title: '',
+        subtitle: '',
+        date: '',
+        time: '',
+        location: ''
+      }
     };
   }
 

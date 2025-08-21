@@ -575,6 +575,47 @@ export class FormControls {
   // 取得用戶時間修改狀態
   getUserModifiedTime(): boolean { return this.userModifiedTime; }
 
+  
+  /**
+   * 設定集合地點相關設定（範本載入時使用）
+   */
+  setMeetupSettings(settings: { showMeetupPoint: boolean; meetupType: 'same' | 'other'; meetupCustomText: string }): void {
+    this.showMeetupPoint = settings.showMeetupPoint;
+    this.meetupType = settings.meetupType;
+    this.meetupCustomText = settings.meetupCustomText;
+    
+    // 更新 UI
+    const showCheckbox = document.getElementById('showMeetupPoint') as HTMLInputElement;
+    const sameRadio = document.getElementById('meetupSame') as HTMLInputElement;
+    const otherRadio = document.getElementById('meetupOther') as HTMLInputElement;
+    const customInput = document.getElementById('meetupCustomText') as HTMLInputElement;
+    const meetupSection = document.getElementById('meetupPointSection') as HTMLElement;
+    
+    if (showCheckbox) showCheckbox.checked = this.showMeetupPoint;
+    if (meetupSection) meetupSection.style.display = this.showMeetupPoint ? 'block' : 'none';
+    if (sameRadio) sameRadio.checked = (this.meetupType === 'same');
+    if (otherRadio) otherRadio.checked = (this.meetupType === 'other');
+    if (customInput) {
+      customInput.value = this.meetupCustomText;
+      customInput.disabled = (this.meetupType !== 'other');
+    }
+    
+    console.log('✅ 集合地點設定已從範本還原');
+  }
+  
+  /**
+   * 設定頁尾相關設定（範本載入時使用）
+   */
+  setFooterSettings(settings: { showFooterNote: boolean; footerContent: string }): void {
+    this.showFooterNote = settings.showFooterNote;
+    const showCheckbox = document.getElementById('showFooterNote') as HTMLInputElement;
+    const contentTextarea = document.getElementById('footerNoteContent') as HTMLTextAreaElement;
+    if (showCheckbox) showCheckbox.checked = this.showFooterNote;
+    if (contentTextarea) contentTextarea.value = settings.footerContent;
+    
+    console.log('✅ 頁尾設定已從範本還原');
+  }
+
   private bringToFront(): void {
     if (this.overlayManager) {
       const index = this.overlayManager.getSelectedIndex();

@@ -10,6 +10,10 @@ export class DataManager {
             const key = el.name || el.id;
             if (!key)
                 continue;
+            // 🚫 跳過檔案輸入框 - 避免收集檔案路徑
+            if (el instanceof HTMLInputElement && el.type === 'file') {
+                continue;
+            }
             if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')) {
                 if (el.type === 'radio') {
                     if (el.checked)
@@ -50,6 +54,11 @@ export class DataManager {
             const el = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
             if (!el)
                 continue;
+            // 🚫 跳過檔案輸入框 - 瀏覽器不允許程式設定檔案路徑
+            if (el instanceof HTMLInputElement && el.type === 'file') {
+                console.log('⚠️ 跳過檔案輸入框:', key);
+                continue;
+            }
             if (el instanceof HTMLInputElement && el.type === 'checkbox') {
                 el.checked = Boolean(val);
             }
