@@ -14,7 +14,7 @@ src/
 ├── assets/
 │   └── types.ts              # 8個核心介面定義
 ├── logic/                    # 邏輯層 (5個檔案)
-│   ├── templates.ts          # 癌症專科範本
+│   ├── templates.ts          # 醫療會議範本
 │   ├── colorSchemes.ts       # 配色方案
 │   ├── posterRenderer.ts     # 海報繪製核心
 │   ├── overlayManager.ts     # PNG圖層管理  

@@ -6,7 +6,7 @@ export interface AgendaItem {
   moderator: string;
 }
 
-// 癌症專科範本
+// 醫療會議範本
 export interface CancerTemplate {
   icon: string;
   title: string;

@@ -378,7 +378,7 @@ export class PosterRenderer {
         const cTopic = xTopic + wTopic / 2;
         const cSpeaker = xSpeaker + wSpeaker / 2;
         const cModerator = xModerator + wModerator / 2;
-            // 欄位標題行（直接從議程開始位置繪製）
+        // 欄位標題行（直接從議程開始位置繪製）
         let yPos = agendaStartY;
         this.ctx.fillStyle = scheme.agenda.border;
         this.ctx.fillRect(tableOuterLeft, yPos - 8, W - 80, 35);
