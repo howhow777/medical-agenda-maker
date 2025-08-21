@@ -418,13 +418,7 @@ export class PosterRenderer {
   private drawAgendaTable(agendaItems: AgendaItem[], scheme: ColorScheme, W: number, startY: number): number {
     const agendaStartY = startY;
 
-    // 區段標題欄
-    this.ctx.fillStyle = scheme.agenda.background;
-    this.ctx.fillRect(30, agendaStartY - 20, W - 60, 40);
-    this.ctx.fillStyle = scheme.agenda.border;
-    this.ctx.font = 'bold 26px Microsoft JhengHei';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText('Agenda', W / 2, agendaStartY + 5);
+    // 移除獨立的 Agenda 標題，讓表格自成一體
 
     // 表格幾何計算
     const tableOuterLeft = 40;
@@ -449,9 +443,9 @@ export class PosterRenderer {
     const cSpeaker = xSpeaker + wSpeaker / 2;
     const cModerator = xModerator + wModerator / 2;
 
-    // 欄位標題行
-    let yPos = agendaStartY + 50;
-    this.ctx.fillStyle = scheme.agenda.accent;
+    // 欄位標題行（直接從議程開始位置繪製）
+    let yPos = agendaStartY;
+    this.ctx.fillStyle = scheme.agenda.border;
     this.ctx.fillRect(tableOuterLeft, yPos - 8, W - 80, 35);
 
     this.ctx.fillStyle = '#FFFFFF';
@@ -491,7 +485,7 @@ export class PosterRenderer {
       this.drawCenteredTextWithBreaks(item.time || '', xTime + pad / 2, yPos - 18, wTime - pad, 22, itemH, 'center');
 
       // 主題
-      this.ctx.fillStyle = '#333';
+      this.ctx.fillStyle = scheme.agenda.accent;
       this.ctx.font = '16px Microsoft JhengHei';
       this.drawCenteredTextWithBreaks(item.topic || '', xTopic + pad / 2, yPos - 18, wTopic - pad, 22, itemH, 'center');
 
@@ -505,7 +499,7 @@ export class PosterRenderer {
         this.ctx.font = '14px Microsoft JhengHei';
         this.drawCenteredTextWithBreaks(item.speaker, xSpeaker + pad / 2, yPos - 18, wSpeaker - pad, 20, itemH, 'center');
         
-        this.ctx.fillStyle = scheme.agenda.border;
+        this.ctx.fillStyle = scheme.agenda.accent;
         this.ctx.font = '14px Microsoft JhengHei';
         this.drawCenteredTextWithBreaks(item.moderator, xModerator + pad / 2, yPos - 18, wModerator - pad, 20, itemH, 'center');
       } else if (hasSpeaker && !hasModerator) {
@@ -516,7 +510,7 @@ export class PosterRenderer {
         this.drawCenteredTextWithBreaks(item.speaker, xSpeaker + pad / 2, yPos - 18, spanWidth - pad, 20, itemH, 'center');
       } else if (!hasSpeaker && hasModerator) {
         // 只有主持人：跨欄置中顯示
-        this.ctx.fillStyle = scheme.agenda.border;
+        this.ctx.fillStyle = scheme.agenda.accent;
         this.ctx.font = '14px Microsoft JhengHei';
         const spanWidth = wSpeaker + wModerator; // 跨兩欄的寬度
         this.drawCenteredTextWithBreaks(item.moderator, xSpeaker + pad / 2, yPos - 18, spanWidth - pad, 20, itemH, 'center');

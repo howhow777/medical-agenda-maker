@@ -16,8 +16,7 @@ export class AccordionController {
                 });
             }
         });
-        // 確保第一個區塊預設展開
-        this.ensureDefaultState();
+        // 所有區塊初始狀態為收合
     }
     toggleSection(targetSection) {
         const isActive = targetSection.classList.contains('active');
@@ -30,13 +29,7 @@ export class AccordionController {
             targetSection.classList.add('active');
         }
     }
-    ensureDefaultState() {
-        // 確保第一個區塊（快速開始）預設展開
-        const firstSection = this.sections[0];
-        if (firstSection && !firstSection.classList.contains('active')) {
-            firstSection.classList.add('active');
-        }
-    }
+    // 移除預設展開邏輯，所有區塊初始皆為收合狀態
     // 程式化控制方法
     expandSection(sectionName) {
         const section = document.querySelector(`[data-section="${sectionName}"]`);

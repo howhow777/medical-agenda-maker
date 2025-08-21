@@ -385,17 +385,9 @@ export class UIController {
       titleInput.value = `${year}年度癌症醫學會議`;
     }
 
-    // 🕐 智能時間預設值 - 只在空白時設定
+    // 🕐 固定時間預設值 - 只在空白時設定
     if (timeInput && !timeInput.value.trim()) {
-      const currentHour = today.getHours();
-      const currentMinute = today.getMinutes();
-      
-      // 設定當前時間為起始時間，4小時後為結束時間
-      const startTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
-      const endHour = currentHour + 4;
-      const endTime = `${String(endHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
-      
-      timeInput.value = `${startTime} - ${endTime}`;
+      timeInput.value = '08:30 - 12:00';
       console.log('🕐 設定預設會議時間:', timeInput.value);
     }
 

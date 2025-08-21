@@ -21,9 +21,9 @@
       <!-- 左側控制面板 -->
       <div class="control-panel">
         <!-- 🚀 快速開始區塊 -->
-        <div class="accordion-section active" data-section="quickstart">
+        <div class="accordion-section" data-section="quickstart">
           <div class="accordion-header">
-            <span class="accordion-icon">▼</span>
+            <span class="accordion-icon">▶</span>
             <span class="section-title-text">🚀 快速開始</span>
           </div>
           <div class="accordion-content">
@@ -167,24 +167,48 @@
               <div class="color-group">
                 <label>🌟 標題漸層色彩（三色）</label>
                 <div class="three-color-row">
-                  <input type="color" id="headerC1" value="#1B4D3E" title="標題色1">
-                  <input type="color" id="headerC2" value="#2D8659" title="標題色2">
-                  <input type="color" id="headerC3" value="#4CAF85" title="標題色3">
+                  <div class="color-item">
+                    <input type="color" id="headerC1" value="#1B4D3E" title="標題主色">
+                    <small class="color-label">主色</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="headerC2" value="#2D8659" title="標題輔色">
+                    <small class="color-label">輔色</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="headerC3" value="#4CAF85" title="標題強調色">
+                    <small class="color-label">強調</small>
+                  </div>
                 </div>
               </div>
               <div class="color-group">
                 <label>📄 議程區域配色（三色）</label>
                 <div class="three-color-row">
-                  <input type="color" id="agendaBg" value="#E8F5E8" title="議程背景色">
-                  <input type="color" id="agendaBorder" value="#1B4D3E" title="議程邊框色">
-                  <input type="color" id="agendaAccent" value="#2D8659" title="議程重點色">
+                  <div class="color-item">
+                    <input type="color" id="agendaBg" value="#E8F5E8" title="議程背景色">
+                    <small class="color-label">背景</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="agendaBorder" value="#1B4D3E" title="議程標題列顏色">
+                    <small class="color-label">標題列</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="agendaAccent" value="#2D8659" title="議程字體顏色">
+                    <small class="color-label">字體</small>
+                  </div>
                 </div>
               </div>
               <div class="color-group">
                 <label>🖼️ 海報底色漸層（雙色）</label>
                 <div class="two-color-row">
-                  <input type="color" id="bgC1" value="#ffffff" title="底色1">
-                  <input type="color" id="bgC2" value="#f8f9fa" title="底色2">
+                  <div class="color-item">
+                    <input type="color" id="bgC1" value="#ffffff" title="底色起始">
+                    <small class="color-label">起始色</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="bgC2" value="#f8f9fa" title="底色結束">
+                    <small class="color-label">結束色</small>
+                  </div>
                 </div>
               </div>
               <div class="row">
@@ -198,7 +222,6 @@
                 </select>
               </div>
               <button class="btn btn-primary" id="applyCustomColors" style="width:100%; margin-top:10px;">🎨 套用自訂配色</button>
-              <button class="btn btn-primary" id="btnUpdate" style="width:100%; margin-top:10px;">🔄 更新海報</button>
             </div>
 
             <!-- PNG 圖層 -->
