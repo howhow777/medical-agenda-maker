@@ -2,6 +2,7 @@
  * UI 主控制器 - 協調所有模組的核心控制器
  */
 import { AppState } from '../assets/types.js';
+import { AgendaData } from '../assets/agendaTypes.js';
 export declare class UIController {
     private appState;
     private dragState;
@@ -19,6 +20,10 @@ export declare class UIController {
      * 初始化整個應用程式
      */
     initialize(): Promise<void>;
+    /**
+     * 載入議程資料並產生海報
+     */
+    loadAgendaData(agendaData: AgendaData): void;
     /**
      * 初始化所有模組
      */

@@ -70,6 +70,18 @@ export const templates = {
             { time: '10:30-11:00', topic: '休息時間', speaker: '', moderator: '' },
             { time: '11:00-12:00', topic: '乳房重建與美容', speaker: '整形外科教授', moderator: '乳癌病友代表' }
         ]
+    },
+    // 新增：醫學會議議程模板 (使用特殊標識符來區分)
+    'medical_agenda_special': {
+        icon: '📝',
+        title: '醫學會議議程',
+        color: '#1a365d',
+        sampleItems: [
+            { time: '09:00-09:30', topic: '會議開場', speaker: '大會主席', moderator: '秘書長' },
+            { time: '09:30-10:30', topic: '主題演講', speaker: '專家醫師', moderator: '學科主任' },
+            { time: '10:30-11:00', topic: '茶歇時間', speaker: '', moderator: '' },
+            { time: '11:00-12:00', topic: '經驗分享', speaker: '臨床醫師', moderator: '主治醫師' }
+        ]
     }
 };
 //# sourceMappingURL=templates.js.map

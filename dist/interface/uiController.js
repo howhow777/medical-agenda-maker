@@ -6,6 +6,7 @@ import { FormControls } from './formControls.js';
 import { HighQualityTestController } from './high-quality-test.js';
 import { TemplateController } from './templateController.js';
 import { templates } from '../logic/templates.js';
+import { DataConverter } from '../logic/dataConverter.js';
 import { OverlayManager } from '../logic/overlayManager.js';
 import { PosterRenderer } from '../logic/posterRenderer.js';
 import { DataManager } from '../logic/dataManager.js';
@@ -69,6 +70,31 @@ export class UIController {
         catch (error) {
             console.error('❌ 初始化失敗:', error);
             throw error;
+        }
+    }
+    /**
+     * 載入議程資料並產生海報
+     */
+    loadAgendaData(agendaData) {
+        try {
+            console.log('📋 開始載入議程資料:', agendaData);
+            // 轉換議程資料為海報系統格式
+            const convertedState = DataConverter.convertAgendaDataToAppState(agendaData);
+            // 驗證轉換結果
+            if (!DataConverter.validateConversion(convertedState)) {
+                throw new Error('議程資料轉換失敗');
+            }
+            // 更新應用狀態
+            Object.assign(this.appState, convertedState);
+            // 更新表單控制器的議程項目
+            this.formControls.setAgendaItems(this.appState.agendaItems);
+            // 重新渲染海報
+            this.updatePoster();
+            console.log('✅ 議程資料載入完成');
+        }
+        catch (error) {
+            console.error('❌ 議程資料載入失敗:', error);
+            alert(`議程資料載入失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
         }
     }
     /**
