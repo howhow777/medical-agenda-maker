@@ -125,7 +125,148 @@ src/
 3. 根據實際使用調整模板樣式
 4. 探索進階功能需求（多模板、圖片整合等）
 
+## 最新更新：新增集合地點功能 📍 [待修復]
+
+**更新時間**: 2025-08-21  
+**功能**: 新增集合地點可選顯示功能  
+**狀態**: 🔴 功能實作完成但存在 Bug，需要除錯修復
+
+### 已完成的修改 ✅
+1. **agendaTypes.ts** - 擴展基本資訊資料結構，新增集合地點相關欄位
+2. **index.html** - 新增集合地點 UI 控制區域（checkbox + radio buttons + 文字輸入）
+3. **styles.css** - 新增集合地點區域的樣式
+4. **formControls.ts** - 新增集合地點的狀態管理和 UI 互動邏輯
+5. **uiController.ts** - 更新會議資料取得和基本資訊表單更新邏輯
+6. **posterRenderer.ts** - 新增集合地點的條件顯示和文字生成邏輯
+7. **excelParser.ts** - 支援從 Excel 解析集合地點資訊
+8. **enhanced-poster-renderer.ts** - 更新增強版渲染器的介面
+
+### 發現的問題 🔴
+1. **海報顯示問題**：
+   - 已勾選「顯示集合地點資訊」但海報上沒有顯示
+   - 選擇「其他」選項後海報仍無集合地點資訊
+
+2. **輸入框問題**：
+   - 選擇「其他」後文字輸入框無法編輯
+   - `disabled` 屬性可能沒有正確切換
+
+### 需要修復的邏輯 🛠️
+1. **事件綁定檢查**：
+   - FormControls 中的事件監聽器可能沒有正確綁定
+   - `updateCallback()` 可能沒有被觸發
+
+2. **狀態同步問題**：
+   - FormControls 的 getter 方法可能回傳錯誤值
+   - UIController 的資料傳遞可能有問題
+
+3. **海報渲染邏輯**：
+   - `conferenceData.showMeetupPoint` 可能始終為 false
+   - `generateMeetupText()` 方法可能沒有被調用
+
+### 除錯建議 🔍
+1. **Console 除錯**：
+   ```javascript
+   // 在瀏覽器 F12 檢查
+   console.log('showMeetupPoint:', formControls.getShowMeetupPoint());
+   console.log('meetupType:', formControls.getMeetupType());
+   console.log('meetupCustomText:', formControls.getMeetupCustomText());
+   ```
+
+2. **事件綁定檢查**：
+   - 確認 `showMeetupCheckbox.addEventListener` 是否正確執行
+   - 檢查 radio button 的 change 事件
+   - 驗證 `meetupCustomInput` 的輸入事件
+
+3. **資料流追蹤**：
+   - FormControls → UIController → PosterRenderer
+   - 確認每個環節的資料傳遞
+
+### 技術實作詳情 📝
+
+**已實作的功能架構**：
+- ✅ UI 介面：checkbox + radio buttons + 文字輸入
+- ✅ 資料結構：showMeetupPoint, meetupType, meetupCustomText
+- ✅ 事件處理：change 和 input 事件監聽
+- ✅ 海報渲染：條件顯示邏輯
+- ✅ Excel 整合：自動解析集合地點
+
+**預期的顯示效果**：
+```
+📍 Meetup point: [■]同會議地點  [  ]其他：
+📍 Meetup point: [  ]同會議地點  [■]其他：自訂地點內容
+```
+
+### 修復進度更新 🔧 [2025-08-21]
+
+**已修復的問題**:
+1. ✅ **事件綁定位置錯誤**: 集合地點事件綁定代碼被錯誤地放在 `createOverlayFromFile` 方法中，已移動到 `bindBasicInputs` 方法
+2. ✅ **方法可見性問題**: `getConferenceData` 方法從 `private` 改為 `public`，使其可被外部測試訪問
+3. ✅ **副標題錯誤邏輯**: 修復 Excel 解析後副標題被錯誤設定為地點名稱的問題
+4. ✅ **創建除錯工具**: 建立了瀏覽器控制台測試腳本和獨立的 HTML 測試頁面
+
+**修復的技術細節**:
+- 📁 `formControls.ts`: 移除了 `createOverlayFromFile` 中的集合地點事件綁定代碼
+- 📁 `formControls.ts`: 在 `bindBasicInputs` 方法中正確添加了集合地點控制項事件綁定
+- 📁 `uiController.ts`: 將 `getConferenceData` 方法改為 public，便於除錯
+- 📁 `uiController.ts`: 註解掉 `updateBasicInfoForm` 中錯誤的副標題設定邏輯（第155-157行）
+
+**副標題修復說明**:
+- ❌ **修復前**: Excel 解析後副標題自動設定為 `basicInfo.venue`（地點名稱）
+- ✅ **修復後**: Excel 解析後副標題保持預設值，不會被錯誤覆蓋
+- ℹ️ **保留功能**: 用戶手動切換模板時的智能副標題生成功能（如「肺癌治療新進展論壇」）
+
+**測試方法**:
+1. 執行 `test-subtitle-fix.bat` 啟動測試服務
+2. 上傳 Excel 檔案 (`Agenda TWKEY00692 Aug20240926 的複本.xlsx` 或 `20250712Agenda TWLAM01356_NSCLC 複本.xlsx`)
+3. 確認副標題保持為「肺癌治療新進展論壇」，不會變成「高雄萬豪酒店」等地點名稱
+
+**預期修復結果**:
+- ✅ 集合地點功能完全正常（顯示/隱藏、其他選項可編輯、海報正確顯示）
+- ✅ Excel 解析後副標題不會被地點名稱覆蓋
+- ✅ 模板切換時的智能副標題生成保持正常
+- ✅ 其他基本資訊（標題、日期、時間、地點）正確填入
+
+### Excel 跨欄合併解析除錯 🔍 [2025-08-21]
+
+**問題回溯**:
+- 修改過程中導致基本功能完全失效（連 Speaker 都不顯示）
+- 需要先恢復基本功能，再漸進式修復跨欄問題
+
+**緊急回退措施** ⚠️:
+1. ✅ **簡化 parseAgendaItems**: 移除複雜的動態欄位檢測，恢復原始邏輯
+2. ✅ **簡化 parseAgendaRow**: 移除額外參數，保持原始方法簽名  
+3. ✅ **移除 detectSpannedRow**: 刪除新增的複雜檢測方法
+4. ✅ **保留基本除錯**: 只保留簡單的 Console 輸出
+
+**當前版本特點**:
+- 📋 基本 Excel 解析邏輯恢復到修改前狀態
+- 🔍 添加最小化的除錯日誌（表格檢測、每行解析）
+- 🧹 移除所有複雜的動態檢測邏輯
+- ⚡ 確保不會破壞原有正常功能
+
+**測試重點**:
+1. **基本功能恢復**: Speaker/Moderator 重新顯示
+2. **Console 除錯**: 觀察簡化的解析過程
+3. **確認修復基線**: 建立穩定的修復起點
+
+**預期 Console 輸出**:
+```
+🔍 找到表格標題行: ["Time", "Content", "Speaker", "Moderator"]
+🔍 解析第 2 行: ["14:30-15:15", "演講內容", "台中榮總 黃醫師", "台中榮總 楊醫師"]
+  [2] Speaker: "台中榮總 黃醫師"
+  [3] Moderator: "台中榮總 楊醫師"  
+✅ 解析成功: {time: "14:30-15:15", speaker: "台中榮總 黃醫師", moderator: "台中榮總 楊醫師"}
+📊 總共解析出 5 個議程項目
+```
+
+### 下次對話接續重點 🎯
+1. **驗證基本功能恢復**: 確認 Speaker/Moderator 重新正常顯示
+2. **分析 Console 除錯日誌**: 理解正常情況下的解析過程
+3. **識別跨欄問題具體位置**: 從除錯日誌中找出跨欄時的索引變化
+4. **最小化修復**: 只針對跨欄問題進行精準修復，不影響正常功能
+5. **漸進式驗證**: 每次小幅修改後立即測試，避免再次破壞功能
+
 ---
-**記錄時間**: 2025-08-21 (更新)  
-**專案狀態**: 第二階段完成，議程資料整合功能實作完畢  
-**下次接續**: 完整流程測試與模板優化
+**記錄時間**: 2025-08-21 (集合地點功能完成)  
+**專案狀態**: 時間欄位 + 集合地點功能實作完畢，需編譯測試  
+**下次接續**: 編譯 TypeScript 並測試完整功能

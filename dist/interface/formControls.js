@@ -19,6 +19,9 @@ export class FormControls {
             bgGradientDir: 'none'
         };
         this.showFooterNote = true;
+        this.showMeetupPoint = false;
+        this.meetupType = 'same';
+        this.meetupCustomText = '';
         this.eventsAlreadyBound = false;
         this.initializeForm();
         this.bindEvents();
@@ -272,7 +275,7 @@ export class FormControls {
     }
     // 綁定基本輸入欄位
     bindBasicInputs() {
-        const inputs = ['conferenceTitle', 'conferenceSubtitle', 'conferenceDate', 'conferenceLocation'];
+        const inputs = ['conferenceTitle', 'conferenceSubtitle', 'conferenceDate', 'conferenceTime', 'conferenceLocation', 'meetupCustomText'];
         inputs.forEach(id => {
             const input = document.getElementById(id);
             if (input) {
@@ -293,6 +296,40 @@ export class FormControls {
             footerContent.addEventListener('input', () => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => this.updateCallback(), 250);
+            });
+        }
+        // 集合地點控制項
+        const showMeetupCheckbox = document.getElementById('showMeetupPoint');
+        const meetupSection = document.getElementById('meetupPointSection');
+        const meetupSameRadio = document.getElementById('meetupSame');
+        const meetupOtherRadio = document.getElementById('meetupOther');
+        const meetupCustomInput = document.getElementById('meetupCustomText');
+        if (showMeetupCheckbox) {
+            showMeetupCheckbox.addEventListener('change', () => {
+                this.showMeetupPoint = showMeetupCheckbox.checked;
+                if (meetupSection) {
+                    meetupSection.style.display = this.showMeetupPoint ? 'block' : 'none';
+                }
+                this.updateCallback();
+            });
+        }
+        [meetupSameRadio, meetupOtherRadio].forEach(radio => {
+            if (radio) {
+                radio.addEventListener('change', () => {
+                    this.meetupType = radio.value;
+                    if (meetupCustomInput) {
+                        meetupCustomInput.disabled = this.meetupType === 'same';
+                        if (this.meetupType === 'same')
+                            meetupCustomInput.value = '';
+                    }
+                    this.updateCallback();
+                });
+            }
+        });
+        if (meetupCustomInput) {
+            meetupCustomInput.addEventListener('input', () => {
+                this.meetupCustomText = meetupCustomInput.value;
+                this.updateCallback();
             });
         }
     }
@@ -462,6 +499,10 @@ export class FormControls {
     getShowFooterNote() {
         return this.showFooterNote;
     }
+    // 取得集合地點相關狀態
+    getShowMeetupPoint() { return this.showMeetupPoint; }
+    getMeetupType() { return this.meetupType; }
+    getMeetupCustomText() { return this.meetupCustomText; }
     bringToFront() {
         if (this.overlayManager) {
             const index = this.overlayManager.getSelectedIndex();

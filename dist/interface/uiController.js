@@ -86,6 +86,8 @@ export class UIController {
             }
             // 更新應用狀態
             Object.assign(this.appState, convertedState);
+            // 更新表單的基本資訊
+            this.updateBasicInfoForm(agendaData.basicInfo);
             // 更新表單控制器的議程項目
             this.formControls.setAgendaItems(this.appState.agendaItems);
             // 重新渲染海報
@@ -96,6 +98,53 @@ export class UIController {
             console.error('❌ 議程資料載入失敗:', error);
             alert(`議程資料載入失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
         }
+    }
+    /**
+     * 更新基本資訊表單
+     */
+    updateBasicInfoForm(basicInfo) {
+        const titleInput = document.getElementById('conferenceTitle');
+        const subtitleInput = document.getElementById('conferenceSubtitle');
+        const dateInput = document.getElementById('conferenceDate');
+        const timeInput = document.getElementById('conferenceTime');
+        const locationInput = document.getElementById('conferenceLocation');
+        if (titleInput && basicInfo.title) {
+            titleInput.value = basicInfo.title;
+        }
+        // 🔧 修復：不再自動設定副標題為地點名稱
+        // 保持副標題的預設值或基於會議類型的智能生成
+        // if (subtitleInput && basicInfo.venue) {
+        //   subtitleInput.value = basicInfo.venue;
+        // }
+        if (dateInput && basicInfo.date) {
+            dateInput.value = basicInfo.date;
+        }
+        if (timeInput && basicInfo.time) {
+            timeInput.value = basicInfo.time;
+        }
+        // 更新集合地點資訊
+        const showMeetupCheckbox = document.getElementById('showMeetupPoint');
+        const meetupSameRadio = document.getElementById('meetupSame');
+        const meetupOtherRadio = document.getElementById('meetupOther');
+        const meetupCustomInput = document.getElementById('meetupCustomText');
+        if (showMeetupCheckbox && basicInfo.showMeetupPoint) {
+            showMeetupCheckbox.checked = basicInfo.showMeetupPoint;
+            const meetupSection = document.getElementById('meetupPointSection');
+            if (meetupSection)
+                meetupSection.style.display = 'block';
+            if (basicInfo.meetupType === 'other') {
+                if (meetupOtherRadio)
+                    meetupOtherRadio.checked = true;
+                if (meetupCustomInput && basicInfo.meetupCustom) {
+                    meetupCustomInput.value = basicInfo.meetupCustom;
+                    meetupCustomInput.disabled = false;
+                }
+            }
+        }
+        if (locationInput && basicInfo.venue) {
+            locationInput.value = basicInfo.venue;
+        }
+        console.log('✅ 基本資訊表單已更新（副標題保持預設值）');
     }
     /**
      * 初始化所有模組
@@ -278,12 +327,21 @@ export class UIController {
         const titleInput = document.getElementById('conferenceTitle');
         const subtitleInput = document.getElementById('conferenceSubtitle');
         const dateInput = document.getElementById('conferenceDate');
+        const timeInput = document.getElementById('conferenceTime');
         const locationInput = document.getElementById('conferenceLocation');
+        // 取得集合地點資訊
+        const showMeetupPoint = this.formControls.getShowMeetupPoint();
+        const meetupType = this.formControls.getMeetupType();
+        const meetupCustomText = this.formControls.getMeetupCustomText();
         return {
             title: titleInput?.value || '醫學會議',
             subtitle: subtitleInput?.value || '',
             date: dateInput?.value || '',
-            location: locationInput?.value || ''
+            time: timeInput?.value || '',
+            location: locationInput?.value || '',
+            showMeetupPoint,
+            meetupType,
+            meetupCustomText
         };
     }
     /**

@@ -15,8 +15,16 @@ export declare class PosterRenderer {
         title: string;
         subtitle: string;
         date: string;
+        time: string;
         location: string;
+        showMeetupPoint?: boolean;
+        meetupType?: 'same' | 'other';
+        meetupCustomText?: string;
     }, showFooter: boolean, footerText: string, overlays?: Overlay[]): void;
+    /**
+     * 生成集合地點顯示文字
+     */
+    private generateMeetupText;
     private drawAgendaTable;
     private drawFooterNote;
     private getActiveColorScheme;

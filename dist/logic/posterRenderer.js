@@ -314,10 +314,19 @@ export class PosterRenderer {
         this.ctx.textAlign = 'left';
         if (conferenceData.date)
             this.ctx.fillText('📅 ' + conferenceData.date, 60, infoCardY + 30);
+        if (conferenceData.time)
+            this.ctx.fillText('🕐 ' + conferenceData.time, 60, infoCardY + 60);
         if (conferenceData.location)
-            this.ctx.fillText('🏢 ' + conferenceData.location, 60, infoCardY + 60);
+            this.ctx.fillText('🏢 ' + conferenceData.location, 60, infoCardY + 90);
+        // 集合地點資訊
+        let nextY = infoCardY + 120;
+        if (conferenceData.showMeetupPoint) {
+            const meetupText = this.generateMeetupText(conferenceData);
+            this.ctx.fillText('📍 ' + meetupText, 60, nextY);
+            nextY += 30;
+        }
         // 議程表
-        let afterAgendaY = infoCardY + 80 + 40;
+        let afterAgendaY = nextY + 40;
         if (agendaItems.length > 0) {
             afterAgendaY = this.drawAgendaTable(agendaItems, scheme, W, afterAgendaY);
         }
@@ -332,6 +341,19 @@ export class PosterRenderer {
         this.drawCancerDecorations(template, scheme, W, H);
         // 渲染PNG圖層
         this.drawOverlays(overlays);
+    }
+    /**
+     * 生成集合地點顯示文字
+     */
+    generateMeetupText(conferenceData) {
+        const sameChecked = conferenceData.meetupType === 'same' ? '[■]' : '[  ]';
+        const otherChecked = conferenceData.meetupType === 'other' ? '[■]' : '[  ]';
+        if (conferenceData.meetupType === 'other' && conferenceData.meetupCustomText) {
+            return `Meetup point: ${sameChecked}同會議地點  ${otherChecked}其他：${conferenceData.meetupCustomText}`;
+        }
+        else {
+            return `Meetup point: ${sameChecked}同會議地點  ${otherChecked}其他：`;
+        }
     }
     // 繪製議程表
     drawAgendaTable(agendaItems, scheme, W, startY) {
@@ -399,14 +421,33 @@ export class PosterRenderer {
             this.ctx.fillStyle = '#333';
             this.ctx.font = '16px Microsoft JhengHei';
             this.drawCenteredTextWithBreaks(item.topic || '', xTopic + pad / 2, yPos - 18, wTopic - pad, 22, itemH, 'center');
-            // 講者
-            this.ctx.fillStyle = scheme.agenda.accent;
-            this.ctx.font = '14px Microsoft JhengHei';
-            this.drawCenteredTextWithBreaks(item.speaker || '', xSpeaker + pad / 2, yPos - 18, wSpeaker - pad, 20, itemH, 'center');
-            // 主持人
-            this.ctx.fillStyle = scheme.agenda.border;
-            this.ctx.font = '14px Microsoft JhengHei';
-            this.drawCenteredTextWithBreaks(item.moderator || '', xModerator + pad / 2, yPos - 18, wModerator - pad, 20, itemH, 'center');
+            // 講者和主持人 - 智能跨欄顯示
+            const hasSpeaker = item.speaker && item.speaker.trim();
+            const hasModerator = item.moderator && item.moderator.trim();
+            if (hasSpeaker && hasModerator) {
+                // 兩者都有：正常分欄顯示
+                this.ctx.fillStyle = scheme.agenda.accent;
+                this.ctx.font = '14px Microsoft JhengHei';
+                this.drawCenteredTextWithBreaks(item.speaker, xSpeaker + pad / 2, yPos - 18, wSpeaker - pad, 20, itemH, 'center');
+                this.ctx.fillStyle = scheme.agenda.border;
+                this.ctx.font = '14px Microsoft JhengHei';
+                this.drawCenteredTextWithBreaks(item.moderator, xModerator + pad / 2, yPos - 18, wModerator - pad, 20, itemH, 'center');
+            }
+            else if (hasSpeaker && !hasModerator) {
+                // 只有講者：跨欄置中顯示
+                this.ctx.fillStyle = scheme.agenda.accent;
+                this.ctx.font = '14px Microsoft JhengHei';
+                const spanWidth = wSpeaker + wModerator; // 跨兩欄的寬度
+                this.drawCenteredTextWithBreaks(item.speaker, xSpeaker + pad / 2, yPos - 18, spanWidth - pad, 20, itemH, 'center');
+            }
+            else if (!hasSpeaker && hasModerator) {
+                // 只有主持人：跨欄置中顯示
+                this.ctx.fillStyle = scheme.agenda.border;
+                this.ctx.font = '14px Microsoft JhengHei';
+                const spanWidth = wSpeaker + wModerator; // 跨兩欄的寬度
+                this.drawCenteredTextWithBreaks(item.moderator, xSpeaker + pad / 2, yPos - 18, spanWidth - pad, 20, itemH, 'center');
+            }
+            // 如果都沒有就不顯示任何內容
             yPos += itemH + 5;
         });
         return yPos + 10;
@@ -641,6 +682,7 @@ export class PosterRenderer {
                     title: this.getInputValue('conferenceTitle') || '',
                     subtitle: this.getInputValue('conferenceSubtitle') || '',
                     date: this.getInputValue('conferenceDate') || '',
+                    time: this.getInputValue('conferenceTime') || '',
                     location: this.getInputValue('conferenceLocation') || ''
                 },
                 showFooter: this.getCheckboxValue('showFooterNote'),
@@ -685,7 +727,11 @@ export class PosterRenderer {
                 title: this.getInputValue('conferenceTitle') || '醫學會議',
                 subtitle: this.getInputValue('conferenceSubtitle') || '',
                 date: this.getInputValue('conferenceDate') || '',
-                location: this.getInputValue('conferenceLocation') || ''
+                time: this.getInputValue('conferenceTime') || '',
+                location: this.getInputValue('conferenceLocation') || '',
+                showMeetupPoint: false,
+                meetupType: 'same',
+                meetupCustomText: ''
             },
             showFooter: this.getCheckboxValue('showFooterNote'),
             footerText: this.getInputValue('footerNoteContent') || '',

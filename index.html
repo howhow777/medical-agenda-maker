@@ -35,8 +35,30 @@
           <input id="conferenceDate" type="text" placeholder="例：2025年8月15日" />
         </div>
         <div class="form-group">
+          <label>時間</label>
+          <input id="conferenceTime" type="text" placeholder="例：14:30 - 18:15" />
+        </div>
+        <div class="form-group">
           <label>地點</label>
           <input id="conferenceLocation" type="text" value="台北國際會議中心" />
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center; gap:8px; font-weight:600;">
+            <input type="checkbox" id="showMeetupPoint" style="width:auto;"/>顯示集合地點資訊
+          </label>
+        </div>
+        <div id="meetupPointSection" class="meetup-section" style="display:none; margin-left:20px; border-left:3px solid #ddd; padding-left:15px;">
+          <div style="margin-bottom:8px;">
+            <label style="display:flex;align-items:center; gap:8px;">
+              <input type="radio" name="meetupType" value="same" id="meetupSame" checked style="width:auto;"/>同會議地點
+            </label>
+          </div>
+          <div style="margin-bottom:8px;">
+            <label style="display:flex;align-items:center; gap:8px;">
+              <input type="radio" name="meetupType" value="other" id="meetupOther" style="width:auto;"/>其他：
+            </label>
+            <input id="meetupCustomText" type="text" placeholder="請輸入集合地點" style="margin-top:5px;" disabled />
+          </div>
         </div>
 
         <!-- 範本管理 -->

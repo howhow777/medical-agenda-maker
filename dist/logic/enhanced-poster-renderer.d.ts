@@ -41,7 +41,11 @@ export declare class EnhancedPosterRenderer extends PosterRenderer {
         title: string;
         subtitle: string;
         date: string;
+        time: string;
         location: string;
+        showMeetupPoint?: boolean;
+        meetupType?: 'same' | 'other';
+        meetupCustomText?: string;
     }, showFooter: boolean, footerText: string, overlays?: Overlay[], options?: {
         preprocess?: boolean;
         onProgress?: (processed: number, total: number, currentLayer?: string) => void;

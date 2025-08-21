@@ -9,6 +9,9 @@ export declare class FormControls {
     private currentGradientDirection;
     private customColors;
     private showFooterNote;
+    private showMeetupPoint;
+    private meetupType;
+    private meetupCustomText;
     private fileUploadHandler?;
     private eventsAlreadyBound;
     constructor(updateCallback: () => void, overlayManager?: OverlayManager | undefined);
@@ -41,6 +44,9 @@ export declare class FormControls {
     setCurrentTemplate(template: string): void;
     setCustomColors(colors: CustomColors): void;
     getShowFooterNote(): boolean;
+    getShowMeetupPoint(): boolean;
+    getMeetupType(): 'same' | 'other';
+    getMeetupCustomText(): string;
     private bringToFront;
     private bringForward;
     private sendBackward;

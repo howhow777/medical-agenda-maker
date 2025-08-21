@@ -3,6 +3,9 @@ export interface AgendaBasicInfo {
     venue: string;
     date: string;
     time: string;
+    showMeetupPoint?: boolean;
+    meetupType?: 'same' | 'other';
+    meetupCustom?: string;
     meetupPoint?: string;
 }
 export interface AgendaItem {

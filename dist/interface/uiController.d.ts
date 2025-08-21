@@ -25,6 +25,10 @@ export declare class UIController {
      */
     loadAgendaData(agendaData: AgendaData): void;
     /**
+     * 更新基本資訊表單
+     */
+    private updateBasicInfoForm;
+    /**
      * 初始化所有模組
      */
     private initializeModules;
@@ -51,7 +55,16 @@ export declare class UIController {
     /**
      * 取得會議資料
      */
-    private getConferenceData;
+    getConferenceData(): {
+        title: string;
+        subtitle: string;
+        date: string;
+        time: string;
+        location: string;
+        showMeetupPoint: boolean;
+        meetupType: "same" | "other";
+        meetupCustomText: string;
+    };
     /**
      * 取得頁尾註解文字
      */
