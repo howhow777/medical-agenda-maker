@@ -160,8 +160,15 @@ export class UIController {
       dateInput.value = basicInfo.date;
     }
     
+    // 🕐 智能時間更新：Excel 優先，但保護用戶修改
     if (timeInput && basicInfo.time) {
-      timeInput.value = basicInfo.time;
+      const userModified = this.formControls.getUserModifiedTime();
+      if (!userModified) {
+        timeInput.value = basicInfo.time;
+        console.log('🕐 Excel 時間已載入（覆蓋預設值）:', basicInfo.time);
+      } else {
+        console.log('🕐 保護用戶手動修改的時間，不覆蓋:', timeInput.value);
+      }
     }
 
     // 更新集合地點資訊
@@ -188,7 +195,7 @@ export class UIController {
       locationInput.value = basicInfo.venue;
     }
     
-    console.log('✅ 基本資訊表單已更新（副標題保持預設值）');
+    console.log('✅ 基本資訊表單已更新（智能時間邏輯）');
   }
 
   /**
@@ -339,6 +346,7 @@ export class UIController {
     
     const dateInput = document.getElementById('conferenceDate') as HTMLInputElement;
     const titleInput = document.getElementById('conferenceTitle') as HTMLInputElement;
+    const timeInput = document.getElementById('conferenceTime') as HTMLInputElement;
     
     if (dateInput) {
       dateInput.value = `${year}年${month}月${day}日`;
@@ -346,6 +354,20 @@ export class UIController {
     
     if (titleInput) {
       titleInput.value = `${year}年度癌症醫學會議`;
+    }
+
+    // 🕐 智能時間預設值 - 只在空白時設定
+    if (timeInput && !timeInput.value.trim()) {
+      const currentHour = today.getHours();
+      const currentMinute = today.getMinutes();
+      
+      // 設定當前時間為起始時間，4小時後為結束時間
+      const startTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+      const endHour = currentHour + 4;
+      const endTime = `${String(endHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+      
+      timeInput.value = `${startTime} - ${endTime}`;
+      console.log('🕐 設定預設會議時間:', timeInput.value);
     }
 
     // 載入預設範例議程

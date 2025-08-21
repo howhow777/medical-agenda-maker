@@ -128,7 +128,8 @@ export class ExcelAgendaParser {
           const meetupStr = nextCell || this.findValueInRow(row, j + 1);
           if (meetupStr) {
             basicInfo.meetupPoint = meetupStr;
-            basicInfo.showMeetupPoint = true;
+            // 🔧 修復: 預設不勾選集合地點顯示
+            // basicInfo.showMeetupPoint = true;
           }
         }
       }

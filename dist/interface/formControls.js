@@ -22,6 +22,7 @@ export class FormControls {
         this.showMeetupPoint = false;
         this.meetupType = 'same';
         this.meetupCustomText = '';
+        this.userModifiedTime = false; // 追蹤用戶是否手動修改過時間
         this.eventsAlreadyBound = false;
         this.initializeForm();
         this.bindEvents();
@@ -216,7 +217,7 @@ export class FormControls {
                     this.currentTemplate = template;
                     const subtitleInput = document.getElementById('conferenceSubtitle');
                     if (subtitleInput) {
-                        subtitleInput.value = `${templates[this.currentTemplate].title}治療新進展論壇`;
+                        subtitleInput.value = `${templates[this.currentTemplate].title}治療醫學研討會`;
                     }
                     this.agendaItems = [...templates[this.currentTemplate].sampleItems];
                     this.refreshAgendaList();
@@ -275,13 +276,22 @@ export class FormControls {
     }
     // 綁定基本輸入欄位
     bindBasicInputs() {
-        const inputs = ['conferenceTitle', 'conferenceSubtitle', 'conferenceDate', 'conferenceTime', 'conferenceLocation', 'meetupCustomText'];
+        const inputs = ['conferenceTitle', 'conferenceSubtitle', 'conferenceDate', 'conferenceLocation', 'meetupCustomText'];
         inputs.forEach(id => {
             const input = document.getElementById(id);
             if (input) {
                 input.addEventListener('input', () => this.updateCallback());
             }
         });
+        // 🕐 特殊處理時間欄位 - 追蹤用戶修改
+        const timeInput = document.getElementById('conferenceTime');
+        if (timeInput) {
+            timeInput.addEventListener('input', () => {
+                this.userModifiedTime = true; // 標記用戶已手動修改
+                console.log('🕐 用戶手動修改時間，標記保護');
+                this.updateCallback();
+            });
+        }
         // 頁尾註解
         const footerNote = document.getElementById('showFooterNote');
         const footerContent = document.getElementById('footerNoteContent');
@@ -503,6 +513,8 @@ export class FormControls {
     getShowMeetupPoint() { return this.showMeetupPoint; }
     getMeetupType() { return this.meetupType; }
     getMeetupCustomText() { return this.meetupCustomText; }
+    // 取得用戶時間修改狀態
+    getUserModifiedTime() { return this.userModifiedTime; }
     bringToFront() {
         if (this.overlayManager) {
             const index = this.overlayManager.getSelectedIndex();

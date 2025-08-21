@@ -1,7 +1,7 @@
 export const templates = {
     lung: {
         icon: '🫁',
-        title: '肺癌',
+        title: '癌症',
         color: '#4A90E2',
         sampleItems: [
             { time: '08:30-09:00', topic: '報到註冊', speaker: '', moderator: '' },

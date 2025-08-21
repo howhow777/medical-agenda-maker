@@ -259,12 +259,55 @@ src/
 📊 總共解析出 5 個議程項目
 ```
 
+### 智能時間邏輯修復 🕐 [2025-08-21]
+
+**問題**：Excel 時間無法覆蓋系統預設時間
+
+**根源**：過度保守的邏輯，只要時間欄位不為空就不更新
+
+**修復邏輯**：
+```typescript
+// 新增用戶修改追蹤
+private userModifiedTime: boolean = false;
+
+// 時間欄位特殊監聽
+timeInput.addEventListener('input', () => {
+  this.userModifiedTime = true; // 標記用戶手動修改
+});
+
+// Excel 載入時的智能判斷
+if (timeInput && basicInfo.time) {
+  const userModified = this.formControls.getUserModifiedTime();
+  if (!userModified) {
+    timeInput.value = basicInfo.time; // Excel 覆蓋預設值
+  } else {
+    // 保護用戶手動修改的時間
+  }
+}
+```
+
+**完整的時間處理邏輯** 🧠：
+1. **首次載入** → 設定當前時間預設值
+2. **Excel 載入** → Excel 時間覆蓋預設值 ✅ 
+3. **用戶手動修改** → 標記保護狀態
+4. **後續 Excel 載入** → 保護用戶修改，不覆蓋
+
+**修改位置**：
+- 📁 `formControls.ts`: 新增 `userModifiedTime` 追蹤和特殊事件監聽
+- 📁 `uiController.ts`: 修改 `updateBasicInfoForm` 的時間更新邏輯
+
+**測試場景**：
+- ✅ 場景1: 首次載入顯示當前時間
+- ✅ 場景2: Excel 時間覆蓋預設值
+- ✅ 場景3: 手動修改後受保護
+- ✅ 場景4: 修改後再上傳 Excel 不被覆蓋
+
 ### 下次對話接續重點 🎯
-1. **驗證基本功能恢復**: 確認 Speaker/Moderator 重新正常顯示
-2. **分析 Console 除錯日誌**: 理解正常情況下的解析過程
-3. **識別跨欄問題具體位置**: 從除錯日誌中找出跨欄時的索引變化
-4. **最小化修復**: 只針對跨欄問題進行精準修復，不影響正常功能
-5. **漸進式驗證**: 每次小幅修改後立即測試，避免再次破壞功能
+1. **驗證預設值更新** - 確認副標題和智能時間功能正常
+2. **清理除錯代碼** - 移除不必要的 Console 日誌輸出
+3. **完整功能測試** - 驗證所有修復功能的整合效果
+4. **使用者體驗優化** - 根據實際使用調整細節
+5. **文檔整理** - 更新 README.md 和功能說明
 
 ---
 **記錄時間**: 2025-08-21 (集合地點功能完成)  

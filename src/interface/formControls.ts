@@ -22,6 +22,7 @@ export class FormControls {
   private showMeetupPoint: boolean = false;
   private meetupType: 'same' | 'other' = 'same';
   private meetupCustomText: string = '';
+  private userModifiedTime: boolean = false; // 追蹤用戶是否手動修改過時間
   private fileUploadHandler?: (e: Event) => void;
   private eventsAlreadyBound: boolean = false;
 
@@ -248,7 +249,7 @@ export class FormControls {
           this.currentTemplate = template;
           const subtitleInput = document.getElementById('conferenceSubtitle') as HTMLInputElement;
           if (subtitleInput) {
-            subtitleInput.value = `${templates[this.currentTemplate].title}治療新進展論壇`;
+            subtitleInput.value = `${templates[this.currentTemplate].title}治療醫學研討會`;
           }
           this.agendaItems = [...templates[this.currentTemplate].sampleItems];
           this.refreshAgendaList();
@@ -316,13 +317,23 @@ export class FormControls {
 
   // 綁定基本輸入欄位
   private bindBasicInputs(): void {
-    const inputs = ['conferenceTitle', 'conferenceSubtitle', 'conferenceDate', 'conferenceTime', 'conferenceLocation', 'meetupCustomText'];
+    const inputs = ['conferenceTitle', 'conferenceSubtitle', 'conferenceDate', 'conferenceLocation', 'meetupCustomText'];
     inputs.forEach(id => {
       const input = document.getElementById(id);
       if (input) {
         input.addEventListener('input', () => this.updateCallback());
       }
     });
+
+    // 🕐 特殊處理時間欄位 - 追蹤用戶修改
+    const timeInput = document.getElementById('conferenceTime') as HTMLInputElement;
+    if (timeInput) {
+      timeInput.addEventListener('input', () => {
+        this.userModifiedTime = true; // 標記用戶已手動修改
+        console.log('🕐 用戶手動修改時間，標記保護');
+        this.updateCallback();
+      });
+    }
 
     // 頁尾註解
     const footerNote = document.getElementById('showFooterNote') as HTMLInputElement;
@@ -560,6 +571,9 @@ export class FormControls {
   getShowMeetupPoint(): boolean { return this.showMeetupPoint; }
   getMeetupType(): 'same' | 'other' { return this.meetupType; }
   getMeetupCustomText(): string { return this.meetupCustomText; }
+
+  // 取得用戶時間修改狀態
+  getUserModifiedTime(): boolean { return this.userModifiedTime; }
 
   private bringToFront(): void {
     if (this.overlayManager) {

@@ -12,6 +12,7 @@ export declare class FormControls {
     private showMeetupPoint;
     private meetupType;
     private meetupCustomText;
+    private userModifiedTime;
     private fileUploadHandler?;
     private eventsAlreadyBound;
     constructor(updateCallback: () => void, overlayManager?: OverlayManager | undefined);
@@ -47,6 +48,7 @@ export declare class FormControls {
     getShowMeetupPoint(): boolean;
     getMeetupType(): 'same' | 'other';
     getMeetupCustomText(): string;
+    getUserModifiedTime(): boolean;
     private bringToFront;
     private bringForward;
     private sendBackward;
