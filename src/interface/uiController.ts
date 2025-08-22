@@ -502,20 +502,20 @@ export class UIController {
       // 先更新海報確保最新內容
       this.updatePoster();
       
-      // 使用高解析度渲染（3倍高品質，適合所有用途）
-      const { blob } = await this.posterRenderer.exportHighQuality('png', 0.95, 3);
+      // 使用高解析度渲染（3倍高品質JPEG，檔案更小且適合所有用途）
+      const { blob } = await this.posterRenderer.exportHighQuality('jpeg', 0.95, 3);
       
       // 創建下載連結
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `醫學會議海報_${new Date().toISOString().split('T')[0]}.png`;
+      link.download = `醫學會議海報_${new Date().toISOString().split('T')[0]}.jpg`;
       link.href = url;
       link.click();
       
       // 清理 URL 對象
       URL.revokeObjectURL(url);
       
-      console.log('✅ 海報下載成功（高品質3倍解析度）');
+      console.log('✅ 海報下載成功（高品質3倍解析度JPEG）');
     } catch (error) {
       console.error('❌ 下載海報失敗:', error);
     }
