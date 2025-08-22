@@ -74,24 +74,79 @@ canvas {
   /* bottom 值由 JavaScript 動態設定 */
   left: 50%;
   transform: translateX(-50%);
-  padding: 12px 20px;
-  background: rgba(0, 0, 0, 0.8);
+  padding: 14px 28px;
+  background: linear-gradient(135deg, 
+      #667eea 0%, 
+      #764ba2 25%, 
+      #f093fb 50%, 
+      #f5576c 75%, 
+      #fda085 100%);
+  background-size: 200% 200%;
   color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   border: none;
   border-radius: 25px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
   z-index: 100;
   font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+  overflow: hidden;
+  animation: gradientShift 8s ease infinite;
 }
 
-.floating-download-center:hover {
-  transform: translateX(-50%) scale(1.05);
-  background: rgba(0, 0, 0, 0.9);
+/* 漸層色彩緩慢流動 */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
+
+/* 光澤掠過效果 - shimmer 動畫 */
+.floating-download-center::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 70%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.6s;
+  animation: shimmer 3s infinite;
+  border-radius: 25px;
+}
+
+@keyframes shimmer {
+  0% { transform: rotate(45deg) translateX(-100%); }
+  100% { transform: rotate(45deg) translateX(100%); }
+}
+
+/* hover 狀態效果增強 */
+.floating-download-center:hover {
+  transform: translateX(-50%) translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  animation-play-state: paused;
+}
+
+/* Hover 時加速光澤效果 */
+.floating-download-center:hover::before {
+  animation-duration: 0.6s;
+}
+
+/* 點擊效果 */
+.floating-download-center:active {
+  transform: translateX(-50%) translateY(0) scale(0.98);
+}
+
+
 
 /* === 摺疊面板系統 === */
 .accordion-section {
