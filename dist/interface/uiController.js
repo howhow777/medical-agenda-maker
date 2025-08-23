@@ -9,6 +9,7 @@ import { DataConverter } from '../logic/dataConverter.js';
 import { OverlayManager } from '../logic/overlayManager.js';
 import { PosterRenderer } from '../logic/posterRenderer.js';
 import { DataManager } from '../logic/dataManager.js';
+import { CropController } from './cropController-fixed.js';
 export class UIController {
     constructor() {
         // 初始化狀態
@@ -256,6 +257,8 @@ export class UIController {
         // 綁定全域函數供 HTML onclick 使用
         window.editAgenda = (index) => this.formControls.editAgenda(index);
         window.deleteAgenda = (index) => this.formControls.deleteAgenda(index);
+        // 初始化裁切控制器 (新增功能，完全獨立)
+        this.cropController = new CropController(this.canvas, this.overlayManager, () => this.updatePoster());
     }
     /**
      * 綁定所有事件
@@ -356,6 +359,8 @@ export class UIController {
             this.posterRenderer.drawPoster(this.appState.agendaItems, this.appState.currentTemplate, this.appState.currentColorScheme, this.appState.currentGradientDirection, this.appState.customColors, conferenceData, showFooter, footerText, this.appState.overlays);
             // 渲染圖層控制框（如果有選中的圖層）
             this.renderOverlayControls();
+            // 渲染裁切界面（如果處於裁切模式）
+            this.cropController.drawCropInterface(this.ctx);
         }
         catch (error) {
             console.error('❌ 更新海報失敗:', error);

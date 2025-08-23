@@ -12,6 +12,7 @@ export declare class UIController {
     private posterRenderer;
     private dataManager;
     private templateController;
+    private cropController;
     private canvas;
     private ctx;
     constructor();

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where claude)",
+      "Bash(claude config mcp list)",
+      "Bash(claude config --help)",
+      "Bash(claude config list)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
