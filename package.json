@@ -9,7 +9,7 @@
     "dev": "tsc --watch",
     "dev:serve": "npm run build && npm run serve & npm run dev",
     "clean": "rmdir /s /q dist 2>nul || echo \"Clean completed\"",
-    "serve": "npx http-server . -p 3001 -o index.html",
+    "serve": "npx http-server . -p 3001 -a 0.0.0.0 -o index.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

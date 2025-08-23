@@ -5,13 +5,19 @@ export declare class CanvasInteractions {
     private syncOverlayControlsCallback;
     private refreshOverlayListCallback;
     private overlayManager;
+    private touchDebug;
     private drag;
     constructor(canvas: HTMLCanvasElement, overlayManager: OverlayManager, updateCallback: () => void, syncOverlayControlsCallback: () => void, refreshOverlayListCallback: () => void);
     bindEvents(): void;
-    private onPointerDown;
-    private onPointerMove;
+    private onTouchStart;
+    private onTouchMove;
     private handleScaling;
-    private onPointerUp;
+    private onTouchEnd;
+    private canvasPointFromTouch;
+    private canvasPointFromMouse;
+    private onMouseDown;
+    private onMouseMove;
+    private onMouseUp;
     private onWheel;
     private canvasPoint;
 }

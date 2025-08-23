@@ -4,6 +4,7 @@
 import { UIController } from './interface/uiController.js';
 import { AccordionController } from './interface/accordionController.js';
 import { FileUploader } from './interface/fileUploader.js';
+import { TouchDebugController } from './interface/touchDebugController.js';
 /**
  * 應用程式初始化
  */
@@ -20,6 +21,13 @@ async function initApp() {
         });
         // 初始化摺疊面板控制器
         new AccordionController();
+        // 初始化觸控除錯控制器（手機測試用）
+        const touchDebugController = new TouchDebugController();
+        // 開發模式自動啟用除錯（可根據需要調整）
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.log('🔍 開發模式：自動啟用觸控除錯');
+            // touchDebugController.setEnabled(true); // 取消註解可自動啟用
+        }
         console.log('✅ 應用程式初始化完成');
     }
     catch (error) {

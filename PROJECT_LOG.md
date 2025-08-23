@@ -411,6 +411,49 @@ if (timeInput && basicInfo.time) {
 **專案狀態**: ✅ 主要UI改善完成，系統穩定運行  
 **成就解鎖**: 🎯 左側面板從7個平鋪區塊優化為3個摺疊區塊，操作效率大幅提升！
 
+### 📱 Canvas觸控優化開發中 [2025-08-23]
+
+**問題**: 手機上Canvas區域無法滾動頁面，但物件操作功能正常
+**目標**: 實現智能觸控策略（物件操作時阻止滾動，空白處允許滾動）
+**策略**: 增量修補，先建立Debug模式精準定位問題
+
+**開發進度**:
+- ✅ 階段1: TouchDebugController核心邏輯完成
+- ✅ 階段2: CSS樣式與UI整合完成
+- ✅ 階段3: CanvasInteractions整合除錯完成
+- ✅ 階段4: 主程式整合與測試腳本完成
+
+**實作完成項目**:
+- 🎯 智能touch-action策略（dragging時none，平時manipulation）
+- 📊 即時觸控事件監測與視覺化面板
+- 🔍 詳細Console日誌輸出（事件類型、座標、命中狀態）
+- 📱 響應式除錯面板（手機適配）
+- 💾 日誌匯出功能（JSON格式）
+- ⚙️ 開發環境自動偵測
+
+**修復問題**:
+- 🔄 Canvas滾動範圍修復（overflow-y → overflow, 新增min-width/min-height）
+- ✅ 左側截斷問題修復（align-items: center → text-align + margin: 0 auto）
+- ✅ Canvas高度恢復正常（恢復flex佈局，添加flex-shrink: 0）
+- ✅ Canvas高度限制徹底移除（height: 800px → min-height: 800px, 移除max-height）
+- ✅ Canvas觸控滾動問題完全解決 [2025-08-23]
+
+**✅ 最終解決方案**:
+- 🎯 智能touch-action策略：dragging時none，平時manipulation  
+- 🔧 精準佈局修復：align-items: flex-start + margin: 0 auto
+- 📱 完美觸控體驗：空白處滾動頁面，物件操作時專注拖拉
+- 🚀 Debug系統：完整觸控事件監測與分析工具
+
+**成功關鍵**:
+- 責任分離：Flexbox管理垂直，margin管理水平居中
+- 最小侵入式修復：只改必要部分，保持其他機制完整  
+- 優雅降級：寬度足夠時居中，不足時左對齊+完整滾動
+
+**技術架構**:
+- 📁 `src/interface/touchDebugController.ts` - 觸控事件監測與除錯
+- 🎯 除錯面板：即時顯示觸控狀態、事件日誌、裝置能力
+- 📊 Console輸出：詳細事件追蹤、效能數據
+
 ### 🎨 UI優化：移除冗餘按鈕 [2025-08-21]
 
 **改善**: 移除「更新海報」按鈕，簡化用戶界面
