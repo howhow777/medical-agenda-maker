@@ -113,6 +113,22 @@ export declare class CropController {
      */
     private applyCrop;
     /**
+     * 執行圖片裁切處理
+     */
+    private cropImageData;
+    /**
+     * 執行Canvas裁切操作
+     */
+    private performCrop;
+    /**
+     * 更新overlay為裁切後的圖片
+     */
+    private updateOverlayWithCroppedImage;
+    /**
+     * 設定載入中狀態
+     */
+    private setLoadingState;
+    /**
      * 取消裁切
      */
     private cancelCrop;

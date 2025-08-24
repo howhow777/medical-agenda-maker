@@ -456,19 +456,171 @@ export class CropController {
   /**
    * 套用裁切
    */
-  private applyCrop(): void {
+  private async applyCrop(): Promise<void> {
     console.log('✅ 套用裁切');
     
-    const cropInfo = {
-      裁切區域: this.cropState.cropRect,
-      原始尺寸: {
-        w: this.overlayManager.getOverlays()[this.cropState.selectedIndex]?.w,
-        h: this.overlayManager.getOverlays()[this.cropState.selectedIndex]?.h
-      }
-    };
+    const overlay = this.overlayManager.getOverlays()[this.cropState.selectedIndex];
+    if (!overlay || !overlay.img) {
+      console.error('❌ 無法獲取overlay或圖片資料');
+      return;
+    }
     
-    alert('裁切區域已確定！\n\n' + JSON.stringify(cropInfo, null, 2));
-    this.exitCropMode();
+    try {
+      // 顯示載入中狀態
+      this.setLoadingState(true);
+      
+      // 執行圖片裁切
+      const croppedImageData = await this.cropImageData(overlay, this.cropState.cropRect);
+      
+      // 更新overlay屬性
+      await this.updateOverlayWithCroppedImage(overlay, croppedImageData, this.cropState.cropRect);
+      
+      console.log('✅ 圖片裁切完成');
+      this.exitCropMode();
+      
+    } catch (error) {
+      console.error('❌ 裁切過程發生錯誤:', error);
+      alert('裁切失敗，請重試');
+    } finally {
+      this.setLoadingState(false);
+    }
+  }
+
+  /**
+   * 執行圖片裁切處理
+   */
+  private cropImageData(
+    overlay: Overlay, 
+    cropRect: { x: number; y: number; w: number; h: number }
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      // 創建Canvas進行圖片裁切
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('無法創建Canvas context'));
+        return;
+      }
+      
+      // 設定裁切後的Canvas尺寸
+      canvas.width = cropRect.w;
+      canvas.height = cropRect.h;
+      
+      // 確保圖片已載入
+      if (overlay.img.complete && overlay.img.naturalHeight !== 0) {
+        this.performCrop(ctx, overlay, cropRect, resolve);
+      } else {
+        // 等待圖片載入完成
+        overlay.img.onload = () => {
+          this.performCrop(ctx, overlay, cropRect, resolve);
+        };
+        overlay.img.onerror = () => {
+          reject(new Error('圖片載入失敗'));
+        };
+      }
+    });
+  }
+  
+  /**
+   * 執行Canvas裁切操作
+   */
+  private performCrop(
+    ctx: CanvasRenderingContext2D,
+    overlay: Overlay,
+    cropRect: { x: number; y: number; w: number; h: number },
+    resolve: (value: string) => void
+  ): void {
+    try {
+      // 繪製裁切區域的圖片
+      ctx.drawImage(
+        overlay.img,                                    // 來源圖片
+        cropRect.x, cropRect.y, cropRect.w, cropRect.h, // 來源區域
+        0, 0, cropRect.w, cropRect.h                    // 目標區域
+      );
+      
+      // 轉換為高品質PNG數據
+      const croppedImageData = ctx.canvas.toDataURL('image/png', 1.0);
+      resolve(croppedImageData);
+      
+    } catch (error) {
+      console.error('❌ Canvas裁切操作失敗:', error);
+      resolve(''); // 解析為空字符串表示失敗
+    }
+  }
+  
+  /**
+   * 更新overlay為裁切後的圖片
+   */
+  private updateOverlayWithCroppedImage(
+    overlay: Overlay, 
+    croppedImageData: string,
+    cropRect: { x: number; y: number; w: number; h: number }
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!croppedImageData) {
+        reject(new Error('裁切圖片資料為空'));
+        return;
+      }
+      
+      // 創建新的Image物件
+      const newImg = new Image();
+      
+      newImg.onload = () => {
+        // 更新overlay屬性
+        overlay.img = newImg;
+        overlay.src = croppedImageData;
+        overlay.w = cropRect.w;
+        overlay.h = cropRect.h;
+        
+        // 調整位置以保持視覺上的一致性
+        const centerOffsetX = (cropRect.w - overlay.w) / 2;
+        const centerOffsetY = (cropRect.h - overlay.h) / 2;
+        
+        // 考慮旋轉和縮放的位置調整
+        const cos = Math.cos(overlay.rotation);
+        const sin = Math.sin(overlay.rotation);
+        const offsetX = cropRect.x - overlay.w/2 + cropRect.w/2;
+        const offsetY = cropRect.y - overlay.h/2 + cropRect.h/2;
+        
+        overlay.x += (offsetX * cos - offsetY * sin) * overlay.scaleX;
+        overlay.y += (offsetX * sin + offsetY * cos) * overlay.scaleY;
+        
+        console.log('✅ Overlay屬性已更新:', {
+          新尺寸: { w: overlay.w, h: overlay.h },
+          新位置: { x: Math.round(overlay.x), y: Math.round(overlay.y) }
+        });
+        
+        // 觸發重繪
+        this.updateCallback();
+        resolve();
+      };
+      
+      newImg.onerror = () => {
+        reject(new Error('新圖片載入失敗'));
+      };
+      
+      newImg.src = croppedImageData;
+    });
+  }
+  
+  /**
+   * 設定載入中狀態
+   */
+  private setLoadingState(isLoading: boolean): void {
+    if (this.cropApplyBtn) {
+      if (isLoading) {
+        this.cropApplyBtn.textContent = '⏳ 處理中...';
+        this.cropApplyBtn.disabled = true;
+      } else {
+        this.cropApplyBtn.textContent = '✅ 套用';
+        this.cropApplyBtn.disabled = false;
+      }
+    }
+    
+    if (this.cropCancelBtn) {
+      this.cropCancelBtn.disabled = isLoading;
+    }
   }
   
   /**
