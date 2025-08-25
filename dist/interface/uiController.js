@@ -10,6 +10,7 @@ import { OverlayManager } from '../logic/overlayManager.js';
 import { PosterRenderer } from '../logic/posterRenderer.js';
 import { DataManager } from '../logic/dataManager.js';
 import { CropController } from './cropController-fixed.js';
+import { FeedbackController } from './feedbackController.js';
 export class UIController {
     constructor() {
         // 初始化狀態
@@ -259,6 +260,8 @@ export class UIController {
         window.deleteAgenda = (index) => this.formControls.deleteAgenda(index);
         // 初始化裁切控制器 (新增功能，完全獨立)
         this.cropController = new CropController(this.canvas, this.overlayManager, () => this.updatePoster());
+        // 初始化用戶回饋控制器
+        this.feedbackController = new FeedbackController(this.overlayManager);
     }
     /**
      * 綁定所有事件
@@ -286,7 +289,24 @@ export class UIController {
             btnUpdate.addEventListener('click', () => this.updatePoster());
         }
         if (btnDownload) {
-            btnDownload.addEventListener('click', () => this.downloadPoster());
+            btnDownload.addEventListener('click', async () => {
+                console.log('🎯 用戶點擊下載按鈕');
+                try {
+                    const shouldDownload = await this.feedbackController.showModal();
+                    if (shouldDownload) {
+                        console.log('✅ 用戶完成回饋，開始下載');
+                        this.downloadPoster();
+                    }
+                    else {
+                        console.log('❌ 用戶取消下載');
+                    }
+                }
+                catch (error) {
+                    console.error('❌ 回饋流程錯誤:', error);
+                    // 發生錯誤時直接下載
+                    this.downloadPoster();
+                }
+            });
         }
     }
     /**

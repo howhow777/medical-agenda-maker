@@ -13,6 +13,7 @@ export declare class UIController {
     private dataManager;
     private templateController;
     private cropController;
+    private feedbackController;
     private canvas;
     private ctx;
     constructor();
