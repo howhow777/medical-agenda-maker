@@ -68,6 +68,8 @@ export declare class FormControls {
     private bringForward;
     private sendBackward;
     private sendToBack;
+    private moveToBackground;
+    private moveToForeground;
     private centerOverlay;
     private resetOverlay;
     private removeOverlay;

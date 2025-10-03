@@ -37,7 +37,8 @@ export class OverlayManager {
             rotation: 0,
             opacity: 1,
             visible: true,
-            lockAspect: true
+            lockAspect: true,
+            zIndex: 1 // 預設為前景層（Table上方）
         };
         this.overlays.push(overlay);
         this.selectedIndex = this.overlays.length - 1;
@@ -91,6 +92,18 @@ export class OverlayManager {
             const overlay = this.overlays.splice(index, 1)[0];
             this.overlays.unshift(overlay);
             this.selectedIndex = 0;
+        }
+    }
+    // 切換選中圖層到背景層（Table下方）
+    moveSelectedToBackground() {
+        if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
+            this.overlays[this.selectedIndex].zIndex = 0;
+        }
+    }
+    // 切換選中圖層到前景層（Table上方）
+    moveSelectedToForeground() {
+        if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
+            this.overlays[this.selectedIndex].zIndex = 1;
         }
     }
     // 置中選中的圖層

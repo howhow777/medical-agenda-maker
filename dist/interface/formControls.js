@@ -97,6 +97,13 @@ export class FormControls {
             sendBackward.addEventListener('click', () => this.sendBackward());
         if (sendBack)
             sendBack.addEventListener('click', () => this.sendToBack());
+        // 前後景切換按鈕
+        const moveToBackground = document.getElementById('moveToBackground');
+        const moveToForeground = document.getElementById('moveToForeground');
+        if (moveToBackground)
+            moveToBackground.addEventListener('click', () => this.moveToBackground());
+        if (moveToForeground)
+            moveToForeground.addEventListener('click', () => this.moveToForeground());
         // 圖層操作按鈕
         const centerOverlay = document.getElementById('centerOverlay');
         const resetOverlay = document.getElementById('resetOverlay');
@@ -592,6 +599,18 @@ export class FormControls {
                 this.overlayManager.sendToBack(index);
                 this.refreshOverlayList();
             }
+            this.updateCallback();
+        }
+    }
+    moveToBackground() {
+        if (this.overlayManager) {
+            this.overlayManager.moveSelectedToBackground();
+            this.updateCallback();
+        }
+    }
+    moveToForeground() {
+        if (this.overlayManager) {
+            this.overlayManager.moveSelectedToForeground();
             this.updateCallback();
         }
     }

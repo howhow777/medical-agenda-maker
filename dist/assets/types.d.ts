@@ -37,6 +37,7 @@ export interface Overlay {
     opacity: number;
     visible: boolean;
     lockAspect: boolean;
+    zIndex: number;
 }
 export interface CustomColors {
     headerC1: string;

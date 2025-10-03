@@ -378,6 +378,10 @@ export class PosterRenderer {
       nextY += 30;
     }
 
+    // 繪製背景 PNG 圖層（zIndex = 0，在 Table 下方）
+    const backgroundOverlays = overlays.filter(o => o.zIndex === 0);
+    this.drawOverlays(backgroundOverlays);
+
     // 議程表
     let afterAgendaY = nextY + 40;
     if (agendaItems.length > 0) {
@@ -396,8 +400,9 @@ export class PosterRenderer {
     // 主題裝飾圖案
     this.drawCancerDecorations(template, scheme, W, H);
 
-    // 渲染PNG圖層
-    this.drawOverlays(overlays);
+    // 渲染前景 PNG 圖層（zIndex = 1，在 Table 上方）
+    const foregroundOverlays = overlays.filter(o => o.zIndex === 1 || o.zIndex === undefined);
+    this.drawOverlays(foregroundOverlays);
   }
 
   /**

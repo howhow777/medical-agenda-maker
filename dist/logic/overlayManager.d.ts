@@ -16,6 +16,8 @@ export declare class OverlayManager {
     bringForward(index: number): void;
     sendBackward(index: number): void;
     sendToBack(index: number): void;
+    moveSelectedToBackground(): void;
+    moveSelectedToForeground(): void;
     centerSelectedOverlay(): void;
     resetSelectedOverlay(): void;
     getOverlaySize(overlay: Overlay): {
