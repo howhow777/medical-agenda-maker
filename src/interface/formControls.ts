@@ -7,6 +7,7 @@ export class FormControls {
   private currentTemplate: string = 'lung';
   private currentColorScheme: string = 'medical_green';
   private currentGradientDirection: string = 'horizontal';
+  private tableOpacity: number = 1.0; // Table 透明度 (0-1)
   private customColors: CustomColors = {
     headerC1: '#1B4D3E',
     headerC2: '#2D8659', 
@@ -269,6 +270,8 @@ export class FormControls {
   private bindColorSchemeControls(): void {
     const colorSchemeSelect = document.getElementById('colorScheme') as HTMLSelectElement;
     const gradientDirSelect = document.getElementById('gradientDir') as HTMLSelectElement;
+    const tableOpacitySlider = document.getElementById('tableOpacity') as HTMLInputElement;
+    const tableOpacityValue = document.getElementById('tableOpacityValue');
     
     if (colorSchemeSelect) {
       colorSchemeSelect.addEventListener('change', (e) => {
@@ -281,6 +284,18 @@ export class FormControls {
     if (gradientDirSelect) {
       gradientDirSelect.addEventListener('change', (e) => {
         this.currentGradientDirection = (e.target as HTMLSelectElement).value;
+        this.updateCallback();
+      });
+    }
+    
+    // Table 透明度滑桿
+    if (tableOpacitySlider) {
+      tableOpacitySlider.addEventListener('input', (e) => {
+        const value = parseFloat((e.target as HTMLInputElement).value);
+        this.tableOpacity = value;
+        if (tableOpacityValue) {
+          tableOpacityValue.textContent = `${Math.round(value * 100)}%`;
+        }
         this.updateCallback();
       });
     }
@@ -551,6 +566,7 @@ export class FormControls {
   getCurrentTemplate(): string { return this.currentTemplate; }
   getCurrentColorScheme(): string { return this.currentColorScheme; }
   getCurrentGradientDirection(): string { return this.currentGradientDirection; }
+  getTableOpacity(): number { return this.tableOpacity; }
   getCustomColors(): CustomColors { return this.customColors; }
 
   // Setter 方法

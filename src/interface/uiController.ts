@@ -470,6 +470,9 @@ export class UIController {
         }
       }
       
+      // 取得 table 透明度
+      const tableOpacity = this.formControls.getTableOpacity();
+      
       // 渲染海報
       this.posterRenderer.drawPoster(
         this.appState.agendaItems,
@@ -480,7 +483,8 @@ export class UIController {
         conferenceData,
         showFooter,
         footerText,
-        this.appState.overlays
+        this.appState.overlays,
+        tableOpacity
       );
       
       // 渲染圖層控制框（如果有選中的圖層）

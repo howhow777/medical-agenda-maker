@@ -23,9 +23,11 @@ export interface ColorScheme {
   };
   agenda: {
     background: string;
+    alternateBackground: string; // 原本透明列的顏色
     border: string;
     accent: string;
   };
+  tableOpacity: number; // Table 整體透明度 (0-1);
 }
 
 // PNG圖層

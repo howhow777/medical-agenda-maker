@@ -375,8 +375,10 @@ export class UIController {
                     ov.y = Math.max(0, Math.min(this.canvas.height, ov.y));
                 }
             }
+            // 取得 table 透明度
+            const tableOpacity = this.formControls.getTableOpacity();
             // 渲染海報
-            this.posterRenderer.drawPoster(this.appState.agendaItems, this.appState.currentTemplate, this.appState.currentColorScheme, this.appState.currentGradientDirection, this.appState.customColors, conferenceData, showFooter, footerText, this.appState.overlays);
+            this.posterRenderer.drawPoster(this.appState.agendaItems, this.appState.currentTemplate, this.appState.currentColorScheme, this.appState.currentGradientDirection, this.appState.customColors, conferenceData, showFooter, footerText, this.appState.overlays, tableOpacity);
             // 渲染圖層控制框（如果有選中的圖層）
             this.renderOverlayControls();
             // 渲染裁切界面（如果處於裁切模式）

@@ -5,7 +5,15 @@
       "Bash(claude config mcp list)",
       "Bash(claude config --help)",
       "Bash(claude config list)",
-      "Bash(claude mcp:*)"
+      "Bash(claude mcp:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Read(//tmp/chrome-devtools-mcp-DQKRpS/**)",
+      "Read(//c/**)",
+      "Bash(npm run build:*)",
+      "Read(//tmp/chrome-devtools-mcp-af7q4l/**)",
+      "Read(//tmp/chrome-devtools-mcp-etIWYt/**)",
+      "Read(//tmp/chrome-devtools-mcp-MiuwaH/**)"
     ],
     "deny": [],
     "ask": []

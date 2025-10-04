@@ -18,9 +18,11 @@ export interface ColorScheme {
     };
     agenda: {
         background: string;
+        alternateBackground: string;
         border: string;
         accent: string;
     };
+    tableOpacity: number;
 }
 export interface Overlay {
     id: number;

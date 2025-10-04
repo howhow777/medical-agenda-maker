@@ -20,7 +20,7 @@ export declare class PosterRenderer {
         showMeetupPoint?: boolean;
         meetupType?: 'same' | 'other';
         meetupCustomText?: string;
-    }, showFooter: boolean, footerText: string, overlays?: Overlay[]): void;
+    }, showFooter: boolean, footerText: string, overlays?: Overlay[], tableOpacity?: number): void;
     /**
      * 生成集合地點顯示文字
      */

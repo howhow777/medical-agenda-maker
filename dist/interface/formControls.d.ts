@@ -7,6 +7,7 @@ export declare class FormControls {
     private currentTemplate;
     private currentColorScheme;
     private currentGradientDirection;
+    private tableOpacity;
     private customColors;
     private showFooterNote;
     private showMeetupPoint;
@@ -40,6 +41,7 @@ export declare class FormControls {
     getCurrentTemplate(): string;
     getCurrentColorScheme(): string;
     getCurrentGradientDirection(): string;
+    getTableOpacity(): number;
     getCustomColors(): CustomColors;
     setAgendaItems(items: AgendaItem[]): void;
     setCurrentTemplate(template: string): void;

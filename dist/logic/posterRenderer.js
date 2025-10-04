@@ -267,10 +267,10 @@ export class PosterRenderer {
         return total;
     }
     // 主要海報繪製方法
-    drawPoster(agendaItems, currentTemplate, currentColorScheme, currentGradientDirection, customColors, conferenceData, showFooter, footerText, overlays = []) {
+    drawPoster(agendaItems, currentTemplate, currentColorScheme, currentGradientDirection, customColors, conferenceData, showFooter, footerText, overlays = [], tableOpacity = 1.0) {
         const W = this.canvas.width;
         const H = this.canvas.height;
-        const scheme = this.getActiveColorScheme(currentColorScheme, customColors);
+        const scheme = this.getActiveColorScheme(currentColorScheme, customColors, tableOpacity);
         const template = templates[currentTemplate];
         // 背景
         if (currentColorScheme === 'custom' && customColors.bgGradientDir !== 'none') {
@@ -384,8 +384,11 @@ export class PosterRenderer {
         const cModerator = xModerator + wModerator / 2;
         // 欄位標題行（直接從議程開始位置繪製）
         let yPos = agendaStartY;
+        const previousAlpha = this.ctx.globalAlpha;
+        this.ctx.globalAlpha = scheme.tableOpacity;
         this.ctx.fillStyle = scheme.agenda.border;
         this.ctx.fillRect(tableOuterLeft, yPos - 8, W - 80, 35);
+        this.ctx.globalAlpha = previousAlpha;
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.font = 'bold 16px Microsoft JhengHei';
         this.ctx.textAlign = 'center';
@@ -405,11 +408,17 @@ export class PosterRenderer {
             const moderatorLines = item.moderator ? this.calculateTextLinesWithBreaks(item.moderator, wModerator - pad) : 1;
             const maxLines = Math.max(timeLines, topicLines, speakerLines, moderatorLines);
             const itemH = Math.max(45, maxLines * 22 + 15);
-            // 斑馬紋背景
+            // 斑馬紋背景 - 所有列都有背景色
+            const previousAlpha = this.ctx.globalAlpha;
+            this.ctx.globalAlpha = scheme.tableOpacity;
             if (idx % 2 === 0) {
                 this.ctx.fillStyle = scheme.agenda.background;
-                this.ctx.fillRect(tableOuterLeft, yPos - 18, W - 80, itemH);
             }
+            else {
+                this.ctx.fillStyle = scheme.agenda.alternateBackground;
+            }
+            this.ctx.fillRect(tableOuterLeft, yPos - 18, W - 80, itemH);
+            this.ctx.globalAlpha = previousAlpha;
             this.ctx.textAlign = 'left';
             // 時間
             this.ctx.fillStyle = scheme.agenda.accent;
@@ -464,7 +473,7 @@ export class PosterRenderer {
         return noteY + contentH;
     }
     // 取得當前配色方案
-    getActiveColorScheme(currentColorScheme, customColors) {
+    getActiveColorScheme(currentColorScheme, customColors, tableOpacity = 1.0) {
         if (currentColorScheme === 'custom') {
             return {
                 name: '自訂配色',
@@ -474,12 +483,19 @@ export class PosterRenderer {
                 },
                 agenda: {
                     background: customColors.agendaBg,
+                    alternateBackground: '#FFFFFF', // 自訂配色的透明列使用白色
                     border: customColors.agendaBorder,
                     accent: customColors.agendaAccent
-                }
+                },
+                tableOpacity: tableOpacity
             };
         }
-        return colorSchemes[currentColorScheme];
+        // 取得預設配色方案，並覆蓋 tableOpacity
+        const scheme = colorSchemes[currentColorScheme];
+        return {
+            ...scheme,
+            tableOpacity: tableOpacity
+        };
     }
     // 渲染PNG圖層（增強版，支持高品質處理）
     drawOverlays(overlays) {
@@ -655,7 +671,7 @@ export class PosterRenderer {
             // 取得當前海報的所有數據（從 DOM 或全域狀態）
             const posterData = this.getCurrentPosterData();
             // 重新繪製整個海報
-            this.drawPoster(posterData.agendaItems, posterData.currentTemplate, posterData.currentColorScheme, posterData.currentGradientDirection, posterData.customColors, posterData.conferenceData, posterData.showFooter, posterData.footerText, posterData.overlays);
+            this.drawPoster(posterData.agendaItems, posterData.currentTemplate, posterData.currentColorScheme, posterData.currentGradientDirection, posterData.customColors, posterData.conferenceData, posterData.showFooter, posterData.footerText, posterData.overlays, posterData.tableOpacity || 1.0);
         }
         finally {
             // 恢復原始 Canvas 和 Context
@@ -685,7 +701,8 @@ export class PosterRenderer {
                 },
                 showFooter: this.getCheckboxValue('showFooterNote'),
                 footerText: this.getInputValue('footerNoteContent') || '',
-                overlays: state.overlays || []
+                overlays: state.overlays || [],
+                tableOpacity: app.formControls ? app.formControls.getTableOpacity() : 1.0
             };
         }
         // 如果沒有全域狀態，從 DOM 直接讀取
@@ -733,7 +750,8 @@ export class PosterRenderer {
             },
             showFooter: this.getCheckboxValue('showFooterNote'),
             footerText: this.getInputValue('footerNoteContent') || '',
-            overlays
+            overlays,
+            tableOpacity: app && app.formControls ? app.formControls.getTableOpacity() : 1.0
         };
     }
     /**

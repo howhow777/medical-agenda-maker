@@ -9,9 +9,11 @@ export const colorSchemes: Record<string, ColorScheme> = {
     },
     agenda: {
       background: '#E8F5E8',
+      alternateBackground: '#FFFFFF', // 原本透明列改為白色
       border: '#1B4D3E',
       accent: '#2D8659'
-    }
+    },
+    tableOpacity: 1.0
   },
   business_green: {
     name: '專業商務綠',
@@ -21,9 +23,11 @@ export const colorSchemes: Record<string, ColorScheme> = {
     },
     agenda: {
       background: '#F0F4F0',
+      alternateBackground: '#FFFFFF',
       border: '#2F5233',
       accent: '#1B4D3E'
-    }
+    },
+    tableOpacity: 1.0
   },
   tech_green: {
     name: '現代科技綠',
@@ -33,9 +37,11 @@ export const colorSchemes: Record<string, ColorScheme> = {
     },
     agenda: {
       background: '#E6F3FF',
+      alternateBackground: '#FFFFFF',
       border: '#1E6B7A',
       accent: '#1B4D3E'
-    }
+    },
+    tableOpacity: 1.0
   }
 };
 

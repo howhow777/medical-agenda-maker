@@ -315,11 +315,12 @@ export class PosterRenderer {
     },
     showFooter: boolean,
     footerText: string,
-    overlays: Overlay[] = []
+    overlays: Overlay[] = [],
+    tableOpacity: number = 1.0
   ): void {
     const W = this.canvas.width;
     const H = this.canvas.height;
-    const scheme = this.getActiveColorScheme(currentColorScheme, customColors);
+    const scheme = this.getActiveColorScheme(currentColorScheme, customColors, tableOpacity);
     const template = templates[currentTemplate];
 
     // 背景
@@ -450,8 +451,12 @@ export class PosterRenderer {
 
     // 欄位標題行（直接從議程開始位置繪製）
     let yPos = agendaStartY;
+    
+    const previousAlpha = this.ctx.globalAlpha;
+    this.ctx.globalAlpha = scheme.tableOpacity;
     this.ctx.fillStyle = scheme.agenda.border;
     this.ctx.fillRect(tableOuterLeft, yPos - 8, W - 80, 35);
+    this.ctx.globalAlpha = previousAlpha;
 
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = 'bold 16px Microsoft JhengHei';
@@ -476,11 +481,18 @@ export class PosterRenderer {
       const maxLines = Math.max(timeLines, topicLines, speakerLines, moderatorLines);
       const itemH = Math.max(45, maxLines * 22 + 15);
 
-      // 斑馬紋背景
+      // 斑馬紋背景 - 所有列都有背景色
+      const previousAlpha = this.ctx.globalAlpha;
+      this.ctx.globalAlpha = scheme.tableOpacity;
+      
       if (idx % 2 === 0) {
         this.ctx.fillStyle = scheme.agenda.background;
-        this.ctx.fillRect(tableOuterLeft, yPos - 18, W - 80, itemH);
+      } else {
+        this.ctx.fillStyle = scheme.agenda.alternateBackground;
       }
+      this.ctx.fillRect(tableOuterLeft, yPos - 18, W - 80, itemH);
+      
+      this.ctx.globalAlpha = previousAlpha
 
       this.ctx.textAlign = 'left';
 
@@ -543,7 +555,7 @@ export class PosterRenderer {
   }
 
   // 取得當前配色方案
-  private getActiveColorScheme(currentColorScheme: string, customColors: CustomColors): ColorScheme {
+  private getActiveColorScheme(currentColorScheme: string, customColors: CustomColors, tableOpacity: number = 1.0): ColorScheme {
     if (currentColorScheme === 'custom') {
       return {
         name: '自訂配色',
@@ -553,12 +565,19 @@ export class PosterRenderer {
         },
         agenda: {
           background: customColors.agendaBg,
+          alternateBackground: '#FFFFFF', // 自訂配色的透明列使用白色
           border: customColors.agendaBorder,
           accent: customColors.agendaAccent
-        }
+        },
+        tableOpacity: tableOpacity
       };
     }
-    return colorSchemes[currentColorScheme];
+    // 取得預設配色方案，並覆蓋 tableOpacity
+    const scheme = colorSchemes[currentColorScheme];
+    return {
+      ...scheme,
+      tableOpacity: tableOpacity
+    };
   }
 
   // 渲染PNG圖層（增強版，支持高品質處理）
@@ -809,7 +828,8 @@ export class PosterRenderer {
         posterData.conferenceData,
         posterData.showFooter,
         posterData.footerText,
-        posterData.overlays
+        posterData.overlays,
+        posterData.tableOpacity || 1.0
       );
       
     } finally {
@@ -841,7 +861,8 @@ export class PosterRenderer {
       },
         showFooter: this.getCheckboxValue('showFooterNote'),
         footerText: this.getInputValue('footerNoteContent') || '',
-        overlays: state.overlays || []
+        overlays: state.overlays || [],
+        tableOpacity: app.formControls ? app.formControls.getTableOpacity() : 1.0
       };
     }
     
@@ -894,7 +915,8 @@ export class PosterRenderer {
       },
       showFooter: this.getCheckboxValue('showFooterNote'),
       footerText: this.getInputValue('footerNoteContent') || '',
-      overlays
+      overlays,
+      tableOpacity: app && app.formControls ? app.formControls.getTableOpacity() : 1.0
     };
   }
 
