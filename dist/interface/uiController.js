@@ -379,8 +379,10 @@ export class UIController {
             const tableOpacity = this.formControls.getTableOpacity();
             // 渲染海報
             this.posterRenderer.drawPoster(this.appState.agendaItems, this.appState.currentTemplate, this.appState.currentColorScheme, this.appState.currentGradientDirection, this.appState.customColors, conferenceData, showFooter, footerText, this.appState.overlays, tableOpacity);
-            // 渲染圖層控制框（如果有選中的圖層）
-            this.renderOverlayControls();
+            // 渲染圖層控制框（裁切模式下隱藏，避免與裁切推桿視覺重疊）
+            if (!this.cropController.isInCropMode()) {
+                this.renderOverlayControls();
+            }
             // 渲染裁切界面（如果處於裁切模式）
             this.cropController.drawCropInterface(this.ctx);
         }

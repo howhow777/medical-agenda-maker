@@ -154,26 +154,24 @@ export class CropController {
    */
   private onCropMouseDown(e: MouseEvent): void {
     if (!this.cropState.isActive || e.button !== 0) return;
-    
+
+    // 裁切模式下永遠攔截 mousedown，不論是否命中推桿
+    // 這樣可以防止事件穿透到底層的縮放/旋轉邏輯（修 bug4/5）
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
     const point = this.canvasPointFromMouse(e);
     const hitResult = this.cropHitTest(point);
-    
+
     if (hitResult.hit) {
       console.log('🎯 裁切推桿被點擊:', hitResult.handle);
-      
-      // 立即阻止事件傳播
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      
+
       this.cropState.isDragging = true;
       this.cropState.dragHandle = hitResult.handle;
       this.cropState.dragStart = point;
       this.cropState.originalRect = { ...this.cropState.cropRect };
-      
-      // 設定游標樣式
+
       this.canvas.style.cursor = this.getCursorForHandle(hitResult.handle);
-      
-      // 事件已阻止
     }
   }
   
@@ -199,9 +197,12 @@ export class CropController {
       const hitResult = this.cropHitTest(point);
       if (hitResult.hit) {
         this.canvas.style.cursor = this.getCursorForHandle(hitResult.handle);
-        e.preventDefault();
-        e.stopImmediatePropagation();
+      } else {
+        this.canvas.style.cursor = 'default';
       }
+      // 裁切模式下永遠攔截 mousemove，避免底層 hover 邏輯
+      e.preventDefault();
+      e.stopImmediatePropagation();
     }
   }
   
@@ -567,31 +568,29 @@ export class CropController {
       const newImg = new Image();
       
       newImg.onload = () => {
-        // 更新overlay屬性
+        // 1. 先計算位置位移（在 overlay.w/h 還是舊值時計算）
+        const oldW = overlay.w;
+        const oldH = overlay.h;
+        const offsetX = cropRect.x + cropRect.w / 2 - oldW / 2;
+        const offsetY = cropRect.y + cropRect.h / 2 - oldH / 2;
+
+        // 2. 套用旋轉/縮放轉換到全域座標
+        const cos = Math.cos(overlay.rotation);
+        const sin = Math.sin(overlay.rotation);
+        overlay.x += (offsetX * cos - offsetY * sin) * overlay.scaleX;
+        overlay.y += (offsetX * sin + offsetY * cos) * overlay.scaleY;
+
+        // 3. 再覆寫尺寸與圖片
         overlay.img = newImg;
         overlay.src = croppedImageData;
         overlay.w = cropRect.w;
         overlay.h = cropRect.h;
-        
-        // 調整位置以保持視覺上的一致性
-        const centerOffsetX = (cropRect.w - overlay.w) / 2;
-        const centerOffsetY = (cropRect.h - overlay.h) / 2;
-        
-        // 考慮旋轉和縮放的位置調整
-        const cos = Math.cos(overlay.rotation);
-        const sin = Math.sin(overlay.rotation);
-        const offsetX = cropRect.x - overlay.w/2 + cropRect.w/2;
-        const offsetY = cropRect.y - overlay.h/2 + cropRect.h/2;
-        
-        overlay.x += (offsetX * cos - offsetY * sin) * overlay.scaleX;
-        overlay.y += (offsetX * sin + offsetY * cos) * overlay.scaleY;
-        
+
         console.log('✅ Overlay屬性已更新:', {
           新尺寸: { w: overlay.w, h: overlay.h },
           新位置: { x: Math.round(overlay.x), y: Math.round(overlay.y) }
         });
-        
-        // 觸發重繪
+
         this.updateCallback();
         resolve();
       };
