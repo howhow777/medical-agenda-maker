@@ -25,8 +25,8 @@ export class TemplateController {
     const buttonGroup = document.createElement('div');
     buttonGroup.className = 'template-buttons';
     buttonGroup.innerHTML = `
-      <button class="btn btn-primary" id="btnSaveTemplate">💾 儲存範本</button>
-      <button class="btn btn-outline" id="btnLoadTemplate">📂 載入範本</button>
+      <button class="btn btn-primary" id="btnSaveTemplate">💾 儲存</button>
+      <button class="btn btn-outline" id="btnLoadTemplate">📂 載入</button>
       <input type="file" id="templateFileInput" accept=".json" style="display: none;">
     `;
     

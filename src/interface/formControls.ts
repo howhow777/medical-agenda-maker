@@ -55,6 +55,7 @@ export class FormControls {
     
     // 🎯 綁定圖層控制按鈕
     this.bindOverlayControls();
+    this.refreshOverlayList();
   }
 
   // 處理檔案上傳
@@ -747,6 +748,17 @@ export class FormControls {
     }
   }
 
+  private updateOverlayUiState(): void {
+    const emptyState = document.getElementById('overlayEmptyState');
+    const controlsPanel = document.getElementById('overlayControlsPanel');
+
+    if (!emptyState || !controlsPanel || !this.overlayManager) return;
+
+    const hasOverlays = this.overlayManager.getOverlays().length > 0;
+    emptyState.style.display = hasOverlays ? 'none' : 'block';
+    controlsPanel.classList.toggle('hidden', !hasOverlays);
+  }
+
   // 刷新圖層列表UI
   public refreshOverlayList(): void {
     const list = document.getElementById('overlayList');
@@ -755,7 +767,9 @@ export class FormControls {
     const overlays = this.overlayManager.getOverlays();
     const selectedIndex = this.overlayManager.getSelectedIndex();
 
+    this.updateOverlayUiState();
     list.innerHTML = '';
+
     overlays.forEach((overlay, index) => {
       const div = document.createElement('div');
       div.className = `overlay-item ${index === selectedIndex ? 'selected' : ''}`;
@@ -773,10 +787,14 @@ export class FormControls {
       });
       list.appendChild(div);
     });
+
+    this.syncOverlayControls();
   }
 
   // 同步圖層控制項
   public syncOverlayControls(): void {
+    this.updateOverlayUiState();
+
     if (this.overlayManager) {
       const overlay = this.overlayManager.getSelectedOverlay();
       if (overlay) {

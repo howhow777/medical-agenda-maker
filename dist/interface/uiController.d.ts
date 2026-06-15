@@ -99,7 +99,7 @@ export declare class UIController {
      */
     private initializeDownloadButtonPosition;
     /**
-     * 更新下載按鈕位置 - 固定在白色框下緣上方
+     * 更新下載按鈕位置 - 保持在白色畫布區內、底部中央
      */
     private updateDownloadButtonPosition;
     /**

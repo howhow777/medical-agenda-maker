@@ -78,6 +78,7 @@ export declare class FormControls {
     private setOverlayOpacity;
     private setOverlayVisible;
     private setOverlayLockAspect;
+    private updateOverlayUiState;
     refreshOverlayList(): void;
     syncOverlayControls(): void;
     getOverlays(): Overlay[];

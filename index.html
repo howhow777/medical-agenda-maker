@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎗%ufe0f%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
   <!-- Excel 處理程式庫 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=20260510b" />
   <link rel="stylesheet" href="src/assets/feedback-modal.css" />
 </head>
 <body>
@@ -41,8 +41,8 @@
               <div class="upload-status" id="upload-status"></div>
             </div>
 
-            <!-- 範本管理 -->
-            <h3 class="sub-section-title">📋 範本管理</h3>
+            <!-- 本機儲存 -->
+            <h3 class="sub-section-title">📋 本機儲存</h3>
             <div class="template-selector">
               <!-- 範本按鈕將由 templateController.ts 動態生成 -->
             </div>
@@ -239,33 +239,39 @@
               <input id="overlayFile" type="file" accept="image/png" multiple />
               <div class="mini-hint">點擊清單選取；拖曳畫布移動；角落縮放；上方圓點旋轉。支援多物件與層級調整。</div>
             </div>
-            <div id="overlayList" class="overlay-list"></div>
-            <div class="row" style="margin-top:6px;">
-              <button class="btn btn-secondary" id="bringFront" title="移到最上層">⬆️ 最上</button>
-              <button class="btn btn-secondary" id="bringForward" title="上移一層">🔼 上移</button>
-              <button class="btn btn-secondary" id="sendBackward" title="下移一層">🔽 下移</button>
-              <button class="btn btn-secondary" id="sendBack" title="移到最下層">⬇️ 最下</button>
+            <div id="overlayEmptyState" class="overlay-empty-state">
+              <div class="overlay-empty-title">尚未插入 PNG 圖片</div>
+              <div class="overlay-empty-copy">加入圖片後，才會顯示圖層順序、透明度、顯示/鎖定比例、置中與移除等進階控制。</div>
             </div>
-            <div class="row" style="margin-top:6px;">
-              <button class="btn btn-primary" id="moveToBackground" title="移到 Table 後方">📋⬇️ 移到表格後</button>
-              <button class="btn btn-primary" id="moveToForeground" title="移到 Table 前方">📋⬆️ 移到表格前</button>
-            </div>
-            <div class="row" style="margin-top:6px;">
-              <label style="flex:none; width:88px;">透明度</label>
-              <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="1" />
-            </div>
-            <div class="row" style="margin-top:6px;">
-              <label style="display:flex; align-items:center; gap:6px; flex:1;">
-                <input id="overlayVisible" type="checkbox" checked style="width:auto;"> 顯示
-              </label>
-              <label style="display:flex; align-items:center; gap:6px; flex:1;">
-                <input id="overlayLockAspect" type="checkbox" checked style="width:auto;"> 鎖定比例
-              </label>
-            </div>
-            <div class="row" style="margin-top:6px;">
-              <button class="btn btn-secondary" id="centerOverlay">置中</button>
-              <button class="btn btn-secondary" id="resetOverlay">重設大小/角度</button>
-              <button class="btn btn-danger" id="removeOverlay">移除</button>
+            <div id="overlayControlsPanel" class="overlay-controls-panel hidden">
+              <div id="overlayList" class="overlay-list"></div>
+              <div class="row" style="margin-top:6px;">
+                <button class="btn btn-secondary" id="bringFront" title="移到最上層">⬆️ 最上</button>
+                <button class="btn btn-secondary" id="bringForward" title="上移一層">🔼 上移</button>
+                <button class="btn btn-secondary" id="sendBackward" title="下移一層">🔽 下移</button>
+                <button class="btn btn-secondary" id="sendBack" title="移到最下層">⬇️ 最下</button>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <button class="btn btn-primary" id="moveToBackground" title="移到 Table 後方">📋⬇️ 移到表格後</button>
+                <button class="btn btn-primary" id="moveToForeground" title="移到 Table 前方">📋⬆️ 移到表格前</button>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <label style="flex:none; width:88px;">透明度</label>
+                <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="1" />
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <label style="display:flex; align-items:center; gap:6px; flex:1;">
+                  <input id="overlayVisible" type="checkbox" checked style="width:auto;"> 顯示
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; flex:1;">
+                  <input id="overlayLockAspect" type="checkbox" checked style="width:auto;"> 鎖定比例
+                </label>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <button class="btn btn-secondary" id="centerOverlay">置中</button>
+                <button class="btn btn-secondary" id="resetOverlay">重設大小/角度</button>
+                <button class="btn btn-danger" id="removeOverlay">移除</button>
+              </div>
             </div>
           </div>
         </div>
@@ -276,7 +282,7 @@
         <div class="canvas-area">
           <canvas id="posterCanvas" width="800" height="600"></canvas>
         </div>
-        <button id="btnDownload" class="floating-download-center">⬇️ 下載高畫質Agenda海報</button>
+        <button id="btnDownload" class="floating-download-center"><span class="download-button-icon" aria-hidden="true">⬇️</span><span class="download-button-label">下載高畫質 Agenda 海報</span></button>
       </div>
     </div>
   </div>
@@ -284,6 +290,6 @@
 
 
   <!-- 載入主程式 -->
-  <script type="module" src="./dist/main.js"></script>
+  <script type="module" src="./dist/main.js?v=20260510e"></script>
 </body>
 </html>

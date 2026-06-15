@@ -665,29 +665,19 @@ export class UIController {
   }
 
   /**
-   * 更新下載按鈕位置 - 固定在白色框下緣上方
+   * 更新下載按鈕位置 - 保持在白色畫布區內、底部中央
    */
   private updateDownloadButtonPosition(): void {
-    const canvasContainer = document.querySelector('.canvas-container') as HTMLElement;
     const downloadBtn = document.getElementById('btnDownload') as HTMLElement;
     
-    if (!canvasContainer || !downloadBtn) {
-      console.warn('🔍 找不到 Canvas 容器或下載按鈕');
+    if (!downloadBtn) {
+      console.warn('🔍 找不到下載按鈕');
       return;
     }
     
     try {
-      const rect = canvasContainer.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      
-      // 計算距離視窗底部的距離，在白色框下緣上方 15px
-      const bottomOffset = Math.max(15, windowHeight - rect.bottom + 15);
-      
-      downloadBtn.style.bottom = `${bottomOffset}px`;
-      
-      // 除錯用 console（生產環境可移除）
-      // console.log('🎯 按鈕位置更新:', { bottom: bottomOffset, rectBottom: rect.bottom, windowHeight });
-      
+      downloadBtn.style.bottom = '20px';
+      downloadBtn.style.left = 'auto';
     } catch (error) {
       console.error('❌ 更新下載按鈕位置時發生錯誤:', error);
     }

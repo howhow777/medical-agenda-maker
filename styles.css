@@ -72,13 +72,22 @@ canvas {
   min-width: 800px;
 }
 
-/* 懸浮下載按鈕 - Canvas 中央下方 */
+/* 懸浮下載按鈕 - 固定在白色畫布區底部中央 */
 .floating-download-center {
-  position: fixed;
-  /* bottom 值由 JavaScript 動態設定 */
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 14px 28px;
+  position: sticky;
+  bottom: 20px;
+  left: auto;
+  align-self: center;
+  margin: 20px auto 0;
+  transform: none;
+  min-height: 52px;
+  padding: 12px 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.1;
+  white-space: nowrap;
   background: linear-gradient(135deg, 
       #667eea 0%, 
       #764ba2 25%, 
@@ -96,9 +105,25 @@ canvas {
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   transition: all 0.3s ease;
   z-index: 100;
-  font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+  font-family: 'Microsoft JhengHei', 'PingFang TC', 'Arial', sans-serif;
   overflow: hidden;
   animation: gradientShift 8s ease infinite;
+}
+
+.floating-download-center .download-button-icon,
+.floating-download-center .download-button-label {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.floating-download-center .download-button-icon {
+  font-size: 16px;
+  transform: translateY(-1px);
+}
+
+.floating-download-center .download-button-label {
+  transform: translateY(-1px);
 }
 
 /* 漸層色彩緩慢流動 */
@@ -135,7 +160,7 @@ canvas {
 
 /* hover 狀態效果增強 */
 .floating-download-center:hover {
-  transform: translateX(-50%) translateY(-2px) scale(1.05);
+  transform: translateY(-2px) scale(1.05);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
   animation-play-state: paused;
 }
@@ -147,7 +172,7 @@ canvas {
 
 /* 點擊效果 */
 .floating-download-center:active {
-  transform: translateX(-50%) translateY(0) scale(0.98);
+  transform: scale(0.98);
 }
 
 
@@ -258,6 +283,20 @@ input, select, textarea {
   font-size: 14px;
   transition: all .2s;
   font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+}
+
+input[type="range"] {
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  min-width: 0;
+}
+
+input[type="range"]:focus {
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* 顏色選擇器特殊樣式 */
@@ -411,6 +450,31 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* === PNG 圖層清單 === */
+.overlay-controls-panel.hidden {
+  display: none;
+}
+
+.overlay-empty-state {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border: 2px dashed #d5dbe7;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fafcff 0%, #f4f7fb 100%);
+}
+
+.overlay-empty-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.overlay-empty-copy {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5f6b7a;
+}
+
 .overlay-list {
   max-height: 260px;
   overflow: auto;
@@ -856,8 +920,16 @@ input:focus, select:focus, textarea:focus {
 .template-buttons .btn {
   flex: 1;
   max-width: 200px;
+  min-height: 52px;
   padding: 12px 20px;
   font-size: 16px;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-family: 'Microsoft JhengHei', 'PingFang TC', 'Arial', sans-serif;
 }
 
 /* ===========================================
