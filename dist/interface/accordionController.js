@@ -24,10 +24,15 @@ export class AccordionController {
         const container = document.querySelector('.container');
         if (!toggle || !container)
             return;
+        const label = toggle.querySelector('.menu-toggle-label');
         const syncLabel = () => {
             const isCollapsed = container.classList.contains('controls-collapsed');
+            const actionText = isCollapsed ? '開啟設定' : '收合設定';
             toggle.setAttribute('aria-expanded', String(!isCollapsed));
-            toggle.title = isCollapsed ? '顯示左側選單' : '隱藏左側選單';
+            toggle.setAttribute('aria-label', actionText);
+            toggle.title = actionText;
+            if (label)
+                label.textContent = actionText;
         };
         toggle.addEventListener('click', () => {
             container.classList.toggle('controls-collapsed');

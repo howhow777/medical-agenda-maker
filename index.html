@@ -8,17 +8,17 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎗%ufe0f%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
   <!-- Excel 處理程式庫 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260709h" />
+  <link rel="stylesheet" href="./styles.css?v=20260709k" />
   <link rel="stylesheet" href="src/assets/feedback-modal.css" />
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <button id="menuToggle" class="menu-toggle-button" type="button" aria-expanded="true" aria-controls="controlPanel" title="隱藏/顯示左側選單">
+      <button id="menuToggle" class="menu-toggle-button" type="button" aria-expanded="true" aria-label="收合設定" aria-controls="controlPanel" title="收合設定">
         <span class="hamburger-line"></span>
         <span class="hamburger-line"></span>
         <span class="hamburger-line"></span>
-        <span class="menu-toggle-label">選單</span>
+        <span class="menu-toggle-label">收合設定</span>
       </button>
       <p class="developer-credit">開發者: Tom Ho</p>
     </div>
@@ -30,6 +30,28 @@
           <h1>🎗️ 會議議程海報製作器 Beta</h1>
           <div class="brand-hint">設定、匯入與版面控制</div>
         </div>
+
+        <section id="updateNotice" class="update-notice" aria-label="近期更新通知">
+          <div class="update-notice-inner">
+            <div class="update-notice-kicker">近期更新</div>
+            <div class="update-notice-title">手機審閱、議程編輯與 Moderator 顯示已優化</div>
+            <p class="update-notice-summary">這次更新讓手機畫面更清爽，議程修改更直覺，也改善主持人欄位顯示。</p>
+            <div id="updateNoticeDetails" class="update-notice-details" hidden>
+              <ul>
+                <li>設定區可收合，手機預覽空間更大。</li>
+                <li>議程項目先看清單，點 ✏️ 再到下方編輯。</li>
+                <li>可隱藏 Moderator 欄，Speaker 自動置中延展。</li>
+                <li>相同 Moderator 可垂直合併置中，背景色更自然。</li>
+                <li>修正集合地點在高畫質下載時遺失的問題。</li>
+              </ul>
+            </div>
+            <div class="update-notice-actions">
+              <button id="updateNoticeToggle" class="update-notice-button update-notice-button-primary" type="button" aria-expanded="false" aria-controls="updateNoticeDetails">查看更新內容</button>
+              <button id="updateNoticeRemindLater" class="update-notice-button update-notice-button-secondary" type="button">下次提醒</button>
+              <button id="updateNoticeDismiss" class="update-notice-button update-notice-button-secondary" type="button">我知道了</button>
+            </div>
+          </div>
+        </section>
         <!-- 🚀 快速開始區塊 -->
         <div class="accordion-section" data-section="quickstart">
           <div class="accordion-header">
@@ -314,6 +336,6 @@
 
 
   <!-- 載入主程式 -->
-  <script type="module" src="./dist/main.js?v=20260709h"></script>
+  <script type="module" src="./dist/main.js?v=20260709k"></script>
 </body>
 </html>

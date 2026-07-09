@@ -7,6 +7,7 @@ import { AccordionController } from './interface/accordionController.js';
 import { FileUploader } from './interface/fileUploader.js';
 import { AgendaData } from './assets/agendaTypes.js';
 import { TouchDebugController } from './interface/touchDebugController.js';
+import { UpdateNoticeController } from './interface/updateNoticeController.js';
 
 /**
  * 應用程式初始化
@@ -28,6 +29,9 @@ async function initApp(): Promise<void> {
     
     // 初始化摺疊面板控制器
     new AccordionController();
+
+    // 初始化今日更新提示卡
+    new UpdateNoticeController();
     
     // 初始化觸控除錯控制器（手機測試用）
     const touchDebugController = new TouchDebugController();

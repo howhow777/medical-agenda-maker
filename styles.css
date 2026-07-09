@@ -95,17 +95,7 @@ body {
   border: 0;
 }
 
-.container.controls-collapsed .menu-toggle-button .hamburger-line:nth-child(1) {
-  transform: translateY(6px) rotate(45deg);
-}
-
-.container.controls-collapsed .menu-toggle-button .hamburger-line:nth-child(2) {
-  opacity: 0;
-}
-
-.container.controls-collapsed .menu-toggle-button .hamburger-line:nth-child(3) {
-  transform: translateY(-6px) rotate(-45deg);
-}
+/* 選單按鈕永遠維持三條槓槓，避免收合後變成 X 而被誤解為關閉畫面。 */
 
 .main-content {
   display: flex;
@@ -144,6 +134,146 @@ body {
   font-size: 12px;
   line-height: 1.2;
   opacity: 0.86;
+}
+
+.update-notice {
+  position: relative;
+  margin: 0 0 10px;
+  padding: 2px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(102, 126, 234, 0.14);
+  transition: opacity 0.22s ease, transform 0.22s ease, max-height 0.22s ease, margin 0.22s ease;
+}
+
+.update-notice::before {
+  content: '';
+  position: absolute;
+  inset: -90%;
+  z-index: 0;
+  background: conic-gradient(
+    from 0deg,
+    #667eea,
+    #22d3ee,
+    #4ade80,
+    #facc15,
+    #fb7185,
+    #a78bfa,
+    #667eea
+  );
+  opacity: 0.78;
+  animation: updateNoticeRainbowSpin 10s linear infinite;
+  pointer-events: none;
+}
+
+.update-notice-inner {
+  position: relative;
+  z-index: 1;
+  padding: 12px 13px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.97);
+}
+
+.update-notice-kicker {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(102, 126, 234, 0.1);
+  color: #4c51bf;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.update-notice-title {
+  color: #2d3748;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.update-notice-summary {
+  margin: 5px 0 0;
+  color: #4a5568;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.update-notice-details {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(102, 126, 234, 0.12);
+  color: #4a5568;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.update-notice-details ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.update-notice-details li + li {
+  margin-top: 3px;
+}
+
+.update-notice-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.update-notice-button {
+  min-height: 34px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  font-family: 'Microsoft JhengHei', 'PingFang TC', 'Arial', sans-serif;
+}
+
+.update-notice-button-primary {
+  background: #667eea;
+  color: #ffffff;
+  box-shadow: 0 5px 12px rgba(102, 126, 234, 0.22);
+}
+
+.update-notice-button-secondary {
+  background: #ffffff;
+  border-color: #d8def0;
+  color: #4a5568;
+}
+
+.update-notice-dismissing {
+  max-height: 0;
+  margin-bottom: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.update-notice-hidden {
+  display: none;
+}
+
+@keyframes updateNoticeRainbowSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-notice::before {
+    animation: none;
+  }
 }
 
 .container.controls-collapsed .control-panel {
@@ -910,6 +1040,10 @@ input:focus, select:focus, textarea:focus {
 
   .control-panel {
     padding: 12px;
+  }
+
+  .container.controls-collapsed .control-panel {
+    padding: 0;
   }
 
   .control-panel-brand {
