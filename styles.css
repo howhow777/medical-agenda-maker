@@ -27,10 +27,84 @@ body {
 }
 
 .header {
+  position: relative;
+  min-height: 48px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
-  padding: 30px;
   text-align: center;
+}
+
+.developer-credit {
+  margin: 0;
+  opacity: .9;
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.menu-toggle-button {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  width: 44px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  transform: translateY(-50%);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.menu-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.26);
+  transform: translateY(calc(-50% - 1px));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+}
+
+.hamburger-line {
+  width: 22px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  display: block;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.menu-toggle-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.container.controls-collapsed .menu-toggle-button .hamburger-line:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.container.controls-collapsed .menu-toggle-button .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.container.controls-collapsed .menu-toggle-button .hamburger-line:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 .main-content {
@@ -41,10 +115,45 @@ body {
 /* === 控制面板 === */
 .control-panel {
   width: 460px;
-  padding: 24px 20px;
+  padding: 14px 16px 24px;
   background: #f8f9fa;
   overflow-y: auto;
   border-right: 2px solid #e0e0e0;
+  transition: width 0.24s ease, padding 0.24s ease, opacity 0.18s ease, border-color 0.24s ease;
+}
+
+.control-panel-brand {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(102, 126, 234, 0.22);
+}
+
+.control-panel-brand h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.18;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+  opacity: 0.86;
+}
+
+.container.controls-collapsed .control-panel {
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-right-color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .canvas-container {
@@ -423,6 +532,13 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* === 議程項目 === */
+.agenda-list-heading {
+  margin: 8px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a5568;
+}
+
 .agenda-items {
   max-height: 260px;
   overflow-y: auto;
@@ -430,6 +546,27 @@ input:focus, select:focus, textarea:focus {
   border-radius: 8px;
   padding: 12px;
   background: #fff;
+  margin-bottom: 14px;
+}
+
+.agenda-editor-panel {
+  padding: 12px;
+  border: 1px solid #e6e9f2;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.agenda-editor-panel.editing-active {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.16);
+}
+
+.agenda-editor-title {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #667eea;
 }
 
 .agenda-item {
@@ -645,6 +782,36 @@ input:focus, select:focus, textarea:focus {
   resize: vertical;
 }
 
+.poster-display-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin: -2px 0 14px;
+  border: 1px solid #dfe3ea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+  cursor: pointer;
+}
+
+.checkbox-row.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.checkbox-row.disabled input {
+  cursor: not-allowed;
+}
+
 /* === 檔案儲存載入列 === */
 .filebar {
   display: flex;
@@ -700,6 +867,16 @@ input:focus, select:focus, textarea:focus {
     width: 100%;
     max-height: 400px;
   }
+
+  .container.controls-collapsed .control-panel {
+    width: 100%;
+    max-height: 0;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
   
   .canvas-container {
     max-height: none;
@@ -716,7 +893,32 @@ input:focus, select:focus, textarea:focus {
   }
   
   .header {
-    padding: 20px;
+    min-height: 44px;
+    padding: 7px 12px;
+    text-align: center;
+  }
+
+  .developer-credit {
+    font-size: 12px;
+  }
+
+  .menu-toggle-button {
+    left: 12px;
+    width: 42px;
+    height: 34px;
+  }
+
+  .control-panel {
+    padding: 12px;
+  }
+
+  .control-panel-brand {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+  }
+
+  .control-panel-brand h1 {
+    font-size: 18px;
   }
   
   .template-selector {

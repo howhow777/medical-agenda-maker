@@ -20,7 +20,29 @@ export class AccordionController {
       }
     });
 
+    this.bindMenuToggle();
+
     // 所有區塊初始狀態為收合
+  }
+
+  private bindMenuToggle(): void {
+    const toggle = document.getElementById('menuToggle') as HTMLButtonElement | null;
+    const container = document.querySelector('.container');
+
+    if (!toggle || !container) return;
+
+    const syncLabel = (): void => {
+      const isCollapsed = container.classList.contains('controls-collapsed');
+      toggle.setAttribute('aria-expanded', String(!isCollapsed));
+      toggle.title = isCollapsed ? '顯示左側選單' : '隱藏左側選單';
+    };
+
+    toggle.addEventListener('click', () => {
+      container.classList.toggle('controls-collapsed');
+      syncLabel();
+    });
+
+    syncLabel();
   }
 
   private toggleSection(targetSection: Element): void {

@@ -200,6 +200,10 @@ export class UIController {
                     showFooterNote: this.formControls.getShowFooterNote(),
                     footerContent: this.getFooterText()
                 },
+                moderatorDisplaySettings: {
+                    hideModeratorColumn: this.formControls.getHideModeratorColumn(),
+                    mergeSameModerator: this.formControls.getMergeSameModerator()
+                },
                 basicInfo: {
                     title: document.getElementById('conferenceTitle')?.value || '',
                     subtitle: document.getElementById('conferenceSubtitle')?.value || '',
@@ -247,6 +251,10 @@ export class UIController {
             // 🆕 還原頁尾設定
             if (customState.footerSettings) {
                 this.formControls.setFooterSettings(customState.footerSettings);
+            }
+            // 🆕 還原主持人顯示設定
+            if (customState.moderatorDisplaySettings) {
+                this.formControls.setModeratorDisplaySettings(customState.moderatorDisplaySettings);
             }
             // 🆕 還原基本資訊
             if (customState.basicInfo) {
@@ -362,7 +370,11 @@ export class UIController {
             const showFooter = this.formControls.getShowFooterNote();
             const footerText = this.getFooterText();
             // 計算所需高度
-            const requiredHeight = this.posterRenderer.calculateRequiredHeight(this.appState.agendaItems, showFooter, footerText, this.canvas.width);
+            const requiredHeight = this.posterRenderer.calculateRequiredHeight(this.appState.agendaItems, showFooter, footerText, this.canvas.width, {
+                hideModerator: conferenceData.hideModerator,
+                mergeSameModerator: conferenceData.mergeSameModerator,
+                showMeetupPoint: conferenceData.showMeetupPoint
+            });
             // 調整畫布高度
             if (this.canvas.height !== requiredHeight) {
                 this.canvas.height = requiredHeight;
@@ -403,6 +415,8 @@ export class UIController {
         const showMeetupPoint = this.formControls.getShowMeetupPoint();
         const meetupType = this.formControls.getMeetupType();
         const meetupCustomText = this.formControls.getMeetupCustomText();
+        const hideModerator = this.formControls.getHideModeratorColumn();
+        const mergeSameModerator = this.formControls.getMergeSameModerator();
         return {
             title: titleInput?.value || '醫學會議',
             subtitle: subtitleInput?.value || '',
@@ -411,7 +425,9 @@ export class UIController {
             location: locationInput?.value || '',
             showMeetupPoint,
             meetupType,
-            meetupCustomText
+            meetupCustomText,
+            hideModerator,
+            mergeSameModerator
         };
     }
     /**

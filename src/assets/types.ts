@@ -98,6 +98,10 @@ export interface TemplateData {
     showFooterNote: boolean;
     footerContent: string;
   };
+  moderatorDisplaySettings?: {
+    hideModeratorColumn: boolean;
+    mergeSameModerator: boolean;
+  };
   basicInfo: {
     title: string;
     subtitle: string;

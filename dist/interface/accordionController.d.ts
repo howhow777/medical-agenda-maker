@@ -5,6 +5,7 @@ export declare class AccordionController {
     private sections;
     constructor();
     private init;
+    private bindMenuToggle;
     private toggleSection;
     expandSection(sectionName: string): void;
     collapseSection(sectionName: string): void;

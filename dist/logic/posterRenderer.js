@@ -227,8 +227,12 @@ export class PosterRenderer {
         }
     }
     // 計算所需的海報高度
-    calculateRequiredHeight(agendaItems, showFooter, footerText, W) {
+    calculateRequiredHeight(agendaItems, showFooter, footerText, W, renderOptions = {}) {
         let total = 275;
+        // Canvas 上若顯示集合地點，表格會往下移 30px；下載用高解析重繪也要保留同樣高度。
+        if (renderOptions.showMeetupPoint) {
+            total += 30;
+        }
         if (agendaItems.length > 0) {
             this.ctx.font = '16px Microsoft JhengHei';
             let agendaH = 75 + 35 + 45; // 標題區 + 間隔 + 欄位標題
@@ -239,15 +243,16 @@ export class PosterRenderer {
             const innerLeft = tableOuterLeft + innerPad;
             const innerRight = tableOuterRight - innerPad;
             const innerWidth = innerRight - innerLeft;
+            const hideModerator = Boolean(renderOptions.hideModerator);
             const wTime = Math.round(innerWidth * 0.1765);
-            const wTopic = Math.round(innerWidth * 0.4412);
-            const wSpeaker = Math.round(innerWidth * 0.2059);
-            const wModerator = innerWidth - wTime - wTopic - wSpeaker;
+            const wTopic = hideModerator ? Math.round(innerWidth * 0.50) : Math.round(innerWidth * 0.4412);
+            const wSpeaker = hideModerator ? innerWidth - wTime - wTopic : Math.round(innerWidth * 0.2059);
+            const wModerator = hideModerator ? 0 : innerWidth - wTime - wTopic - wSpeaker;
             const pad = 10;
             agendaItems.forEach(item => {
                 const topicLines = this.calculateTextLinesWithBreaks(item.topic, Math.max(10, wTopic - pad));
                 const speakerLines = item.speaker ? this.calculateTextLinesWithBreaks(item.speaker, Math.max(10, wSpeaker - pad)) : 1;
-                const moderatorLines = item.moderator ? this.calculateTextLinesWithBreaks(item.moderator, Math.max(10, wModerator - pad)) : 1;
+                const moderatorLines = !hideModerator && item.moderator ? this.calculateTextLinesWithBreaks(item.moderator, Math.max(10, wModerator - pad)) : 1;
                 const timeLines = this.calculateTextLinesWithBreaks(item.time, Math.max(10, wTime - pad));
                 const maxLines = Math.max(topicLines, speakerLines, moderatorLines, timeLines);
                 const rowH = Math.max(50, maxLines * 22 + 16);
@@ -331,7 +336,10 @@ export class PosterRenderer {
         // 議程表
         let afterAgendaY = nextY + 40;
         if (agendaItems.length > 0) {
-            afterAgendaY = this.drawAgendaTable(agendaItems, scheme, W, afterAgendaY);
+            afterAgendaY = this.drawAgendaTable(agendaItems, scheme, W, afterAgendaY, {
+                hideModerator: conferenceData.hideModerator,
+                mergeSameModerator: conferenceData.mergeSameModerator
+            });
         }
         // 頁尾註解
         if (showFooter && footerText.trim()) {
@@ -360,8 +368,10 @@ export class PosterRenderer {
         }
     }
     // 繪製議程表
-    drawAgendaTable(agendaItems, scheme, W, startY) {
+    drawAgendaTable(agendaItems, scheme, W, startY, renderOptions = {}) {
         const agendaStartY = startY;
+        const hideModerator = Boolean(renderOptions.hideModerator);
+        const mergeSameModerator = Boolean(renderOptions.mergeSameModerator) && !hideModerator;
         // 移除獨立的 Agenda 標題，讓表格自成一體
         // 表格幾何計算
         const tableOuterLeft = 40;
@@ -371,9 +381,9 @@ export class PosterRenderer {
         const innerRight = tableOuterRight - innerPad;
         const innerWidth = innerRight - innerLeft;
         const wTime = Math.round(innerWidth * 0.1765);
-        const wTopic = Math.round(innerWidth * 0.4412);
-        const wSpeaker = Math.round(innerWidth * 0.2059);
-        const wModerator = innerWidth - wTime - wTopic - wSpeaker;
+        const wTopic = hideModerator ? Math.round(innerWidth * 0.50) : Math.round(innerWidth * 0.4412);
+        const wSpeaker = hideModerator ? innerWidth - wTime - wTopic : Math.round(innerWidth * 0.2059);
+        const wModerator = hideModerator ? 0 : innerWidth - wTime - wTopic - wSpeaker;
         const xTime = innerLeft;
         const xTopic = xTime + wTime;
         const xSpeaker = xTopic + wTopic;
@@ -395,20 +405,26 @@ export class PosterRenderer {
         this.ctx.fillText('Time', cTime, yPos + 15);
         this.ctx.fillText('Content', cTopic, yPos + 15);
         this.ctx.fillText('Speaker', cSpeaker, yPos + 15);
-        this.ctx.fillText('Moderator', cModerator, yPos + 15);
+        if (!hideModerator) {
+            this.ctx.fillText('Moderator', cModerator, yPos + 15);
+        }
         yPos += 45;
         // 資料行
         const pad = 10;
+        const rowLayouts = [];
+        const normalizeModerator = (value) => value.trim().replace(/\s+/g, ' ');
         agendaItems.forEach((item, idx) => {
             this.ctx.font = '16px Microsoft JhengHei';
             // 計算行高
-            const timeLines = this.calculateTextLinesWithBreaks(item.time, wTime - pad);
-            const topicLines = this.calculateTextLinesWithBreaks(item.topic, wTopic - pad);
-            const speakerLines = item.speaker ? this.calculateTextLinesWithBreaks(item.speaker, wSpeaker - pad) : 1;
-            const moderatorLines = item.moderator ? this.calculateTextLinesWithBreaks(item.moderator, wModerator - pad) : 1;
+            const timeLines = this.calculateTextLinesWithBreaks(item.time, Math.max(10, wTime - pad));
+            const topicLines = this.calculateTextLinesWithBreaks(item.topic, Math.max(10, wTopic - pad));
+            const speakerLines = item.speaker ? this.calculateTextLinesWithBreaks(item.speaker, Math.max(10, wSpeaker - pad)) : 1;
+            const moderatorLines = !hideModerator && item.moderator ? this.calculateTextLinesWithBreaks(item.moderator, Math.max(10, wModerator - pad)) : 1;
             const maxLines = Math.max(timeLines, topicLines, speakerLines, moderatorLines);
             const itemH = Math.max(45, maxLines * 22 + 15);
-            // 斑馬紋背景 - 所有列都有背景色
+            const rowTop = yPos - 18;
+            // 斑馬紋背景：一般模式畫整列；Moderator 合併模式先只畫左三欄，
+            // 右側 Moderator 欄稍後依 merge group 一次畫好，避免像事後拼貼覆蓋。
             const previousAlpha = this.ctx.globalAlpha;
             this.ctx.globalAlpha = scheme.tableOpacity;
             if (idx % 2 === 0) {
@@ -417,46 +433,83 @@ export class PosterRenderer {
             else {
                 this.ctx.fillStyle = scheme.agenda.alternateBackground;
             }
-            this.ctx.fillRect(tableOuterLeft, yPos - 18, W - 80, itemH);
+            const rowBackgroundRight = mergeSameModerator ? xModerator : tableOuterRight;
+            this.ctx.fillRect(tableOuterLeft, rowTop, rowBackgroundRight - tableOuterLeft, itemH);
             this.ctx.globalAlpha = previousAlpha;
             this.ctx.textAlign = 'left';
             // 時間
             this.ctx.fillStyle = scheme.agenda.accent;
             this.ctx.font = 'bold 16px Microsoft JhengHei';
-            this.drawCenteredTextWithBreaks(item.time || '', xTime + pad / 2, yPos - 18, wTime - pad, 22, itemH, 'center');
+            this.drawCenteredTextWithBreaks(item.time || '', xTime + pad / 2, rowTop, wTime - pad, 22, itemH, 'center');
             // 主題
             this.ctx.fillStyle = scheme.agenda.accent;
             this.ctx.font = '16px Microsoft JhengHei';
-            this.drawCenteredTextWithBreaks(item.topic || '', xTopic + pad / 2, yPos - 18, wTopic - pad, 22, itemH, 'center');
-            // 講者和主持人 - 智能跨欄顯示
-            const hasSpeaker = item.speaker && item.speaker.trim();
-            const hasModerator = item.moderator && item.moderator.trim();
-            if (hasSpeaker && hasModerator) {
-                // 兩者都有：正常分欄顯示
+            this.drawCenteredTextWithBreaks(item.topic || '', xTopic + pad / 2, rowTop, wTopic - pad, 22, itemH, 'center');
+            // 講者 - 如果隱藏 Moderator，Speaker 欄自動吃掉原 Moderator 寬度
+            const hasSpeaker = Boolean(item.speaker && item.speaker.trim());
+            const hasModerator = Boolean(item.moderator && item.moderator.trim());
+            if (hasSpeaker) {
                 this.ctx.fillStyle = scheme.agenda.accent;
                 this.ctx.font = '14px Microsoft JhengHei';
-                this.drawCenteredTextWithBreaks(item.speaker, xSpeaker + pad / 2, yPos - 18, wSpeaker - pad, 20, itemH, 'center');
-                this.ctx.fillStyle = scheme.agenda.accent;
-                this.ctx.font = '14px Microsoft JhengHei';
-                this.drawCenteredTextWithBreaks(item.moderator, xModerator + pad / 2, yPos - 18, wModerator - pad, 20, itemH, 'center');
+                const speakerSpanWidth = hideModerator || !hasModerator ? wSpeaker + wModerator : wSpeaker;
+                this.drawCenteredTextWithBreaks(item.speaker, xSpeaker + pad / 2, rowTop, speakerSpanWidth - pad, 20, itemH, 'center');
             }
-            else if (hasSpeaker && !hasModerator) {
-                // 只有講者：跨欄置中顯示
-                this.ctx.fillStyle = scheme.agenda.accent;
-                this.ctx.font = '14px Microsoft JhengHei';
-                const spanWidth = wSpeaker + wModerator; // 跨兩欄的寬度
-                this.drawCenteredTextWithBreaks(item.speaker, xSpeaker + pad / 2, yPos - 18, spanWidth - pad, 20, itemH, 'center');
-            }
-            else if (!hasSpeaker && hasModerator) {
-                // 只有主持人：跨欄置中顯示
-                this.ctx.fillStyle = scheme.agenda.accent;
-                this.ctx.font = '14px Microsoft JhengHei';
-                const spanWidth = wSpeaker + wModerator; // 跨兩欄的寬度
-                this.drawCenteredTextWithBreaks(item.moderator, xSpeaker + pad / 2, yPos - 18, spanWidth - pad, 20, itemH, 'center');
-            }
-            // 如果都沒有就不顯示任何內容
+            rowLayouts.push({ item, top: rowTop, height: itemH, index: idx });
             yPos += itemH + 5;
         });
+        // Moderator 欄另行繪製，才能支援「相同 Moderator 垂直跨列置中」。
+        if (!hideModerator) {
+            let i = 0;
+            while (i < rowLayouts.length) {
+                const current = rowLayouts[i];
+                const moderator = current.item.moderator || '';
+                const normalized = normalizeModerator(moderator);
+                let end = i;
+                if (mergeSameModerator && normalized) {
+                    while (end + 1 < rowLayouts.length &&
+                        normalizeModerator(rowLayouts[end + 1].item.moderator || '') === normalized) {
+                        end += 1;
+                    }
+                }
+                const isMergedGroup = mergeSameModerator && normalized && end > i;
+                const first = rowLayouts[i];
+                const last = rowLayouts[end];
+                const groupTop = first.top;
+                const groupHeight = (last.top + last.height) - groupTop;
+                // 合併模式下，Moderator 欄背景從一開始就按 group 繪製，
+                // 而不是蓋在已畫好的整列背景上；視覺上會像真正的 merged cell。
+                if (mergeSameModerator) {
+                    const previousAlpha = this.ctx.globalAlpha;
+                    this.ctx.globalAlpha = scheme.tableOpacity;
+                    this.ctx.fillStyle = first.index % 2 === 0 ? scheme.agenda.background : scheme.agenda.alternateBackground;
+                    this.ctx.fillRect(xModerator, groupTop, tableOuterRight - xModerator, groupHeight);
+                    this.ctx.globalAlpha = previousAlpha;
+                }
+                if (!normalized) {
+                    i = end + 1;
+                    continue;
+                }
+                const hasSpeaker = Boolean(first.item.speaker && first.item.speaker.trim());
+                const drawX = isMergedGroup || hasSpeaker ? xModerator + pad / 2 : xSpeaker + pad / 2;
+                const drawWidth = isMergedGroup || hasSpeaker ? wModerator - pad : wSpeaker + wModerator - pad;
+                this.ctx.fillStyle = scheme.agenda.accent;
+                this.ctx.font = '14px Microsoft JhengHei';
+                this.drawCenteredTextWithBreaks(moderator, drawX, groupTop, Math.max(10, drawWidth), 20, groupHeight, 'center');
+                i = end + 1;
+            }
+            // 很淡的欄位分隔線，讓右側 merged-cell 區域看起來是表格欄位本身，而不是貼片。
+            if (mergeSameModerator && rowLayouts.length > 0) {
+                const firstRow = rowLayouts[0];
+                const lastRow = rowLayouts[rowLayouts.length - 1];
+                const tableBodyTop = firstRow.top;
+                const tableBodyHeight = (lastRow.top + lastRow.height) - tableBodyTop;
+                const previousAlpha = this.ctx.globalAlpha;
+                this.ctx.globalAlpha = Math.min(0.18, scheme.tableOpacity * 0.18);
+                this.ctx.fillStyle = scheme.agenda.border;
+                this.ctx.fillRect(xModerator, tableBodyTop, 1, tableBodyHeight);
+                this.ctx.globalAlpha = previousAlpha;
+            }
+        }
         return yPos + 10;
     }
     // 繪製頁尾註解
@@ -686,19 +739,14 @@ export class PosterRenderer {
         const app = window.app;
         if (app && app.getAppState) {
             const state = app.getAppState();
+            const conferenceData = app.getConferenceData ? app.getConferenceData() : this.getConferenceDataFromDOM();
             return {
                 agendaItems: state.agendaItems || [],
                 currentTemplate: state.currentTemplate || 'lung',
                 currentColorScheme: state.currentColorScheme || 'medical_green',
                 currentGradientDirection: state.currentGradientDirection || 'horizontal',
                 customColors: state.customColors || {},
-                conferenceData: {
-                    title: this.getInputValue('conferenceTitle') || '',
-                    subtitle: this.getInputValue('conferenceSubtitle') || '',
-                    date: this.getInputValue('conferenceDate') || '',
-                    time: this.getInputValue('conferenceTime') || '',
-                    location: this.getInputValue('conferenceLocation') || ''
-                },
+                conferenceData,
                 showFooter: this.getCheckboxValue('showFooterNote'),
                 footerText: this.getInputValue('footerNoteContent') || '',
                 overlays: state.overlays || [],
@@ -707,6 +755,23 @@ export class PosterRenderer {
         }
         // 如果沒有全域狀態，從 DOM 直接讀取
         return this.getPosterDataFromDOM();
+    }
+    /**
+     * 從 DOM 讀取會議資訊；高品質下載需使用同一份選項，避免下載檔漏掉 Canvas 上的集合地點或 Moderator 設定。
+     */
+    getConferenceDataFromDOM() {
+        return {
+            title: this.getInputValue('conferenceTitle') || '醫學會議',
+            subtitle: this.getInputValue('conferenceSubtitle') || '',
+            date: this.getInputValue('conferenceDate') || '',
+            time: this.getInputValue('conferenceTime') || '',
+            location: this.getInputValue('conferenceLocation') || '',
+            showMeetupPoint: this.getCheckboxValue('showMeetupPoint'),
+            meetupType: this.getRadioValue('meetupType') === 'other' ? 'other' : 'same',
+            meetupCustomText: this.getInputValue('meetupCustomText') || '',
+            hideModerator: this.getCheckboxValue('hideModeratorColumn'),
+            mergeSameModerator: this.getCheckboxValue('mergeSameModerator')
+        };
     }
     /**
      * 從 DOM 元素讀取當前海報數據
@@ -738,16 +803,7 @@ export class PosterRenderer {
                 bgC2: '#f8f9fa',
                 bgGradientDir: 'none'
             },
-            conferenceData: {
-                title: this.getInputValue('conferenceTitle') || '醫學會議',
-                subtitle: this.getInputValue('conferenceSubtitle') || '',
-                date: this.getInputValue('conferenceDate') || '',
-                time: this.getInputValue('conferenceTime') || '',
-                location: this.getInputValue('conferenceLocation') || '',
-                showMeetupPoint: false,
-                meetupType: 'same',
-                meetupCustomText: ''
-            },
+            conferenceData: this.getConferenceDataFromDOM(),
             showFooter: this.getCheckboxValue('showFooterNote'),
             footerText: this.getInputValue('footerNoteContent') || '',
             overlays,
@@ -759,6 +815,13 @@ export class PosterRenderer {
      */
     getInputValue(id) {
         const element = document.getElementById(id);
+        return element ? element.value : '';
+    }
+    /**
+     * 輔助方法：從 DOM 取得 radio 群組值
+     */
+    getRadioValue(name) {
+        const element = document.querySelector(`input[name="${name}"]:checked`);
         return element ? element.value : '';
     }
     /**

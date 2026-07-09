@@ -23,6 +23,8 @@ export class FormControls {
   private showMeetupPoint: boolean = false;
   private meetupType: 'same' | 'other' = 'same';
   private meetupCustomText: string = '';
+  private hideModeratorColumn: boolean = false;
+  private mergeSameModerator: boolean = false;
   private userModifiedTime: boolean = false; // 追蹤用戶是否手動修改過時間
   private fileUploadHandler?: (e: Event) => void;
   private eventsAlreadyBound: boolean = false;
@@ -412,6 +414,37 @@ export class FormControls {
         this.updateCallback();
       });
     }
+
+    const hideModeratorCheckbox = document.getElementById('hideModeratorColumn') as HTMLInputElement;
+    const mergeSameModeratorCheckbox = document.getElementById('mergeSameModerator') as HTMLInputElement;
+    const mergeSameModeratorRow = document.getElementById('mergeSameModeratorRow');
+
+    const syncModeratorDisplayOptions = (): void => {
+      if (!mergeSameModeratorCheckbox) return;
+      mergeSameModeratorCheckbox.disabled = this.hideModeratorColumn;
+      if (this.hideModeratorColumn) {
+        mergeSameModeratorCheckbox.checked = false;
+        this.mergeSameModerator = false;
+      }
+      mergeSameModeratorRow?.classList.toggle('disabled', this.hideModeratorColumn);
+    };
+
+    if (hideModeratorCheckbox) {
+      hideModeratorCheckbox.addEventListener('change', () => {
+        this.hideModeratorColumn = hideModeratorCheckbox.checked;
+        syncModeratorDisplayOptions();
+        this.updateCallback();
+      });
+    }
+
+    if (mergeSameModeratorCheckbox) {
+      mergeSameModeratorCheckbox.addEventListener('change', () => {
+        this.mergeSameModerator = mergeSameModeratorCheckbox.checked;
+        this.updateCallback();
+      });
+    }
+
+    syncModeratorDisplayOptions();
   }
 
   // 新增或更新議程
@@ -499,6 +532,22 @@ export class FormControls {
       addBtn.textContent = '💾 更新';
       addBtn.dataset.edit = index.toString();
     }
+
+    const editor = document.getElementById('agendaEditor');
+    if (editor) {
+      const panel = document.getElementById('controlPanel');
+      if (panel) {
+        const panelRect = panel.getBoundingClientRect();
+        const editorRect = editor.getBoundingClientRect();
+        const targetTop = panel.scrollTop + editorRect.top - panelRect.top - 12;
+        panel.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+      } else {
+        editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      editor.classList.add('editing-active');
+      window.setTimeout(() => editor.classList.remove('editing-active'), 1200);
+    }
+    window.setTimeout(() => timeInput?.focus({ preventScroll: true }), 250);
   }
 
   // 刪除議程
@@ -595,6 +644,10 @@ export class FormControls {
   getMeetupType(): 'same' | 'other' { return this.meetupType; }
   getMeetupCustomText(): string { return this.meetupCustomText; }
 
+  // 取得主持人顯示設定
+  getHideModeratorColumn(): boolean { return this.hideModeratorColumn; }
+  getMergeSameModerator(): boolean { return this.mergeSameModerator; }
+
   // 取得用戶時間修改狀態
   getUserModifiedTime(): boolean { return this.userModifiedTime; }
 
@@ -624,6 +677,27 @@ export class FormControls {
     }
     
     console.log('✅ 集合地點設定已從範本還原');
+  }
+
+  /**
+   * 設定主持人顯示方式（範本載入時使用）
+   */
+  setModeratorDisplaySettings(settings: { hideModeratorColumn?: boolean; mergeSameModerator?: boolean }): void {
+    this.hideModeratorColumn = Boolean(settings.hideModeratorColumn);
+    this.mergeSameModerator = this.hideModeratorColumn ? false : Boolean(settings.mergeSameModerator);
+
+    const hideCheckbox = document.getElementById('hideModeratorColumn') as HTMLInputElement;
+    const mergeCheckbox = document.getElementById('mergeSameModerator') as HTMLInputElement;
+    const mergeRow = document.getElementById('mergeSameModeratorRow');
+
+    if (hideCheckbox) hideCheckbox.checked = this.hideModeratorColumn;
+    if (mergeCheckbox) {
+      mergeCheckbox.checked = this.mergeSameModerator;
+      mergeCheckbox.disabled = this.hideModeratorColumn;
+    }
+    mergeRow?.classList.toggle('disabled', this.hideModeratorColumn);
+
+    console.log('✅ 主持人顯示設定已從範本還原');
   }
   
   /**

@@ -23,6 +23,8 @@ export class FormControls {
         this.showMeetupPoint = false;
         this.meetupType = 'same';
         this.meetupCustomText = '';
+        this.hideModeratorColumn = false;
+        this.mergeSameModerator = false;
         this.userModifiedTime = false; // 追蹤用戶是否手動修改過時間
         this.eventsAlreadyBound = false;
         this.initializeForm();
@@ -364,6 +366,33 @@ export class FormControls {
                 this.updateCallback();
             });
         }
+        const hideModeratorCheckbox = document.getElementById('hideModeratorColumn');
+        const mergeSameModeratorCheckbox = document.getElementById('mergeSameModerator');
+        const mergeSameModeratorRow = document.getElementById('mergeSameModeratorRow');
+        const syncModeratorDisplayOptions = () => {
+            if (!mergeSameModeratorCheckbox)
+                return;
+            mergeSameModeratorCheckbox.disabled = this.hideModeratorColumn;
+            if (this.hideModeratorColumn) {
+                mergeSameModeratorCheckbox.checked = false;
+                this.mergeSameModerator = false;
+            }
+            mergeSameModeratorRow?.classList.toggle('disabled', this.hideModeratorColumn);
+        };
+        if (hideModeratorCheckbox) {
+            hideModeratorCheckbox.addEventListener('change', () => {
+                this.hideModeratorColumn = hideModeratorCheckbox.checked;
+                syncModeratorDisplayOptions();
+                this.updateCallback();
+            });
+        }
+        if (mergeSameModeratorCheckbox) {
+            mergeSameModeratorCheckbox.addEventListener('change', () => {
+                this.mergeSameModerator = mergeSameModeratorCheckbox.checked;
+                this.updateCallback();
+            });
+        }
+        syncModeratorDisplayOptions();
     }
     // 新增或更新議程
     addOrUpdateAgenda() {
@@ -451,6 +480,22 @@ export class FormControls {
             addBtn.textContent = '💾 更新';
             addBtn.dataset.edit = index.toString();
         }
+        const editor = document.getElementById('agendaEditor');
+        if (editor) {
+            const panel = document.getElementById('controlPanel');
+            if (panel) {
+                const panelRect = panel.getBoundingClientRect();
+                const editorRect = editor.getBoundingClientRect();
+                const targetTop = panel.scrollTop + editorRect.top - panelRect.top - 12;
+                panel.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+            }
+            else {
+                editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            editor.classList.add('editing-active');
+            window.setTimeout(() => editor.classList.remove('editing-active'), 1200);
+        }
+        window.setTimeout(() => timeInput?.focus({ preventScroll: true }), 250);
     }
     // 刪除議程
     deleteAgenda(index) {
@@ -536,6 +581,9 @@ export class FormControls {
     getShowMeetupPoint() { return this.showMeetupPoint; }
     getMeetupType() { return this.meetupType; }
     getMeetupCustomText() { return this.meetupCustomText; }
+    // 取得主持人顯示設定
+    getHideModeratorColumn() { return this.hideModeratorColumn; }
+    getMergeSameModerator() { return this.mergeSameModerator; }
     // 取得用戶時間修改狀態
     getUserModifiedTime() { return this.userModifiedTime; }
     /**
@@ -564,6 +612,24 @@ export class FormControls {
             customInput.disabled = (this.meetupType !== 'other');
         }
         console.log('✅ 集合地點設定已從範本還原');
+    }
+    /**
+     * 設定主持人顯示方式（範本載入時使用）
+     */
+    setModeratorDisplaySettings(settings) {
+        this.hideModeratorColumn = Boolean(settings.hideModeratorColumn);
+        this.mergeSameModerator = this.hideModeratorColumn ? false : Boolean(settings.mergeSameModerator);
+        const hideCheckbox = document.getElementById('hideModeratorColumn');
+        const mergeCheckbox = document.getElementById('mergeSameModerator');
+        const mergeRow = document.getElementById('mergeSameModeratorRow');
+        if (hideCheckbox)
+            hideCheckbox.checked = this.hideModeratorColumn;
+        if (mergeCheckbox) {
+            mergeCheckbox.checked = this.mergeSameModerator;
+            mergeCheckbox.disabled = this.hideModeratorColumn;
+        }
+        mergeRow?.classList.toggle('disabled', this.hideModeratorColumn);
+        console.log('✅ 主持人顯示設定已從範本還原');
     }
     /**
      * 設定頁尾相關設定（範本載入時使用）

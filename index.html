@@ -8,19 +8,28 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎗%ufe0f%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
   <!-- Excel 處理程式庫 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260510b" />
+  <link rel="stylesheet" href="./styles.css?v=20260709h" />
   <link rel="stylesheet" href="src/assets/feedback-modal.css" />
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🎗️ 會議議程海報製作器 Beta</h1>
-      <p style="margin-top:10px;opacity:.9;">開發者: Tom Ho</p>
+      <button id="menuToggle" class="menu-toggle-button" type="button" aria-expanded="true" aria-controls="controlPanel" title="隱藏/顯示左側選單">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="menu-toggle-label">選單</span>
+      </button>
+      <p class="developer-credit">開發者: Tom Ho</p>
     </div>
     
     <div class="main-content">
       <!-- 左側控制面板 -->
-      <div class="control-panel">
+      <div class="control-panel" id="controlPanel">
+        <div class="control-panel-brand">
+          <h1>🎗️ 會議議程海報製作器 Beta</h1>
+          <div class="brand-hint">設定、匯入與版面控制</div>
+        </div>
         <!-- 🚀 快速開始區塊 -->
         <div class="accordion-section" data-section="quickstart">
           <div class="accordion-header">
@@ -61,6 +70,16 @@
             <span class="section-title-text">📝 內容編輯</span>
           </div>
           <div class="accordion-content">
+            <div class="poster-display-options">
+              <label class="checkbox-row">
+                <input type="checkbox" id="hideModeratorColumn" style="width:auto;" />隱藏 Moderator 欄
+              </label>
+              <label class="checkbox-row" id="mergeSameModeratorRow">
+                <input type="checkbox" id="mergeSameModerator" style="width:auto;" />相同 Moderator 垂直合併置中
+              </label>
+              <div class="mini-hint">這兩個選項只影響 Canvas 與下載海報；原始議程資料仍會保留主持人文字。</div>
+            </div>
+
             <!-- 基本資訊 -->
             <h3 class="sub-section-title">📋 基本資訊</h3>
             <div class="form-group">
@@ -104,28 +123,33 @@
 
             <!-- 議程項目 -->
             <h3 class="sub-section-title">📅 議程項目</h3>
-            <div class="form-group">
-              <label>時間</label>
-              <input id="agendaTime" placeholder="例：09:00-09:30" type="text" />
-            </div>
-            <div class="form-group">
-              <label>主題（可按Enter換行）</label>
-              <textarea id="agendaTopic" placeholder="例：開幕致詞" class="multiline-input"></textarea>
-            </div>
-            <div class="form-group">
-              <label>講者（可按Enter換行）</label>
-              <textarea id="agendaSpeaker" placeholder="例：王教授" class="multiline-input"></textarea>
-            </div>
-            <div class="form-group">
-              <label>主持人（可按Enter換行）</label>
-              <textarea id="agendaModerator" placeholder="例：李醫師" class="multiline-input"></textarea>
-            </div>
-            <div class="row">
-              <button class="btn btn-primary" id="agendaAdd">➕ 新增</button>
-              <button class="btn btn-secondary" id="agendaSample">📋 載入範例</button>
-              <button class="btn btn-secondary" id="agendaClear">🗑️ 清空</button>
-            </div>
+            <div class="agenda-list-heading">已建立議程（點 ✏️ 編輯）</div>
             <div id="agendaList" class="agenda-items"></div>
+
+            <div id="agendaEditor" class="agenda-editor-panel">
+              <div class="agenda-editor-title">編輯議程內容</div>
+              <div class="form-group">
+                <label>時間</label>
+                <input id="agendaTime" placeholder="例：09:00-09:30" type="text" />
+              </div>
+              <div class="form-group">
+                <label>主題（可按Enter換行）</label>
+                <textarea id="agendaTopic" placeholder="例：開幕致詞" class="multiline-input"></textarea>
+              </div>
+              <div class="form-group">
+                <label>講者（可按Enter換行）</label>
+                <textarea id="agendaSpeaker" placeholder="例：王教授" class="multiline-input"></textarea>
+              </div>
+              <div class="form-group">
+                <label>主持人（可按Enter換行）</label>
+                <textarea id="agendaModerator" placeholder="例：李醫師" class="multiline-input"></textarea>
+              </div>
+              <div class="row">
+                <button class="btn btn-primary" id="agendaAdd">➕ 新增</button>
+                <button class="btn btn-secondary" id="agendaSample">📋 載入範例</button>
+                <button class="btn btn-secondary" id="agendaClear">🗑️ 清空</button>
+              </div>
+            </div>
 
             <!-- 頁尾註解 -->
             <h3 class="sub-section-title">📝 頁尾註解</h3>
@@ -290,6 +314,6 @@
 
 
   <!-- 載入主程式 -->
-  <script type="module" src="./dist/main.js?v=20260510e"></script>
+  <script type="module" src="./dist/main.js?v=20260709h"></script>
 </body>
 </html>

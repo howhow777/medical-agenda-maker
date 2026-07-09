@@ -1,4 +1,21 @@
 import { AgendaItem, ColorScheme, CancerTemplate, CustomColors, Overlay } from '../assets/types.js';
+type PosterRenderOptions = {
+    hideModerator?: boolean;
+    mergeSameModerator?: boolean;
+    showMeetupPoint?: boolean;
+};
+type ConferencePosterData = {
+    title: string;
+    subtitle: string;
+    date: string;
+    time: string;
+    location: string;
+    showMeetupPoint?: boolean;
+    meetupType?: 'same' | 'other';
+    meetupCustomText?: string;
+    hideModerator?: boolean;
+    mergeSameModerator?: boolean;
+};
 export declare class PosterRenderer {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
@@ -10,17 +27,8 @@ export declare class PosterRenderer {
     wrapTextWithBreaks(text: string, x: number, y: number, maxWidth: number, lineHeight: number, align?: string): number;
     drawCenteredTextWithBreaks(text: string, x: number, y: number, maxWidth: number, lineHeight: number, cellHeight: number, align?: string): number;
     drawCancerDecorations(template: CancerTemplate, scheme: ColorScheme, W: number, H: number): void;
-    calculateRequiredHeight(agendaItems: AgendaItem[], showFooter: boolean, footerText: string, W: number): number;
-    drawPoster(agendaItems: AgendaItem[], currentTemplate: string, currentColorScheme: string, currentGradientDirection: string, customColors: CustomColors, conferenceData: {
-        title: string;
-        subtitle: string;
-        date: string;
-        time: string;
-        location: string;
-        showMeetupPoint?: boolean;
-        meetupType?: 'same' | 'other';
-        meetupCustomText?: string;
-    }, showFooter: boolean, footerText: string, overlays?: Overlay[], tableOpacity?: number): void;
+    calculateRequiredHeight(agendaItems: AgendaItem[], showFooter: boolean, footerText: string, W: number, renderOptions?: PosterRenderOptions): number;
+    drawPoster(agendaItems: AgendaItem[], currentTemplate: string, currentColorScheme: string, currentGradientDirection: string, customColors: CustomColors, conferenceData: ConferencePosterData, showFooter: boolean, footerText: string, overlays?: Overlay[], tableOpacity?: number): void;
     /**
      * 生成集合地點顯示文字
      */
@@ -97,6 +105,10 @@ export declare class PosterRenderer {
      */
     private getCurrentPosterData;
     /**
+     * 從 DOM 讀取會議資訊；高品質下載需使用同一份選項，避免下載檔漏掉 Canvas 上的集合地點或 Moderator 設定。
+     */
+    private getConferenceDataFromDOM;
+    /**
      * 從 DOM 元素讀取當前海報數據
      */
     private getPosterDataFromDOM;
@@ -105,7 +117,12 @@ export declare class PosterRenderer {
      */
     private getInputValue;
     /**
+     * 輔助方法：從 DOM 取得 radio 群組值
+     */
+    private getRadioValue;
+    /**
      * 輔助方法：從 DOM 取得 checkbox 值
      */
     private getCheckboxValue;
 }
+export {};

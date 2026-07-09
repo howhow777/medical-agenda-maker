@@ -13,6 +13,8 @@ export declare class FormControls {
     private showMeetupPoint;
     private meetupType;
     private meetupCustomText;
+    private hideModeratorColumn;
+    private mergeSameModerator;
     private userModifiedTime;
     private fileUploadHandler?;
     private eventsAlreadyBound;
@@ -50,6 +52,8 @@ export declare class FormControls {
     getShowMeetupPoint(): boolean;
     getMeetupType(): 'same' | 'other';
     getMeetupCustomText(): string;
+    getHideModeratorColumn(): boolean;
+    getMergeSameModerator(): boolean;
     getUserModifiedTime(): boolean;
     /**
      * 設定集合地點相關設定（範本載入時使用）
@@ -58,6 +62,13 @@ export declare class FormControls {
         showMeetupPoint: boolean;
         meetupType: 'same' | 'other';
         meetupCustomText: string;
+    }): void;
+    /**
+     * 設定主持人顯示方式（範本載入時使用）
+     */
+    setModeratorDisplaySettings(settings: {
+        hideModeratorColumn?: boolean;
+        mergeSameModerator?: boolean;
     }): void;
     /**
      * 設定頁尾相關設定（範本載入時使用）

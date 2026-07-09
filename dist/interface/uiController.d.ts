@@ -65,6 +65,8 @@ export declare class UIController {
         showMeetupPoint: boolean;
         meetupType: "same" | "other";
         meetupCustomText: string;
+        hideModerator: boolean;
+        mergeSameModerator: boolean;
     };
     /**
      * 取得頁尾註解文字
