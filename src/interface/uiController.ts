@@ -14,6 +14,8 @@ import { PosterRenderer } from '../logic/posterRenderer.js';
 import { DataManager } from '../logic/dataManager.js';
 import { CropController } from './cropController-fixed.js';
 import { FeedbackController } from './feedbackController.js';
+import { CancerDesignSwitcher } from './cancerDesignSwitcher.js';
+import { CancerDesignPresetId, cancerDesignPresets } from '../logic/cancerDesignPresets.js';
 
 export class UIController {
   // 狀態管理
@@ -29,6 +31,7 @@ export class UIController {
   private templateController!: TemplateController;
   private cropController!: CropController;
   private feedbackController!: FeedbackController;
+  private cancerDesignSwitcher!: CancerDesignSwitcher;
 
   // DOM 元素
   private canvas!: HTMLCanvasElement;
@@ -84,6 +87,9 @@ export class UIController {
 
       // 初始化所有模組
       this.initializeModules();
+
+      // 設計切換器只改配色、癌別與一個受管理的內建圖案；不改議程及使用者上傳圖片。
+      this.cancerDesignSwitcher = new CancerDesignSwitcher((presetId, motifId) => this.applyCancerDesign(presetId, motifId));
       
       // 綁定事件
       this.bindEvents();
@@ -93,9 +99,10 @@ export class UIController {
       
       // 載入初始資料
       this.loadInitialData();
-      
-      // 首次渲染
+
+      // 先算出實際海報高度，讓內建圖案能依最終畫布比例落在建議位置。
       this.updatePoster();
+      await this.cancerDesignSwitcher.initialize();
       
       // 註冊到全域以供 posterRenderer 訪問
       (window as any).app = this;
@@ -105,6 +112,36 @@ export class UIController {
       console.error('❌ 初始化失敗:', error);
       throw error;
     }
+  }
+
+  private async applyCancerDesign(presetId: CancerDesignPresetId, motifId: string): Promise<void> {
+    const preset = cancerDesignPresets[presetId];
+    const motif = preset.motifs.find(item => item.id === motifId) || preset.motifs[0];
+    this.formControls.setCurrentTemplate(preset.id);
+    this.formControls.setCurrentColorScheme(preset.colorScheme);
+
+    const image = await this.loadImage(motif.src);
+    this.overlayManager.upsertManagedOverlay(motif.id, image, motif.name, motif.src, {
+      x: this.canvas.width * motif.xRatio,
+      y: this.canvas.height * motif.yRatio,
+      width: this.canvas.width * motif.widthRatio,
+      opacity: motif.opacity,
+      rotation: motif.rotation,
+      zIndex: 0
+    });
+    this.overlayManager.setSelectedIndex(-1);
+    this.refreshOverlayList();
+    this.syncOverlayControls();
+    this.updatePoster();
+  }
+
+  private loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error(`無法載入內建圖案：${src}`));
+      image.src = src;
+    });
   }
 
   /**
@@ -244,7 +281,8 @@ export class UIController {
           rotation: overlay.rotation,
           opacity: overlay.opacity,
           visible: overlay.visible,
-          lockAspect: overlay.lockAspect
+          lockAspect: overlay.lockAspect,
+          zIndex: overlay.zIndex
         })),
         customColors: this.appState.customColors,
         meetupSettings: {

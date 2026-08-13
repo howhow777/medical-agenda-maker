@@ -54,6 +54,44 @@ export class OverlayManager {
     return overlay;
   }
 
+  // 內建癌別圖案與使用者上傳圖層共用同一套拖曳／縮放控制，但以穩定 ID 避免重複插入。
+  upsertManagedOverlay(
+    managedId: string,
+    img: HTMLImageElement,
+    name: string,
+    src: string,
+    placement: { x: number; y: number; width: number; opacity: number; rotation?: number; zIndex?: number }
+  ): Overlay {
+    const overlayName = `內建圖案｜${name}`;
+    let overlay = this.overlays.find(item => item.name.startsWith('內建圖案｜'));
+    const naturalWidth = img.naturalWidth || img.width;
+    const naturalHeight = img.naturalHeight || img.height;
+    const scale = Math.max(0.05, placement.width / naturalWidth);
+
+    if (!overlay) {
+      overlay = this.addOverlay(img, overlayName, src);
+    }
+
+    Object.assign(overlay, {
+      name: overlayName,
+      img,
+      src,
+      x: placement.x,
+      y: placement.y,
+      w: naturalWidth,
+      h: naturalHeight,
+      scaleX: scale,
+      scaleY: scale,
+      rotation: placement.rotation || 0,
+      opacity: placement.opacity,
+      visible: true,
+      lockAspect: true,
+      zIndex: placement.zIndex ?? 0
+    });
+    this.selectedIndex = this.overlays.indexOf(overlay);
+    return overlay;
+  }
+
   // 移除圖層
   removeOverlay(index: number): void {
     if (index >= 0 && index < this.overlays.length) {

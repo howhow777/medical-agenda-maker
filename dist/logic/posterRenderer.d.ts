@@ -27,6 +27,7 @@ export declare class PosterRenderer {
     wrapTextWithBreaks(text: string, x: number, y: number, maxWidth: number, lineHeight: number, align?: string): number;
     drawCenteredTextWithBreaks(text: string, x: number, y: number, maxWidth: number, lineHeight: number, cellHeight: number, align?: string): number;
     drawCancerDecorations(template: CancerTemplate, scheme: ColorScheme, W: number, H: number): void;
+    private drawPresetHeader;
     calculateRequiredHeight(agendaItems: AgendaItem[], showFooter: boolean, footerText: string, W: number, renderOptions?: PosterRenderOptions): number;
     drawPoster(agendaItems: AgendaItem[], currentTemplate: string, currentColorScheme: string, currentGradientDirection: string, customColors: CustomColors, conferenceData: ConferencePosterData, showFooter: boolean, footerText: string, overlays?: Overlay[], tableOpacity?: number): void;
     /**

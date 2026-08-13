@@ -9,6 +9,14 @@ export declare class OverlayManager {
     setSelectedIndex(index: number): void;
     getSelectedOverlay(): Overlay | null;
     addOverlay(img: HTMLImageElement, name: string, src: string): Overlay;
+    upsertManagedOverlay(managedId: string, img: HTMLImageElement, name: string, src: string, placement: {
+        x: number;
+        y: number;
+        width: number;
+        opacity: number;
+        rotation?: number;
+        zIndex?: number;
+    }): Overlay;
     removeOverlay(index: number): void;
     removeSelectedOverlay(): void;
     clearOverlays(): void;

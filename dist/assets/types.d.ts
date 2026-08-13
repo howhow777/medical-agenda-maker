@@ -117,6 +117,7 @@ export interface OverlayData {
     opacity: number;
     visible: boolean;
     lockAspect: boolean;
+    zIndex?: number;
 }
 export interface AppState {
     agendaItems: AgendaItem[];

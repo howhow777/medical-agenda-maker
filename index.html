@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎗%ufe0f%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
   <!-- Excel 處理程式庫 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260709k" />
+  <link rel="stylesheet" href="./styles.css?v=20260813a" />
   <link rel="stylesheet" href="src/assets/feedback-modal.css" />
 </head>
 <body>
@@ -200,6 +200,12 @@
                 <option value="medical_green">經典醫療綠</option>
                 <option value="business_green">專業商務綠</option>
                 <option value="tech_green">現代科技綠</option>
+                <option value="cancer_lung">肺癌｜清透呼吸</option>
+                <option value="cancer_headneck">頭頸癌｜口腔聚焦</option>
+                <option value="cancer_endometrial">婦癌｜柔韌花瓣</option>
+                <option value="cancer_urinary">泌尿癌｜科學軌道</option>
+                <option value="cancer_colorectal">腸癌｜路徑節奏</option>
+                <option value="cancer_breast">乳癌｜絲帶編織</option>
                 <option value="custom">自訂配色</option>
               </select>
               <select id="gradientDir">
@@ -325,6 +331,9 @@
 
       <!-- 右側畫布區 -->
       <div class="canvas-container">
+        <button id="designSwitcherTrigger" class="design-switcher-trigger design-switcher-discovery" type="button" aria-expanded="false" aria-controls="designSwitcherDrawer">
+          <span aria-hidden="true">🎨</span><span>切換</span>
+        </button>
         <div class="canvas-area">
           <canvas id="posterCanvas" width="800" height="600"></canvas>
         </div>
@@ -333,9 +342,31 @@
     </div>
   </div>
 
+  <div id="designSwitcherBackdrop" class="design-switcher-backdrop" aria-hidden="true"></div>
+  <aside id="designSwitcherDrawer" class="design-switcher-drawer" aria-labelledby="designSwitcherTitle" aria-hidden="true" inert>
+    <div class="design-switcher-header">
+      <div>
+        <h2 id="designSwitcherTitle">快速切換設計</h2>
+        <p>選擇後立即套用，議程與上傳圖片不變</p>
+      </div>
+      <button id="designSwitcherClose" class="design-switcher-close" type="button" aria-label="關閉快速切換設計">×</button>
+    </div>
+    <div class="design-switcher-scroll">
+      <div id="designPresetGrid" class="design-preset-grid" role="radiogroup" aria-label="癌別設計"></div>
+      <section class="design-motif-section" aria-labelledby="designMotifTitle">
+        <div class="design-motif-heading">
+          <h3 id="designMotifTitle">搭配圖案</h3>
+          <span>建議位置已設定</span>
+        </div>
+        <div id="designMotifGrid" class="design-motif-grid" role="radiogroup" aria-label="癌別搭配圖案"></div>
+        <p>圖案插入後仍可在畫布拖曳、縮放、旋轉或隱藏。</p>
+      </section>
+    </div>
+  </aside>
+
 
 
   <!-- 載入主程式 -->
-  <script type="module" src="./dist/main.js?v=20260709k"></script>
+  <script type="module" src="./dist/main.js?v=20260813a"></script>
 </body>
 </html>

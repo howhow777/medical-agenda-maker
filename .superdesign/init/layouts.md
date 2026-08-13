@@ -1,0 +1,348 @@
+# Shared Layouts
+
+## AppShell
+- Source: `index.html`
+- Description: Single-page app shell with a compact top header, a 460px scrollable left control panel, and a flexible right canvas workspace. At 1200px the layout stacks vertically.
+
+```html
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎗️ 會議議程海報製作器 Beta（多PNG、可調層級、解鎖比例）</title>
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎗%ufe0f%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
+  <!-- Excel 處理程式庫 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=20260709k" />
+  <link rel="stylesheet" href="src/assets/feedback-modal.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <button id="menuToggle" class="menu-toggle-button" type="button" aria-expanded="true" aria-label="收合設定" aria-controls="controlPanel" title="收合設定">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="menu-toggle-label">收合設定</span>
+      </button>
+      <p class="developer-credit">開發者: Tom Ho</p>
+    </div>
+
+    <div class="main-content">
+      <!-- 左側控制面板 -->
+      <div class="control-panel" id="controlPanel">
+        <div class="control-panel-brand">
+          <h1>🎗️ 會議議程海報製作器 Beta</h1>
+          <div class="brand-hint">設定、匯入與版面控制</div>
+        </div>
+
+        <section id="updateNotice" class="update-notice" aria-label="近期更新通知">
+          <div class="update-notice-inner">
+            <div class="update-notice-kicker">近期更新</div>
+            <div class="update-notice-title">手機審閱、議程編輯與 Moderator 顯示已優化</div>
+            <p class="update-notice-summary">這次更新讓手機畫面更清爽，議程修改更直覺，也改善主持人欄位顯示。</p>
+            <div id="updateNoticeDetails" class="update-notice-details" hidden>
+              <ul>
+                <li>設定區可收合，手機預覽空間更大。</li>
+                <li>議程項目先看清單，點 ✏️ 再到下方編輯。</li>
+                <li>可隱藏 Moderator 欄，Speaker 自動置中延展。</li>
+                <li>相同 Moderator 可垂直合併置中，背景色更自然。</li>
+                <li>修正集合地點在高畫質下載時遺失的問題。</li>
+              </ul>
+            </div>
+            <div class="update-notice-actions">
+              <button id="updateNoticeToggle" class="update-notice-button update-notice-button-primary" type="button" aria-expanded="false" aria-controls="updateNoticeDetails">查看更新內容</button>
+              <button id="updateNoticeRemindLater" class="update-notice-button update-notice-button-secondary" type="button">下次提醒</button>
+              <button id="updateNoticeDismiss" class="update-notice-button update-notice-button-secondary" type="button">我知道了</button>
+            </div>
+          </div>
+        </section>
+        <!-- 🚀 快速開始區塊 -->
+        <div class="accordion-section" data-section="quickstart">
+          <div class="accordion-header">
+            <span class="accordion-icon">▶</span>
+            <span class="section-title-text">🚀 快速開始</span>
+          </div>
+          <div class="accordion-content">
+            <!-- Excel 匯入 -->
+            <h3 class="sub-section-title">📁 Excel 議程匯入</h3>
+            <div class="excel-upload-area">
+              <div class="upload-zone" id="upload-zone">
+                <div class="upload-content">
+                  <div class="upload-icon">📁</div>
+                  <div class="upload-text">拖拽 Excel 檔案到此處<br>或點擊選擇檔案</div>
+                  <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display: none;">
+                </div>
+              </div>
+              <div class="upload-status" id="upload-status"></div>
+            </div>
+
+            <!-- 本機儲存 -->
+            <h3 class="sub-section-title">📋 本機儲存</h3>
+            <div class="template-selector">
+              <!-- 範本按鈕將由 templateController.ts 動態生成 -->
+            </div>
+            <div class="template-actions">
+              <div class="storage-info" id="storageInfo" style="margin-top: 8px; font-size: 12px; color: #666; text-align: center;">
+                儲存使用：0 KB / 10 MB (0%)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 📝 內容編輯區塊 -->
+        <div class="accordion-section" data-section="content">
+          <div class="accordion-header">
+            <span class="accordion-icon">▶</span>
+            <span class="section-title-text">📝 內容編輯</span>
+          </div>
+          <div class="accordion-content">
+            <div class="poster-display-options">
+              <label class="checkbox-row">
+                <input type="checkbox" id="hideModeratorColumn" style="width:auto;" />隱藏 Moderator 欄
+              </label>
+              <label class="checkbox-row" id="mergeSameModeratorRow">
+                <input type="checkbox" id="mergeSameModerator" style="width:auto;" />相同 Moderator 垂直合併置中
+              </label>
+              <div class="mini-hint">這兩個選項只影響 Canvas 與下載海報；原始議程資料仍會保留主持人文字。</div>
+            </div>
+
+            <!-- 基本資訊 -->
+            <h3 class="sub-section-title">📋 基本資訊</h3>
+            <div class="form-group">
+              <label>會議標題</label>
+              <input id="conferenceTitle" type="text" placeholder="例：2025年度癌症醫學研討會" />
+            </div>
+            <div class="form-group">
+              <label>副標題</label>
+              <input id="conferenceSubtitle" type="text" value="癌症治療醫學研討會" />
+            </div>
+            <div class="form-group">
+              <label>日期</label>
+              <input id="conferenceDate" type="text" placeholder="例：2025年8月15日" />
+            </div>
+            <div class="form-group">
+              <label>時間</label>
+              <input id="conferenceTime" type="text" placeholder="例：14:30 - 18:15" />
+            </div>
+            <div class="form-group">
+              <label>地點</label>
+              <input id="conferenceLocation" type="text" value="台北國際會議中心" />
+            </div>
+            <div class="form-group">
+              <label style="display:flex;align-items:center; gap:8px; font-weight:600;">
+                <input type="checkbox" id="showMeetupPoint" style="width:auto;"/>顯示集合地點資訊
+              </label>
+            </div>
+            <div id="meetupPointSection" class="meetup-section" style="display:none; margin-left:20px; border-left:3px solid #ddd; padding-left:15px;">
+              <div style="margin-bottom:8px;">
+                <label style="display:flex;align-items:center; gap:8px;">
+                  <input type="radio" name="meetupType" value="same" id="meetupSame" checked style="width:auto;"/>同會議地點
+                </label>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="display:flex;align-items:center; gap:8px;">
+                  <input type="radio" name="meetupType" value="other" id="meetupOther" style="width:auto;"/>其他：
+                </label>
+                <input id="meetupCustomText" type="text" placeholder="請輸入集合地點" style="margin-top:5px;" disabled />
+              </div>
+            </div>
+
+            <!-- 議程項目 -->
+            <h3 class="sub-section-title">📅 議程項目</h3>
+            <div class="agenda-list-heading">已建立議程（點 ✏️ 編輯）</div>
+            <div id="agendaList" class="agenda-items"></div>
+
+            <div id="agendaEditor" class="agenda-editor-panel">
+              <div class="agenda-editor-title">編輯議程內容</div>
+              <div class="form-group">
+                <label>時間</label>
+                <input id="agendaTime" placeholder="例：09:00-09:30" type="text" />
+              </div>
+              <div class="form-group">
+                <label>主題（可按Enter換行）</label>
+                <textarea id="agendaTopic" placeholder="例：開幕致詞" class="multiline-input"></textarea>
+              </div>
+              <div class="form-group">
+                <label>講者（可按Enter換行）</label>
+                <textarea id="agendaSpeaker" placeholder="例：王教授" class="multiline-input"></textarea>
+              </div>
+              <div class="form-group">
+                <label>主持人（可按Enter換行）</label>
+                <textarea id="agendaModerator" placeholder="例：李醫師" class="multiline-input"></textarea>
+              </div>
+              <div class="row">
+                <button class="btn btn-primary" id="agendaAdd">➕ 新增</button>
+                <button class="btn btn-secondary" id="agendaSample">📋 載入範例</button>
+                <button class="btn btn-secondary" id="agendaClear">🗑️ 清空</button>
+              </div>
+            </div>
+
+            <!-- 頁尾註解 -->
+            <h3 class="sub-section-title">📝 頁尾註解</h3>
+            <div class="form-group">
+              <label style="display:flex;align-items:center; gap:8px; font-weight:600;">
+                <input type="checkbox" id="showFooterNote" checked style="width:auto;"/>顯示頁尾註解
+              </label>
+            </div>
+            <div class="form-group">
+              <textarea id="footerNoteContent" rows="6" style="resize:vertical; font-size:12px; line-height:1.4;">本會議是醫藥學術會議,與會者皆是醫療專業人員,眷屬不適合參加,本公司亦不會支付眷屬費用。此外,為使與會醫療專業人員享有高質量專業的學術會議。當需要時,本公司會安排特約廠商到場協助接待及做會議紀錄。廠商與默沙東公司簽有服務保密條款,並承諾廠商代表在執行服務時,會議仍順暢進行。如有不便之處,敬請見諒。</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🎨 視覺設計區塊 -->
+        <div class="accordion-section" data-section="design">
+          <div class="accordion-header">
+            <span class="accordion-icon">▶</span>
+            <span class="section-title-text">🎨 視覺設計</span>
+          </div>
+          <div class="accordion-content">
+            <!-- 配色方案 -->
+            <h3 class="sub-section-title">🎨 配色方案</h3>
+            <div class="row">
+              <select id="colorScheme">
+                <option value="medical_green">經典醫療綠</option>
+                <option value="business_green">專業商務綠</option>
+                <option value="tech_green">現代科技綠</option>
+                <option value="custom">自訂配色</option>
+              </select>
+              <select id="gradientDir">
+                <option value="horizontal">水平</option>
+                <option value="vertical">垂直</option>
+                <option value="diagonal">對角</option>
+              </select>
+            </div>
+
+            <!-- Table 透明度控制 -->
+            <div class="row" style="margin-top:10px;">
+              <label style="flex:none; width:100px;">表格透明度</label>
+              <input id="tableOpacity" type="range" min="0" max="1" step="0.01" value="1" />
+              <span id="tableOpacityValue" style="margin-left:8px; min-width:35px;">100%</span>
+            </div>
+
+            <!-- 自訂配色專區 -->
+            <div id="customColorsSection" class="custom-colors-section">
+              <div class="color-group">
+                <label>🌟 標題漸層色彩（三色）</label>
+                <div class="three-color-row">
+                  <div class="color-item">
+                    <input type="color" id="headerC1" value="#1B4D3E" title="標題主色">
+                    <small class="color-label">主色</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="headerC2" value="#2D8659" title="標題輔色">
+                    <small class="color-label">輔色</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="headerC3" value="#4CAF85" title="標題強調色">
+                    <small class="color-label">強調</small>
+                  </div>
+                </div>
+              </div>
+              <div class="color-group">
+                <label>📄 議程區域配色（三色）</label>
+                <div class="three-color-row">
+                  <div class="color-item">
+                    <input type="color" id="agendaBg" value="#E8F5E8" title="議程背景色">
+                    <small class="color-label">背景</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="agendaBorder" value="#1B4D3E" title="議程標題列顏色">
+                    <small class="color-label">標題列</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="agendaAccent" value="#2D8659" title="議程字體顏色">
+                    <small class="color-label">字體</small>
+                  </div>
+                </div>
+              </div>
+              <div class="color-group">
+                <label>🖼️ 海報底色漸層（雙色）</label>
+                <div class="two-color-row">
+                  <div class="color-item">
+                    <input type="color" id="bgC1" value="#ffffff" title="底色起始">
+                    <small class="color-label">起始色</small>
+                  </div>
+                  <div class="color-item">
+                    <input type="color" id="bgC2" value="#f8f9fa" title="底色結束">
+                    <small class="color-label">結束色</small>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <label>底色漸層方向</label>
+                <select id="bgGradientDir">
+                  <option value="horizontal">水平</option>
+                  <option value="vertical">垂直</option>
+                  <option value="diagonal">對角</option>
+                  <option value="radial">放射狀</option>
+                  <option value="none">無漸層</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="applyCustomColors" style="width:100%; margin-top:10px;">🎨 套用自訂配色</button>
+            </div>
+
+            <!-- PNG 圖層 -->
+            <h3 class="sub-section-title">🖼️ PNG 圖層</h3>
+            <div class="form-group">
+              <label>選擇 PNG 檔（可多選，透明背景最佳）</label>
+              <input id="overlayFile" type="file" accept="image/png" multiple />
+              <div class="mini-hint">點擊清單選取；拖曳畫布移動；角落縮放；上方圓點旋轉。支援多物件與層級調整。</div>
+            </div>
+            <div id="overlayEmptyState" class="overlay-empty-state">
+              <div class="overlay-empty-title">尚未插入 PNG 圖片</div>
+              <div class="overlay-empty-copy">加入圖片後，才會顯示圖層順序、透明度、顯示/鎖定比例、置中與移除等進階控制。</div>
+            </div>
+            <div id="overlayControlsPanel" class="overlay-controls-panel hidden">
+              <div id="overlayList" class="overlay-list"></div>
+              <div class="row" style="margin-top:6px;">
+                <button class="btn btn-secondary" id="bringFront" title="移到最上層">⬆️ 最上</button>
+                <button class="btn btn-secondary" id="bringForward" title="上移一層">🔼 上移</button>
+                <button class="btn btn-secondary" id="sendBackward" title="下移一層">🔽 下移</button>
+                <button class="btn btn-secondary" id="sendBack" title="移到最下層">⬇️ 最下</button>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <button class="btn btn-primary" id="moveToBackground" title="移到 Table 後方">📋⬇️ 移到表格後</button>
+                <button class="btn btn-primary" id="moveToForeground" title="移到 Table 前方">📋⬆️ 移到表格前</button>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <label style="flex:none; width:88px;">透明度</label>
+                <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="1" />
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <label style="display:flex; align-items:center; gap:6px; flex:1;">
+                  <input id="overlayVisible" type="checkbox" checked style="width:auto;"> 顯示
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; flex:1;">
+                  <input id="overlayLockAspect" type="checkbox" checked style="width:auto;"> 鎖定比例
+                </label>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <button class="btn btn-secondary" id="centerOverlay">置中</button>
+                <button class="btn btn-secondary" id="resetOverlay">重設大小/角度</button>
+                <button class="btn btn-danger" id="removeOverlay">移除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右側畫布區 -->
+      <div class="canvas-container">
+        <div class="canvas-area">
+          <canvas id="posterCanvas" width="800" height="600"></canvas>
+        </div>
+        <button id="btnDownload" class="floating-download-center"><span class="download-button-icon" aria-hidden="true">⬇️</span><span class="download-button-label">下載高畫質 Agenda 海報</span></button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 載入主程式 -->
+  <script type="module" src="./dist/main.js?v=20260709k"></script>
+</body>
+</html>```

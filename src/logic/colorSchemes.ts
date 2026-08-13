@@ -42,6 +42,42 @@ export const colorSchemes: Record<string, ColorScheme> = {
       accent: '#1B4D3E'
     },
     tableOpacity: 1.0
+  },
+  cancer_lung: {
+    name: '肺癌｜清透呼吸',
+    header: { colors: ['#123B5D', '#2F8FA8', '#71C9CE'], text: '#FFFFFF' },
+    agenda: { background: '#E8F8F7', alternateBackground: '#FFFFFF', border: '#123B5D', accent: '#123B5D' },
+    tableOpacity: 1.0
+  },
+  cancer_headneck: {
+    name: '頭頸癌｜口腔聚焦',
+    header: { colors: ['#293C7A', '#655FA3', '#93B7D3'], text: '#FFFFFF' },
+    agenda: { background: '#EEF1FA', alternateBackground: '#FFFFFF', border: '#293C7A', accent: '#293C7A' },
+    tableOpacity: 1.0
+  },
+  cancer_endometrial: {
+    name: '婦癌｜柔韌花瓣',
+    header: { colors: ['#6F315A', '#B64F70', '#D9828B'], text: '#FFFFFF' },
+    agenda: { background: '#FBECEF', alternateBackground: '#FFFFFF', border: '#6F315A', accent: '#6F315A' },
+    tableOpacity: 1.0
+  },
+  cancer_urinary: {
+    name: '泌尿癌｜科學軌道',
+    header: { colors: ['#174B63', '#268B8F', '#79B8A5'], text: '#FFFFFF' },
+    agenda: { background: '#EDF8F7', alternateBackground: '#FFFFFF', border: '#174B63', accent: '#174B63' },
+    tableOpacity: 1.0
+  },
+  cancer_colorectal: {
+    name: '腸癌｜路徑節奏',
+    header: { colors: ['#213A50', '#B65D45', '#D48A22'], text: '#FFFFFF' },
+    agenda: { background: '#FFF4DE', alternateBackground: '#FFFFFF', border: '#213A50', accent: '#213A50' },
+    tableOpacity: 1.0
+  },
+  cancer_breast: {
+    name: '乳癌｜絲帶編織',
+    header: { colors: ['#7F294A', '#B94768', '#DA7C91'], text: '#FFFFFF' },
+    agenda: { background: '#FFF1F4', alternateBackground: '#FFFFFF', border: '#7F294A', accent: '#7F294A' },
+    tableOpacity: 1.0
   }
 };
 

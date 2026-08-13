@@ -628,6 +628,13 @@ export class FormControls {
   setCurrentTemplate(template: string): void {
     this.currentTemplate = template;
   }
+
+  setCurrentColorScheme(scheme: string): void {
+    this.currentColorScheme = scheme;
+    const select = document.getElementById('colorScheme') as HTMLSelectElement;
+    if (select) select.value = scheme;
+    this.toggleCustomSection(scheme === 'custom');
+  }
   
   setCustomColors(colors: CustomColors): void {
     this.customColors = colors;

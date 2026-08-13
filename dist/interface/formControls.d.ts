@@ -47,6 +47,7 @@ export declare class FormControls {
     getCustomColors(): CustomColors;
     setAgendaItems(items: AgendaItem[]): void;
     setCurrentTemplate(template: string): void;
+    setCurrentColorScheme(scheme: string): void;
     setCustomColors(colors: CustomColors): void;
     getShowFooterNote(): boolean;
     getShowMeetupPoint(): boolean;

@@ -36,6 +36,7 @@ Thumbs.db
 *.tmp
 *.temp
 *.log
+.superdesign/tmp/
 
 # 測試覆蓋率報告
 coverage/

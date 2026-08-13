@@ -134,6 +134,7 @@ export interface OverlayData {
   opacity: number;
   visible: boolean;
   lockAspect: boolean;
+  zIndex?: number;
 }
 
 // 應用程式狀態

@@ -11,6 +11,8 @@ import { PosterRenderer } from '../logic/posterRenderer.js';
 import { DataManager } from '../logic/dataManager.js';
 import { CropController } from './cropController-fixed.js';
 import { FeedbackController } from './feedbackController.js';
+import { CancerDesignSwitcher } from './cancerDesignSwitcher.js';
+import { cancerDesignPresets } from '../logic/cancerDesignPresets.js';
 export class UIController {
     constructor() {
         // 初始化狀態
@@ -58,14 +60,17 @@ export class UIController {
             }
             // 初始化所有模組
             this.initializeModules();
+            // 設計切換器只改配色、癌別與一個受管理的內建圖案；不改議程及使用者上傳圖片。
+            this.cancerDesignSwitcher = new CancerDesignSwitcher((presetId, motifId) => this.applyCancerDesign(presetId, motifId));
             // 綁定事件
             this.bindEvents();
             // 初始化下載按鈕動態定位
             this.initializeDownloadButtonPosition();
             // 載入初始資料
             this.loadInitialData();
-            // 首次渲染
+            // 先算出實際海報高度，讓內建圖案能依最終畫布比例落在建議位置。
             this.updatePoster();
+            await this.cancerDesignSwitcher.initialize();
             // 註冊到全域以供 posterRenderer 訪問
             window.app = this;
             console.log('🎉 醫學會議海報製作器初始化完成');
@@ -74,6 +79,33 @@ export class UIController {
             console.error('❌ 初始化失敗:', error);
             throw error;
         }
+    }
+    async applyCancerDesign(presetId, motifId) {
+        const preset = cancerDesignPresets[presetId];
+        const motif = preset.motifs.find(item => item.id === motifId) || preset.motifs[0];
+        this.formControls.setCurrentTemplate(preset.id);
+        this.formControls.setCurrentColorScheme(preset.colorScheme);
+        const image = await this.loadImage(motif.src);
+        this.overlayManager.upsertManagedOverlay(motif.id, image, motif.name, motif.src, {
+            x: this.canvas.width * motif.xRatio,
+            y: this.canvas.height * motif.yRatio,
+            width: this.canvas.width * motif.widthRatio,
+            opacity: motif.opacity,
+            rotation: motif.rotation,
+            zIndex: 0
+        });
+        this.overlayManager.setSelectedIndex(-1);
+        this.refreshOverlayList();
+        this.syncOverlayControls();
+        this.updatePoster();
+    }
+    loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error(`無法載入內建圖案：${src}`));
+            image.src = src;
+        });
     }
     /**
      * 載入議程資料並產生海報
@@ -188,7 +220,8 @@ export class UIController {
                     rotation: overlay.rotation,
                     opacity: overlay.opacity,
                     visible: overlay.visible,
-                    lockAspect: overlay.lockAspect
+                    lockAspect: overlay.lockAspect,
+                    zIndex: overlay.zIndex
                 })),
                 customColors: this.appState.customColors,
                 meetupSettings: {

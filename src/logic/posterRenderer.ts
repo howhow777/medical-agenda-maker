@@ -259,6 +259,129 @@ export class PosterRenderer {
     }
   }
 
+  // 六個癌別共用資料與表格排版，但各自擁有可辨識的標題輪廓與裝飾語彙。
+  private drawPresetHeader(templateId: string, scheme: ColorScheme, W: number, direction: string): void {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = this.createGradient(W, 140, scheme.header.colors, direction);
+    ctx.beginPath();
+
+    switch (templateId) {
+      case 'headneck':
+        ctx.moveTo(0, 0);
+        ctx.lineTo(W, 0);
+        ctx.lineTo(W, 136);
+        ctx.lineTo(W * 0.64, 108);
+        ctx.lineTo(0, 126);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.18;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        [22, 36, 50].forEach(radius => {
+          ctx.beginPath();
+          ctx.arc(W - 86, 76, radius, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        break;
+      case 'uterus':
+        ctx.moveTo(0, 0);
+        ctx.lineTo(W, 0);
+        ctx.lineTo(W, 104);
+        ctx.bezierCurveTo(W * 0.86, 142, W * 0.69, 88, W * 0.52, 120);
+        ctx.bezierCurveTo(W * 0.35, 148, W * 0.18, 92, 0, 128);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.13;
+        ctx.fillStyle = '#FFFFFF';
+        [-1, 0, 1].forEach(offset => {
+          ctx.beginPath();
+          ctx.ellipse(W - 94 + offset * 26, 72, 28, 54, offset * 0.42, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        break;
+      case 'urinary':
+        ctx.moveTo(0, 0);
+        ctx.lineTo(W, 0);
+        ctx.lineTo(W, 116);
+        ctx.quadraticCurveTo(W * 0.75, 94, W * 0.55, 124);
+        ctx.lineTo(0, 108);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.17;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(92, 68, 55, 27, -0.32, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(92, 68, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        break;
+      case 'colorectal':
+        ctx.moveTo(0, 0);
+        ctx.lineTo(W, 0);
+        ctx.lineTo(W, 98);
+        ctx.lineTo(W * 0.78, 98);
+        ctx.lineTo(W * 0.72, 128);
+        ctx.lineTo(W * 0.42, 116);
+        ctx.lineTo(W * 0.36, 136);
+        ctx.lineTo(0, 112);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.16;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(W - 180, 36);
+        ctx.lineTo(W - 128, 36);
+        ctx.lineTo(W - 128, 82);
+        ctx.lineTo(W - 74, 82);
+        ctx.stroke();
+        break;
+      case 'breast':
+        ctx.moveTo(0, 0);
+        ctx.lineTo(W, 0);
+        ctx.lineTo(W, 108);
+        ctx.bezierCurveTo(W * 0.72, 150, W * 0.46, 78, 0, 124);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.18;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(W - 168, 18);
+        ctx.bezierCurveTo(W - 76, 52, W - 190, 72, W - 86, 115);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(W - 102, 18);
+        ctx.bezierCurveTo(W - 194, 52, W - 80, 72, W - 184, 115);
+        ctx.stroke();
+        break;
+      case 'lung':
+      default:
+        ctx.moveTo(0, 0);
+        ctx.lineTo(W, 0);
+        ctx.lineTo(W, 100);
+        ctx.quadraticCurveTo(W * 0.75, 130, W * 0.5, 110);
+        ctx.quadraticCurveTo(W * 0.25, 90, 0, 120);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.15;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(W - 92, 72, 38, -Math.PI * 0.72, Math.PI * 0.72);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(W - 56, 72, 38, Math.PI * 0.28, Math.PI * 1.72);
+        ctx.stroke();
+        break;
+    }
+    ctx.restore();
+  }
+
   // 計算所需的海報高度
   calculateRequiredHeight(
     agendaItems: AgendaItem[],
@@ -338,7 +461,7 @@ export class PosterRenderer {
     const W = this.canvas.width;
     const H = this.canvas.height;
     const scheme = this.getActiveColorScheme(currentColorScheme, customColors, tableOpacity);
-    const template = templates[currentTemplate];
+    const template = templates[currentTemplate] || templates.lung;
 
     // 背景
     if (currentColorScheme === 'custom' && customColors.bgGradientDir !== 'none') {
@@ -348,17 +471,7 @@ export class PosterRenderer {
     }
     this.ctx.fillRect(0, 0, W, H);
 
-    // 標題波浪區域
-    const headerHeight = 120;
-    this.ctx.fillStyle = this.createGradient(W, headerHeight, scheme.header.colors, currentGradientDirection);
-    this.ctx.beginPath();
-    this.ctx.moveTo(0, 0);
-    this.ctx.lineTo(W, 0);
-    this.ctx.lineTo(W, 100);
-    this.ctx.quadraticCurveTo(W * 0.75, 130, W * 0.5, 110);
-    this.ctx.quadraticCurveTo(W * 0.25, 90, 0, 120);
-    this.ctx.closePath();
-    this.ctx.fill();
+    this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
 
     // 癌症圖標
     // this.ctx.font = '50px Arial';

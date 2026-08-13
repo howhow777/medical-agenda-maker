@@ -14,6 +14,7 @@ export declare class UIController {
     private templateController;
     private cropController;
     private feedbackController;
+    private cancerDesignSwitcher;
     private canvas;
     private ctx;
     constructor();
@@ -21,6 +22,8 @@ export declare class UIController {
      * 初始化整個應用程式
      */
     initialize(): Promise<void>;
+    private applyCancerDesign;
+    private loadImage;
     /**
      * 載入議程資料並產生海報
      */
