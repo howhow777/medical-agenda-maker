@@ -6,6 +6,11 @@ type PosterRenderOptions = {
     mergeSameModerator?: boolean;
     showMeetupPoint?: boolean;
 };
+export declare function partitionOverlayLayers(overlays: Overlay[]): {
+    belowHeader: Overlay[];
+    belowTable: Overlay[];
+    aboveTable: Overlay[];
+};
 type ConferencePosterData = {
     title: string;
     subtitle: string;

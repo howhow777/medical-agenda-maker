@@ -50,7 +50,7 @@ export interface Overlay {
   opacity: number;
   visible: boolean;
   lockAspect: boolean;
-  zIndex: number; // 0 = 背景層（Table下方），1 = 前景層（Table上方，預設）
+  zIndex: number; // -1 = 屋簷下，0 = 屋簷上／Table下，1 = Table上（上傳圖預設）
   sourceKind?: OverlaySourceKind;
   cancerPresetId?: string;
   motifId?: string;

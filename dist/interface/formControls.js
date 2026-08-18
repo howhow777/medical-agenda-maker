@@ -104,10 +104,16 @@ export class FormControls {
         // 前後景切換按鈕
         const moveToBackground = document.getElementById('moveToBackground');
         const moveToForeground = document.getElementById('moveToForeground');
+        const moveBelowHeader = document.getElementById('moveBelowHeader');
+        const moveAboveHeader = document.getElementById('moveAboveHeader');
         if (moveToBackground)
             moveToBackground.addEventListener('click', () => this.moveToBackground());
         if (moveToForeground)
             moveToForeground.addEventListener('click', () => this.moveToForeground());
+        if (moveBelowHeader)
+            moveBelowHeader.addEventListener('click', () => this.moveBelowHeader());
+        if (moveAboveHeader)
+            moveAboveHeader.addEventListener('click', () => this.moveAboveHeader());
         // 圖層操作按鈕
         const centerOverlay = document.getElementById('centerOverlay');
         const resetOverlay = document.getElementById('resetOverlay');
@@ -694,12 +700,28 @@ export class FormControls {
     moveToBackground() {
         if (this.overlayManager) {
             this.overlayManager.moveSelectedToBackground();
+            this.refreshOverlayList();
             this.updateCallback();
         }
     }
     moveToForeground() {
         if (this.overlayManager) {
             this.overlayManager.moveSelectedToForeground();
+            this.refreshOverlayList();
+            this.updateCallback();
+        }
+    }
+    moveBelowHeader() {
+        if (this.overlayManager) {
+            this.overlayManager.moveSelectedBelowHeader();
+            this.refreshOverlayList();
+            this.updateCallback();
+        }
+    }
+    moveAboveHeader() {
+        if (this.overlayManager) {
+            this.overlayManager.moveSelectedAboveHeader();
+            this.refreshOverlayList();
             this.updateCallback();
         }
     }
@@ -766,14 +788,18 @@ export class FormControls {
         const selectedIndex = this.overlayManager.getSelectedIndex();
         this.updateOverlayUiState();
         list.innerHTML = '';
-        entries.forEach(({ overlay, index }) => {
-            const div = document.createElement('div');
+        const appendOverlay = ({ overlay, index }) => {
+            const div = document.createElement('button');
+            const layerLabel = overlay.zIndex < 0 ? '屋簷下' : overlay.zIndex === 0 ? '表格下' : '表格上';
+            div.type = 'button';
             div.className = `overlay-item ${index === selectedIndex ? 'selected' : ''}`;
+            div.setAttribute('aria-label', `${overlay.name}，${layerLabel}`);
             div.innerHTML = `
         <div class="overlay-info">
           <span class="overlay-name">${overlay.name}</span>
           <span class="overlay-size">${overlay.w}×${overlay.h}</span>
         </div>
+        <span class="overlay-layer-badge">${layerLabel}</span>
       `;
             div.addEventListener('click', () => {
                 this.overlayManager.setSelectedIndex(index);
@@ -782,7 +808,14 @@ export class FormControls {
                 this.updateCallback();
             });
             list.appendChild(div);
-        });
+        };
+        entries.filter(({ overlay }) => overlay.zIndex === undefined || overlay.zIndex >= 0).forEach(appendOverlay);
+        const headerLayer = document.createElement('div');
+        headerLayer.className = 'overlay-fixed-layer';
+        headerLayer.setAttribute('aria-label', '固定圖層：頂部造型屋簷');
+        headerLayer.innerHTML = '<span aria-hidden="true">🏠</span><span>頂部造型屋簷</span><span class="overlay-fixed-badge">固定</span>';
+        list.appendChild(headerLayer);
+        entries.filter(({ overlay }) => overlay.zIndex < 0).forEach(appendOverlay);
         this.syncOverlayControls();
     }
     // 同步圖層控制項

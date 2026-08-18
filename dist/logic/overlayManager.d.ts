@@ -5,6 +5,9 @@ export declare const CANCER_MOTIF_SAFE_ZONE: {
     readonly width: 200;
     readonly height: 170;
 };
+export declare const OVERLAY_LAYER_BELOW_HEADER = -1;
+export declare const OVERLAY_LAYER_BELOW_TABLE = 0;
+export declare const OVERLAY_LAYER_ABOVE_TABLE = 1;
 export declare class OverlayManager {
     private overlays;
     private selectedIndex;
@@ -43,6 +46,8 @@ export declare class OverlayManager {
     sendToBack(index: number): void;
     moveSelectedToBackground(): void;
     moveSelectedToForeground(): void;
+    moveSelectedBelowHeader(): void;
+    moveSelectedAboveHeader(): void;
     centerSelectedOverlay(): void;
     resetSelectedOverlay(): void;
     getOverlaySize(overlay: Overlay): {

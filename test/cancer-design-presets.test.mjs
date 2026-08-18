@@ -11,13 +11,23 @@ import {
   normalizeCancerDesignState
 } from '../dist/logic/cancerDesignPresets.js';
 import { headerContourIds } from '../dist/logic/headerContours.js';
-import { CANCER_MOTIF_SAFE_ZONE, OverlayManager } from '../dist/logic/overlayManager.js';
+import {
+  CANCER_MOTIF_SAFE_ZONE,
+  OVERLAY_LAYER_ABOVE_TABLE,
+  OVERLAY_LAYER_BELOW_HEADER,
+  OVERLAY_LAYER_BELOW_TABLE,
+  OverlayManager
+} from '../dist/logic/overlayManager.js';
 import {
   AGENDA_POSTER_STATE_VERSION,
   AGENDA_POSTER_STORAGE_KEY,
   DataManager
 } from '../dist/logic/dataManager.js';
-import { AGENDA_START_Y, AGENDA_START_Y_WITH_MEETUP } from '../dist/logic/posterRenderer.js';
+import {
+  AGENDA_START_Y,
+  AGENDA_START_Y_WITH_MEETUP,
+  partitionOverlayLayers
+} from '../dist/logic/posterRenderer.js';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fakeCanvas = { width: 800, height: 900 };
@@ -128,6 +138,28 @@ test('cancer filtering preserves preset layers while uploads remain renderable',
   assert.equal(upload.sourceKind, 'upload');
 });
 
+test('header contour acts as a fixed compositor divider for image layers', () => {
+  const manager = new OverlayManager(fakeCanvas);
+  const belowHeader = manager.addOverlay(fakeImage(), 'under-roof.png', 'under.png');
+  manager.moveSelectedBelowHeader();
+  const belowTable = manager.addOverlay(fakeImage(), 'under-table.png', 'table.png');
+  manager.moveSelectedToBackground();
+  const aboveTable = manager.addOverlay(fakeImage(), 'front.png', 'front.png');
+
+  assert.equal(belowHeader.zIndex, OVERLAY_LAYER_BELOW_HEADER);
+  assert.equal(belowTable.zIndex, OVERLAY_LAYER_BELOW_TABLE);
+  assert.equal(aboveTable.zIndex, OVERLAY_LAYER_ABOVE_TABLE);
+  assert.deepEqual(partitionOverlayLayers([aboveTable, belowHeader, belowTable]), {
+    belowHeader: [belowHeader],
+    belowTable: [belowTable],
+    aboveTable: [aboveTable]
+  });
+
+  manager.setSelectedIndex(0);
+  manager.moveSelectedAboveHeader();
+  assert.equal(belowHeader.zIndex, OVERLAY_LAYER_BELOW_TABLE);
+});
+
 test('v2 payload keeps the v1 autosave key and accepts a v1 restore callback', async () => {
   assert.equal(AGENDA_POSTER_STORAGE_KEY, 'agendaPoster.autosave.v1');
   const previousDocument = globalThis.document;
@@ -159,9 +191,11 @@ test('overlay metadata and cancer state survive a JSON round trip', () => {
   const state = createDefaultCancerDesignState();
   const manager = new OverlayManager(fakeCanvas);
   const overlay = manager.addCancerCopy('breast', 'breast-motif-02-self-embrace', fakeImage(), 'Self embrace', 'breast.png');
+  overlay.zIndex = OVERLAY_LAYER_BELOW_HEADER;
   const roundTrip = JSON.parse(JSON.stringify({ overlays: [overlay], cancerDesignState: state }));
   assert.equal(roundTrip.overlays[0].sourceKind, 'cancer-preset');
   assert.equal(roundTrip.overlays[0].cancerPresetId, 'breast');
   assert.equal(roundTrip.overlays[0].motifRole, 'copy');
+  assert.equal(roundTrip.overlays[0].zIndex, OVERLAY_LAYER_BELOW_HEADER);
   assert.deepEqual(roundTrip.cancerDesignState, state);
 });

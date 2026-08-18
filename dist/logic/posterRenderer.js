@@ -5,6 +5,13 @@ import { CanvasUtils } from './canvas-utils.js';
 import { drawHeaderContour } from './headerContours.js';
 export const AGENDA_START_Y = 350;
 export const AGENDA_START_Y_WITH_MEETUP = 380;
+export function partitionOverlayLayers(overlays) {
+    return {
+        belowHeader: overlays.filter(overlay => overlay.zIndex < 0),
+        belowTable: overlays.filter(overlay => overlay.zIndex === 0),
+        aboveTable: overlays.filter(overlay => overlay.zIndex === undefined || overlay.zIndex > 0)
+    };
+}
 export class PosterRenderer {
     constructor(canvas) {
         this.useHighQualityOverlays = false;
@@ -296,6 +303,9 @@ export class PosterRenderer {
             this.ctx.fillStyle = currentColorScheme === 'custom' ? customColors.bgC1 : '#fff';
         }
         this.ctx.fillRect(0, 0, W, H);
+        const overlayLayers = partitionOverlayLayers(overlays);
+        // 屋簷下層先畫，再把 Canvas 屋簷蓋上去，形成一致的遮擋關係。
+        this.drawOverlays(overlayLayers.belowHeader);
         this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
         // 癌症圖標
         // this.ctx.font = '50px Arial';
@@ -338,9 +348,8 @@ export class PosterRenderer {
             this.ctx.fillText('📍 ' + meetupText, 60, nextY);
             nextY += 30;
         }
-        // 繪製背景 PNG 圖層（zIndex = 0，在 Table 下方）
-        const backgroundOverlays = overlays.filter(o => o.zIndex === 0);
-        this.drawOverlays(backgroundOverlays);
+        // 屋簷上、Table 下方的 PNG 圖層。
+        this.drawOverlays(overlayLayers.belowTable);
         // 議程表
         let afterAgendaY = conferenceData.showMeetupPoint ? AGENDA_START_Y_WITH_MEETUP : AGENDA_START_Y;
         if (agendaItems.length > 0) {
@@ -356,9 +365,8 @@ export class PosterRenderer {
         // 底部裝飾條 (已移除)
         // this.ctx.fillStyle = scheme.agenda.background;
         // this.ctx.fillRect(0, H - 60, W, 60);
-        // 渲染前景 PNG 圖層（zIndex = 1，在 Table 上方）
-        const foregroundOverlays = overlays.filter(o => o.zIndex === 1 || o.zIndex === undefined);
-        this.drawOverlays(foregroundOverlays);
+        // Table 上方的 PNG 圖層。
+        this.drawOverlays(overlayLayers.aboveTable);
     }
     /**
      * 生成集合地點顯示文字

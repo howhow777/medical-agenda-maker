@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎗%ufe0f%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
   <!-- Excel 處理程式庫 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260819-cancer-v3" />
+  <link rel="stylesheet" href="./styles.css?v=20260819-roof-layer-v1" />
   <link rel="stylesheet" href="src/assets/feedback-modal.css" />
 </head>
 <body>
@@ -308,6 +308,10 @@
                 <button class="btn btn-primary" id="moveToForeground" title="移到 Table 前方">📋⬆️ 移到表格前</button>
               </div>
               <div class="row" style="margin-top:6px;">
+                <button class="btn btn-primary" id="moveBelowHeader" title="讓頂部屋簷遮住圖片邊緣">🏠⬇️ 移到屋簷下</button>
+                <button class="btn btn-primary" id="moveAboveHeader" title="讓圖片顯示在頂部屋簷上方、表格下方">🏠⬆️ 移到屋簷上</button>
+              </div>
+              <div class="row" style="margin-top:6px;">
                 <label style="flex:none; width:88px;">透明度</label>
                 <input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="1" />
               </div>
@@ -375,6 +379,6 @@
 
   <!-- 載入主程式 -->
   <meta name="medical-agenda-build" content="cancer-design-v3">
-  <script type="module" src="./dist/main.js?v=20260819-cancer-v3"></script>
+  <script type="module" src="./dist/main.js?v=20260819-roof-layer-v1"></script>
 </body>
 </html>

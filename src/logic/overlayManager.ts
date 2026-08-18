@@ -2,6 +2,9 @@ import { Overlay, MotifRole } from '../assets/types.js';
 import { OverlayProcessor } from './overlay-processor.js';
 
 export const CANCER_MOTIF_SAFE_ZONE = { x: 560, y: 145, width: 200, height: 170 } as const;
+export const OVERLAY_LAYER_BELOW_HEADER = -1;
+export const OVERLAY_LAYER_BELOW_TABLE = 0;
+export const OVERLAY_LAYER_ABOVE_TABLE = 1;
 
 type CancerOverlayMetadata = {
   sourceKind: 'cancer-preset';
@@ -82,7 +85,7 @@ export class OverlayManager {
       opacity: 1,
       visible: true,
       lockAspect: true,
-      zIndex: 1, // 預設為前景層（Table上方）
+      zIndex: OVERLAY_LAYER_ABOVE_TABLE,
       sourceKind: metadata.sourceKind || 'upload',
       cancerPresetId: metadata.cancerPresetId,
       motifId: metadata.motifId,
@@ -189,7 +192,7 @@ export class OverlayManager {
       opacity: 1,
       visible: true,
       lockAspect: true,
-      zIndex: 0,
+      zIndex: OVERLAY_LAYER_BELOW_TABLE,
       ...metadata
     };
   }
@@ -292,14 +295,27 @@ export class OverlayManager {
   // 切換選中圖層到背景層（Table下方）
   moveSelectedToBackground(): void {
     if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-      this.overlays[this.selectedIndex].zIndex = 0;
+      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BELOW_TABLE;
     }
   }
 
   // 切換選中圖層到前景層（Table上方）
   moveSelectedToForeground(): void {
     if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-      this.overlays[this.selectedIndex].zIndex = 1;
+      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_ABOVE_TABLE;
+    }
+  }
+
+  // 屋簷是固定合成物件；圖片可移到它的下方，避免透明邊緣蓋住屋簷。
+  moveSelectedBelowHeader(): void {
+    if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
+      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BELOW_HEADER;
+    }
+  }
+
+  moveSelectedAboveHeader(): void {
+    if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
+      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BELOW_TABLE;
     }
   }
 

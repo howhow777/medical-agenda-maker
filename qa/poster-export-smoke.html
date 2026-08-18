@@ -28,6 +28,33 @@
       renderedVariants += 1;
     }
   }
+
+  const layerSourceCanvas = document.createElement('canvas');
+  layerSourceCanvas.width = 800;
+  layerSourceCanvas.height = 150;
+  const layerSourceContext = layerSourceCanvas.getContext('2d');
+  layerSourceContext.fillStyle = '#ff00ff';
+  layerSourceContext.fillRect(0, 0, 800, 150);
+  const layerImage = new Image();
+  await new Promise((resolve, reject) => {
+    layerImage.onload = resolve;
+    layerImage.onerror = reject;
+    layerImage.src = layerSourceCanvas.toDataURL('image/png');
+  });
+  const roofTestOverlay = {
+    id: 999, name: 'roof compositor test', img: layerImage, src: layerImage.src,
+    x: 400, y: 75, w: 800, h: 150, scaleX: 1, scaleY: 1,
+    rotation: 0, opacity: 1, visible: true, lockAspect: true, zIndex: -1
+  };
+  renderer.setHeaderContour('soft-wave');
+  renderer.drawPoster([], 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [roofTestOverlay], 1);
+  const belowHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
+  roofTestOverlay.zIndex = 0;
+  renderer.drawPoster([], 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [roofTestOverlay], 1);
+  const aboveHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
+  const roofOcclusionVerified = belowHeaderPixel.slice(0, 3).join(',') !== '255,0,255'
+    && aboveHeaderPixel.slice(0, 3).join(',') === '255,0,255';
+
   window.app = {
     getAppState: () => ({
       agendaItems, currentTemplate: 'lung', currentColorScheme: 'cancer_lung',
@@ -44,6 +71,9 @@
     mime: exported.blob.type,
     original: exported.originalSize,
     highQuality: exported.highQualitySize,
-    bitmap: { width: bitmap.width, height: bitmap.height }
+    bitmap: { width: bitmap.width, height: bitmap.height },
+    roofOcclusionVerified,
+    belowHeaderPixel,
+    aboveHeaderPixel
   });
 </script>

@@ -1143,8 +1143,14 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   padding: 10px;
+  border: 0;
   border-bottom: 1px solid #eee;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
   transition: background-color .2s;
 }
@@ -1155,6 +1161,46 @@ input:focus, select:focus, textarea:focus {
 
 .overlay-item.active {
   background: #e9f0ff;
+}
+
+.overlay-item.selected {
+  background: #e9f0ff;
+}
+
+.overlay-layer-badge,
+.overlay-fixed-badge {
+  flex: none;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.overlay-layer-badge {
+  color: #355070;
+  background: #edf4ff;
+}
+
+.overlay-fixed-layer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-block: 1px solid #a9c3e6;
+  color: #24415f;
+  background: linear-gradient(90deg, #eef6ff, #f7f2ff);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.overlay-fixed-layer > :nth-child(2) {
+  flex: 1;
+}
+
+.overlay-fixed-badge {
+  color: #5c4f7c;
+  background: rgba(112, 91, 160, 0.12);
 }
 
 .overlay-thumb {
