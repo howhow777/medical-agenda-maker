@@ -1,6 +1,8 @@
+export const AGENDA_POSTER_STORAGE_KEY = 'agendaPoster.autosave.v1';
+export const AGENDA_POSTER_STATE_VERSION = 'agenda-poster-v2';
 export class DataManager {
     constructor() {
-        this.LS_KEY = 'agendaPoster.autosave.v1';
+        this.LS_KEY = AGENDA_POSTER_STORAGE_KEY;
     }
     // 收集表單狀態
     collectFormState() {
@@ -37,7 +39,7 @@ export class DataManager {
             document.querySelector('input[name="title"]')?.value ||
             '').trim();
         return {
-            version: 'agenda-poster-v1',
+            version: AGENDA_POSTER_STATE_VERSION,
             savedAt: new Date().toISOString(),
             title: titleGuess || 'agenda',
             form: this.collectFormState(),
@@ -45,38 +47,48 @@ export class DataManager {
         };
     }
     // 套用狀態到表單
-    applyState(state, customStateCallback) {
+    async applyState(state, customStateCallback) {
         if (!state || typeof state !== 'object')
             return;
-        // 1) 表單
-        const form = state.form || {};
-        for (const [key, val] of Object.entries(form)) {
-            const el = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
-            if (!el)
-                continue;
-            // 🚫 跳過檔案輸入框 - 瀏覽器不允許程式設定檔案路徑
-            if (el instanceof HTMLInputElement && el.type === 'file') {
-                console.log('⚠️ 跳過檔案輸入框:', key);
-                continue;
+        document.documentElement.dataset.restoringAgenda = 'true';
+        try {
+            // 1) 表單
+            const form = state.form || {};
+            for (const [key, val] of Object.entries(form)) {
+                const el = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+                if (!el)
+                    continue;
+                // 🚫 跳過檔案輸入框 - 瀏覽器不允許程式設定檔案路徑
+                if (el instanceof HTMLInputElement && el.type === 'file') {
+                    console.log('⚠️ 跳過檔案輸入框:', key);
+                    continue;
+                }
+                if (el instanceof HTMLInputElement && el.type === 'checkbox') {
+                    el.checked = Boolean(val);
+                }
+                else if (el instanceof HTMLInputElement && el.type === 'radio') {
+                    const radio = document.querySelector(`[name="${key}"][value="${val}"]`);
+                    if (radio instanceof HTMLInputElement)
+                        radio.checked = true;
+                }
+                else if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+                    el.value = (val ?? '').toString();
+                }
+                // 觸發事件
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            if (el instanceof HTMLInputElement && el.type === 'checkbox') {
-                el.checked = Boolean(val);
+            // 2) 自訂全域狀態。表單事件已同步完畢，之後只允許狀態套用器做一次完整重繪。
+            delete document.documentElement.dataset.restoringAgenda;
+            if (state.customState && customStateCallback) {
+                await customStateCallback(state.customState);
             }
-            else if (el instanceof HTMLInputElement && el.type === 'radio') {
-                const radio = document.querySelector(`[name="${key}"][value="${val}"]`);
-                if (radio instanceof HTMLInputElement)
-                    radio.checked = true;
+            else {
+                document.getElementById('conferenceTitle')?.dispatchEvent(new Event('input', { bubbles: true }));
             }
-            else if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
-                el.value = (val ?? '').toString();
-            }
-            // 觸發事件
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        // 2) 自訂全域狀態
-        if (state.customState && customStateCallback) {
-            customStateCallback(state.customState);
+        finally {
+            delete document.documentElement.dataset.restoringAgenda;
         }
     }
     // 暫存到 localStorage
@@ -92,7 +104,7 @@ export class DataManager {
         }
     }
     // 從 localStorage 讀回
-    tempLoad(customStateCallback) {
+    async tempLoad(customStateCallback) {
         try {
             const raw = localStorage.getItem(this.LS_KEY);
             if (!raw) {
@@ -100,7 +112,7 @@ export class DataManager {
                 return;
             }
             const state = JSON.parse(raw);
-            this.applyState(state, customStateCallback);
+            await this.applyState(state, customStateCallback);
             this.showToast('已讀取暫存並還原。');
         }
         catch (e) {
@@ -132,14 +144,14 @@ export class DataManager {
     importJson(file, customStateCallback) {
         const reader = new FileReader();
         reader.onerror = () => alert('讀檔失敗。');
-        reader.onload = () => {
+        reader.onload = async () => {
             try {
                 const state = JSON.parse(String(reader.result));
                 if (!state || !state.form) {
                     alert('檔案格式不符：找不到表單內容。');
                     return;
                 }
-                this.applyState(state, customStateCallback);
+                await this.applyState(state, customStateCallback);
                 this.showToast('已開啟檔案並還原。');
             }
             catch (e) {

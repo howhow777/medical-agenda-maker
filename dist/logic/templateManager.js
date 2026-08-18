@@ -38,7 +38,7 @@ export class TemplateManager {
     loadTemplateFromFile(file, customStateCallback) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     console.log('🔍 開始解析範本檔案...');
                     const template = JSON.parse(e.target?.result);
@@ -48,8 +48,8 @@ export class TemplateManager {
                         return;
                     }
                     // 還原表單狀態（包含完整圖層）
-                    this.dataManager.applyState({
-                        version: 'template-v1',
+                    await this.dataManager.applyState({
+                        version: 'template-v2',
                         savedAt: template.createdAt,
                         title: template.name,
                         form: template.data.form,
@@ -59,6 +59,8 @@ export class TemplateManager {
                             customColors: template.data.customColors,
                             meetupSettings: template.data.meetupSettings, // 🆕 恢復集合地點設定
                             footerSettings: template.data.footerSettings, // 🆕 恢復頁尾設定
+                            moderatorDisplaySettings: template.data.moderatorDisplaySettings,
+                            cancerDesignState: template.data.cancerDesignState,
                             basicInfo: template.data.basicInfo // 🆕 恢復基本資訊
                         }
                     }, customStateCallback);
@@ -114,6 +116,11 @@ export class TemplateManager {
                 showFooterNote: true,
                 footerContent: ''
             },
+            moderatorDisplaySettings: customState?.moderatorDisplaySettings || {
+                hideModeratorColumn: false,
+                mergeSameModerator: false
+            },
+            cancerDesignState: customState?.cancerDesignState,
             basicInfo: customState?.basicInfo || {
                 title: '',
                 subtitle: '',

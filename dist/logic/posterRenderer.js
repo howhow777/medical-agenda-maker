@@ -2,12 +2,19 @@ import { colorSchemes, gradientDirections } from './colorSchemes.js';
 import { templates } from './templates.js';
 import { OverlayProcessor } from './overlay-processor.js';
 import { CanvasUtils } from './canvas-utils.js';
+import { drawHeaderContour } from './headerContours.js';
+export const AGENDA_START_Y = 350;
+export const AGENDA_START_Y_WITH_MEETUP = 380;
 export class PosterRenderer {
     constructor(canvas) {
         this.useHighQualityOverlays = false;
         this.processedOverlayCache = new Map();
+        this.headerContourId = 'soft-wave';
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+    }
+    setHeaderContour(contourId) {
+        this.headerContourId = contourId;
     }
     // 創建梯度效果
     createGradient(w, h, colors, direction) {
@@ -226,130 +233,13 @@ export class PosterRenderer {
             this.ctx.globalAlpha = 1;
         }
     }
-    // 六個癌別共用資料與表格排版，但各自擁有可辨識的標題輪廓與裝飾語彙。
-    drawPresetHeader(templateId, scheme, W, direction) {
-        const ctx = this.ctx;
-        ctx.save();
-        ctx.fillStyle = this.createGradient(W, 140, scheme.header.colors, direction);
-        ctx.beginPath();
-        switch (templateId) {
-            case 'headneck':
-                ctx.moveTo(0, 0);
-                ctx.lineTo(W, 0);
-                ctx.lineTo(W, 136);
-                ctx.lineTo(W * 0.64, 108);
-                ctx.lineTo(0, 126);
-                ctx.closePath();
-                ctx.fill();
-                ctx.globalAlpha = 0.18;
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 2;
-                [22, 36, 50].forEach(radius => {
-                    ctx.beginPath();
-                    ctx.arc(W - 86, 76, radius, 0, Math.PI * 2);
-                    ctx.stroke();
-                });
-                break;
-            case 'uterus':
-                ctx.moveTo(0, 0);
-                ctx.lineTo(W, 0);
-                ctx.lineTo(W, 104);
-                ctx.bezierCurveTo(W * 0.86, 142, W * 0.69, 88, W * 0.52, 120);
-                ctx.bezierCurveTo(W * 0.35, 148, W * 0.18, 92, 0, 128);
-                ctx.closePath();
-                ctx.fill();
-                ctx.globalAlpha = 0.13;
-                ctx.fillStyle = '#FFFFFF';
-                [-1, 0, 1].forEach(offset => {
-                    ctx.beginPath();
-                    ctx.ellipse(W - 94 + offset * 26, 72, 28, 54, offset * 0.42, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-                break;
-            case 'urinary':
-                ctx.moveTo(0, 0);
-                ctx.lineTo(W, 0);
-                ctx.lineTo(W, 116);
-                ctx.quadraticCurveTo(W * 0.75, 94, W * 0.55, 124);
-                ctx.lineTo(0, 108);
-                ctx.closePath();
-                ctx.fill();
-                ctx.globalAlpha = 0.17;
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.ellipse(92, 68, 55, 27, -0.32, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(92, 68, 8, 0, Math.PI * 2);
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fill();
-                break;
-            case 'colorectal':
-                ctx.moveTo(0, 0);
-                ctx.lineTo(W, 0);
-                ctx.lineTo(W, 98);
-                ctx.lineTo(W * 0.78, 98);
-                ctx.lineTo(W * 0.72, 128);
-                ctx.lineTo(W * 0.42, 116);
-                ctx.lineTo(W * 0.36, 136);
-                ctx.lineTo(0, 112);
-                ctx.closePath();
-                ctx.fill();
-                ctx.globalAlpha = 0.16;
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 8;
-                ctx.beginPath();
-                ctx.moveTo(W - 180, 36);
-                ctx.lineTo(W - 128, 36);
-                ctx.lineTo(W - 128, 82);
-                ctx.lineTo(W - 74, 82);
-                ctx.stroke();
-                break;
-            case 'breast':
-                ctx.moveTo(0, 0);
-                ctx.lineTo(W, 0);
-                ctx.lineTo(W, 108);
-                ctx.bezierCurveTo(W * 0.72, 150, W * 0.46, 78, 0, 124);
-                ctx.closePath();
-                ctx.fill();
-                ctx.globalAlpha = 0.18;
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 10;
-                ctx.beginPath();
-                ctx.moveTo(W - 168, 18);
-                ctx.bezierCurveTo(W - 76, 52, W - 190, 72, W - 86, 115);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(W - 102, 18);
-                ctx.bezierCurveTo(W - 194, 52, W - 80, 72, W - 184, 115);
-                ctx.stroke();
-                break;
-            case 'lung':
-            default:
-                ctx.moveTo(0, 0);
-                ctx.lineTo(W, 0);
-                ctx.lineTo(W, 100);
-                ctx.quadraticCurveTo(W * 0.75, 130, W * 0.5, 110);
-                ctx.quadraticCurveTo(W * 0.25, 90, 0, 120);
-                ctx.closePath();
-                ctx.fill();
-                ctx.globalAlpha = 0.15;
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(W - 92, 72, 38, -Math.PI * 0.72, Math.PI * 0.72);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(W - 56, 72, 38, Math.PI * 0.28, Math.PI * 1.72);
-                ctx.stroke();
-                break;
-        }
-        ctx.restore();
+    // The same native Canvas geometry is used by the drawer previews.
+    drawPresetHeader(_templateId, scheme, W, direction) {
+        drawHeaderContour(this.ctx, this.headerContourId, W, 150, this.createGradient(W, 150, scheme.header.colors, direction));
     }
     // 計算所需的海報高度
     calculateRequiredHeight(agendaItems, showFooter, footerText, W, renderOptions = {}) {
-        let total = 275;
+        let total = AGENDA_START_Y - 25;
         // Canvas 上若顯示集合地點，表格會往下移 30px；下載用高解析重繪也要保留同樣高度。
         if (renderOptions.showMeetupPoint) {
             total += 30;
@@ -415,7 +305,14 @@ export class PosterRenderer {
         // 主標題
         const title = conferenceData.title || `${template.title}醫學會議`;
         this.ctx.fillStyle = scheme.header.text;
-        this.ctx.font = 'bold 36px Microsoft JhengHei';
+        let titleSize = 36;
+        while (titleSize > 24) {
+            this.ctx.font = `bold ${titleSize}px Microsoft JhengHei`;
+            if (this.ctx.measureText(title).width <= W - 80)
+                break;
+            titleSize -= 1;
+        }
+        this.ctx.font = `bold ${titleSize}px Microsoft JhengHei`;
         this.ctx.textAlign = 'center';
         this.ctx.fillText(title, W / 2, 50);
         // 副標題
@@ -445,7 +342,7 @@ export class PosterRenderer {
         const backgroundOverlays = overlays.filter(o => o.zIndex === 0);
         this.drawOverlays(backgroundOverlays);
         // 議程表
-        let afterAgendaY = nextY + 40;
+        let afterAgendaY = conferenceData.showMeetupPoint ? AGENDA_START_Y_WITH_MEETUP : AGENDA_START_Y;
         if (agendaItems.length > 0) {
             afterAgendaY = this.drawAgendaTable(agendaItems, scheme, W, afterAgendaY, {
                 hideModerator: conferenceData.hideModerator,
@@ -459,8 +356,6 @@ export class PosterRenderer {
         // 底部裝飾條 (已移除)
         // this.ctx.fillStyle = scheme.agenda.background;
         // this.ctx.fillRect(0, H - 60, W, 60);
-        // 主題裝飾圖案
-        this.drawCancerDecorations(template, scheme, W, H);
         // 渲染前景 PNG 圖層（zIndex = 1，在 Table 上方）
         const foregroundOverlays = overlays.filter(o => o.zIndex === 1 || o.zIndex === undefined);
         this.drawOverlays(foregroundOverlays);

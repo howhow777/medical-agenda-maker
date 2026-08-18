@@ -835,7 +835,7 @@ export class FormControls {
 
     if (!emptyState || !controlsPanel || !this.overlayManager) return;
 
-    const hasOverlays = this.overlayManager.getOverlays().length > 0;
+    const hasOverlays = this.overlayManager.getRenderableOverlays().length > 0;
     emptyState.style.display = hasOverlays ? 'none' : 'block';
     controlsPanel.classList.toggle('hidden', !hasOverlays);
   }
@@ -845,13 +845,13 @@ export class FormControls {
     const list = document.getElementById('overlayList');
     if (!list || !this.overlayManager) return;
 
-    const overlays = this.overlayManager.getOverlays();
+    const entries = this.overlayManager.getRenderableEntries();
     const selectedIndex = this.overlayManager.getSelectedIndex();
 
     this.updateOverlayUiState();
     list.innerHTML = '';
 
-    overlays.forEach((overlay, index) => {
+    entries.forEach(({ overlay, index }) => {
       const div = document.createElement('div');
       div.className = `overlay-item ${index === selectedIndex ? 'selected' : ''}`;
       div.innerHTML = `

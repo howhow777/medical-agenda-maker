@@ -2,7 +2,7 @@
  * UI 主控制器 - 協調所有模組的核心控制器
  */
 
-import { AgendaItem, AppState, DragState, Overlay } from '../assets/types.js';
+import { AgendaItem, AppState, CancerDesignStateV2, DragState, Overlay, OverlayData } from '../assets/types.js';
 import { CanvasInteractions } from './canvasInteractions.js';
 import { FormControls } from './formControls.js';
 import { TemplateController } from './templateController.js';
@@ -14,8 +14,8 @@ import { PosterRenderer } from '../logic/posterRenderer.js';
 import { DataManager } from '../logic/dataManager.js';
 import { CropController } from './cropController-fixed.js';
 import { FeedbackController } from './feedbackController.js';
-import { CancerDesignSwitcher } from './cancerDesignSwitcher.js';
-import { CancerDesignPresetId, cancerDesignPresets } from '../logic/cancerDesignPresets.js';
+import { CancerDesignAction, CancerDesignSwitcher } from './cancerDesignSwitcher.js';
+import { CancerDesignPresetId, cancerDesignPresets, normalizeCancerDesignState } from '../logic/cancerDesignPresets.js';
 
 export class UIController {
   // 狀態管理
@@ -88,8 +88,7 @@ export class UIController {
       // 初始化所有模組
       this.initializeModules();
 
-      // 設計切換器只改配色、癌別與一個受管理的內建圖案；不改議程及使用者上傳圖片。
-      this.cancerDesignSwitcher = new CancerDesignSwitcher((presetId, motifId) => this.applyCancerDesign(presetId, motifId));
+      this.cancerDesignSwitcher = new CancerDesignSwitcher(action => this.handleCancerDesignAction(action));
       
       // 綁定事件
       this.bindEvents();
@@ -114,25 +113,43 @@ export class UIController {
     }
   }
 
-  private async applyCancerDesign(presetId: CancerDesignPresetId, motifId: string): Promise<void> {
-    const preset = cancerDesignPresets[presetId];
-    const motif = preset.motifs.find(item => item.id === motifId) || preset.motifs[0];
+  private async handleCancerDesignAction(action: CancerDesignAction): Promise<void> {
+    const preset = cancerDesignPresets[action.presetId];
     this.formControls.setCurrentTemplate(preset.id);
     this.formControls.setCurrentColorScheme(preset.colorScheme);
+    this.overlayManager.setActiveCancerPresetId(preset.id);
 
-    const image = await this.loadImage(motif.src);
-    this.overlayManager.upsertManagedOverlay(motif.id, image, motif.name, motif.src, {
-      x: this.canvas.width * motif.xRatio,
-      y: this.canvas.height * motif.yRatio,
-      width: this.canvas.width * motif.widthRatio,
-      opacity: motif.opacity,
-      rotation: motif.rotation,
-      zIndex: 0
-    });
-    this.overlayManager.setSelectedIndex(-1);
+    if (action.type === 'select-cancer') {
+      const state = this.cancerDesignSwitcher.getState();
+      this.posterRenderer.setHeaderContour(state.contourByCancer[preset.id]);
+      const hasPrimary = this.overlayManager.getOverlays().some(overlay =>
+        overlay.sourceKind === 'cancer-preset' && overlay.cancerPresetId === preset.id && overlay.motifRole === 'primary'
+      );
+      if (!hasPrimary) {
+        const motifId = state.primaryMotifByCancer[preset.id];
+        await this.insertCancerPrimary(preset.id, motifId);
+      }
+      this.overlayManager.setSelectedIndex(-1);
+    } else if (action.type === 'select-primary') {
+      await this.insertCancerPrimary(action.presetId, action.motifId);
+    } else if (action.type === 'add-copy') {
+      const motif = preset.motifs.find(item => item.id === action.motifId) || preset.motifs[0];
+      const image = await this.loadImage(motif.src);
+      this.overlayManager.addCancerCopy(preset.id, motif.id, image, motif.name, motif.src);
+    } else if (action.type === 'select-contour') {
+      this.posterRenderer.setHeaderContour(action.contourId);
+    }
+
     this.refreshOverlayList();
     this.syncOverlayControls();
     this.updatePoster();
+  }
+
+  private async insertCancerPrimary(presetId: CancerDesignPresetId, motifId: string): Promise<void> {
+    const preset = cancerDesignPresets[presetId];
+    const motif = preset.motifs.find(item => item.id === motifId) || preset.motifs[0];
+    const image = await this.loadImage(motif.src);
+    this.overlayManager.upsertCancerPrimary(preset.id, motif.id, image, motif.name, motif.src);
   }
 
   private loadImage(src: string): Promise<HTMLImageElement> {
@@ -282,7 +299,11 @@ export class UIController {
           opacity: overlay.opacity,
           visible: overlay.visible,
           lockAspect: overlay.lockAspect,
-          zIndex: overlay.zIndex
+          zIndex: overlay.zIndex,
+          sourceKind: overlay.sourceKind,
+          cancerPresetId: overlay.cancerPresetId,
+          motifId: overlay.motifId,
+          motifRole: overlay.motifRole
         })),
         customColors: this.appState.customColors,
         meetupSettings: {
@@ -298,6 +319,7 @@ export class UIController {
           hideModeratorColumn: this.formControls.getHideModeratorColumn(),
           mergeSameModerator: this.formControls.getMergeSameModerator()
         },
+        cancerDesignState: this.cancerDesignSwitcher.getState(),
         basicInfo: {
           title: (document.getElementById('conferenceTitle') as HTMLInputElement)?.value || '',
           subtitle: (document.getElementById('conferenceSubtitle') as HTMLInputElement)?.value || '',
@@ -309,62 +331,7 @@ export class UIController {
     });
     
     // 設定範本系統的狀態套用器
-    this.templateController.setStateApplier((customState) => {
-      if (customState.agendaItems) {
-        this.appState.agendaItems = customState.agendaItems;
-        this.formControls.setAgendaItems(customState.agendaItems);
-      }
-      
-      if (customState.overlays) {
-        // 清除現有圖層
-        this.overlayManager.clearOverlays();
-        
-        // 載入圖層資料（需要重新載入圖片）
-        customState.overlays.forEach(async (overlayData: any) => {
-          try {
-            const img = new Image();
-            img.onload = () => {
-              const overlay = this.overlayManager.addOverlay(img, overlayData.name, overlayData.src);
-              // 還原圖層屬性
-              Object.assign(overlay, overlayData);
-              this.refreshOverlayList();
-              this.updatePoster();
-            };
-            img.src = overlayData.src;
-          } catch (e) {
-            console.warn('無法載入圖層:', overlayData.name, e);
-          }
-        });
-      }
-      
-      if (customState.customColors) {
-        this.appState.customColors = customState.customColors;
-        this.formControls.setCustomColors(customState.customColors);
-      }
-      
-      // 🆕 還原集合地點設定
-      if (customState.meetupSettings) {
-        this.formControls.setMeetupSettings(customState.meetupSettings);
-      }
-      
-      // 🆕 還原頁尾設定
-      if (customState.footerSettings) {
-        this.formControls.setFooterSettings(customState.footerSettings);
-      }
-
-      // 🆕 還原主持人顯示設定
-      if (customState.moderatorDisplaySettings) {
-        this.formControls.setModeratorDisplaySettings(customState.moderatorDisplaySettings);
-      }
-      
-      // 🆕 還原基本資訊
-      if (customState.basicInfo) {
-        this.restoreBasicInfo(customState.basicInfo);
-      }
-      
-      // 更新海報
-      this.updatePoster();
-    });
+    this.templateController.setStateApplier(customState => this.restoreCustomState(customState));
     
     // 綁定全域函數供 HTML onclick 使用
     window.editAgenda = (index: number) => this.formControls.editAgenda(index);
@@ -480,6 +447,7 @@ export class UIController {
    * 更新海報
    */
   public updatePoster(): void {
+    if (document.documentElement.dataset.restoringAgenda === 'true') return;
     try {
       // 從 FormControls 同步最新狀態
       this.appState.agendaItems = this.formControls.getAgendaItems();
@@ -487,7 +455,7 @@ export class UIController {
       this.appState.currentColorScheme = this.formControls.getCurrentColorScheme();
       this.appState.currentGradientDirection = this.formControls.getCurrentGradientDirection();
       this.appState.customColors = this.formControls.getCustomColors();
-      this.appState.overlays = this.overlayManager.getOverlays();
+      this.appState.overlays = this.overlayManager.getRenderableOverlays();
       this.appState.selectedOverlayIndex = this.overlayManager.getSelectedIndex();
       
       // 取得會議資料
@@ -515,7 +483,7 @@ export class UIController {
       
       // 確保選取物件仍在畫布內
       if (this.appState.selectedOverlayIndex >= 0) {
-        const ov = this.appState.overlays[this.appState.selectedOverlayIndex];
+        const ov = this.overlayManager.getSelectedOverlay();
         if (ov) {
           ov.x = Math.max(0, Math.min(this.canvas.width, ov.x));
           ov.y = Math.max(0, Math.min(this.canvas.height, ov.y));
@@ -757,5 +725,57 @@ export class UIController {
     if (locationInput && basicInfo.location) locationInput.value = basicInfo.location;
     
     console.log('✅ 基本資訊已從範本還原');
+  }
+
+  private async restoreCustomState(customState: any): Promise<void> {
+    if (customState.agendaItems) {
+      this.appState.agendaItems = customState.agendaItems;
+      this.formControls.setAgendaItems(customState.agendaItems);
+    }
+    if (customState.customColors) {
+      this.appState.customColors = customState.customColors;
+      this.formControls.setCustomColors(customState.customColors);
+    }
+    if (customState.meetupSettings) this.formControls.setMeetupSettings(customState.meetupSettings);
+    if (customState.footerSettings) this.formControls.setFooterSettings(customState.footerSettings);
+    if (customState.moderatorDisplaySettings) {
+      this.formControls.setModeratorDisplaySettings(customState.moderatorDisplaySettings);
+    }
+    if (customState.basicInfo) this.restoreBasicInfo(customState.basicInfo);
+
+    this.overlayManager.clearOverlays();
+    const overlayDataList = Array.isArray(customState.overlays) ? customState.overlays as OverlayData[] : [];
+    const restored = await Promise.all(overlayDataList.map(async overlayData => {
+      try {
+        const image = await this.loadImage(overlayData.src);
+        const overlay = this.overlayManager.addOverlay(image, overlayData.name, overlayData.src, {
+          sourceKind: overlayData.sourceKind || 'upload',
+          cancerPresetId: overlayData.cancerPresetId,
+          motifId: overlayData.motifId,
+          motifRole: overlayData.motifRole
+        });
+        Object.assign(overlay, overlayData, { sourceKind: overlayData.sourceKind || 'upload' });
+        return overlay;
+      } catch (error) {
+        console.warn('無法載入圖層:', overlayData.name, error);
+        return null;
+      }
+    }));
+
+    const designState: CancerDesignStateV2 = customState.cancerDesignState
+      ? normalizeCancerDesignState(customState.cancerDesignState)
+      : this.cancerDesignSwitcher.getState();
+    this.cancerDesignSwitcher.restoreState(designState);
+    const presetId = designState.activePresetId as CancerDesignPresetId;
+    const preset = cancerDesignPresets[presetId];
+    this.overlayManager.setActiveCancerPresetId(presetId);
+    this.posterRenderer.setHeaderContour(designState.contourByCancer[presetId]);
+    this.formControls.setCurrentTemplate(presetId);
+    this.formControls.setCurrentColorScheme(preset.colorScheme);
+    this.overlayManager.setSelectedIndex(-1);
+    this.refreshOverlayList();
+    this.syncOverlayControls();
+    this.updatePoster();
+    console.log(`✅ 已還原 ${restored.filter(Boolean).length} 個圖層與癌別設計狀態`);
   }
 }

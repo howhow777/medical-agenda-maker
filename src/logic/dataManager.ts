@@ -1,5 +1,8 @@
 import { AgendaItem, CustomColors } from '../assets/types.js';
 
+export const AGENDA_POSTER_STORAGE_KEY = 'agendaPoster.autosave.v1';
+export const AGENDA_POSTER_STATE_VERSION = 'agenda-poster-v2';
+
 export interface SavedState {
   version: string;
   savedAt: string;
@@ -9,7 +12,7 @@ export interface SavedState {
 }
 
 export class DataManager {
-  private readonly LS_KEY = 'agendaPoster.autosave.v1';
+  private readonly LS_KEY = AGENDA_POSTER_STORAGE_KEY;
 
   // 收集表單狀態
   collectFormState(): Record<string, any> {
@@ -48,7 +51,7 @@ export class DataManager {
     ).trim();
     
     return {
-      version: 'agenda-poster-v1',
+      version: AGENDA_POSTER_STATE_VERSION,
       savedAt: new Date().toISOString(),
       title: titleGuess || 'agenda',
       form: this.collectFormState(),
@@ -57,8 +60,11 @@ export class DataManager {
   }
 
   // 套用狀態到表單
-  applyState(state: SavedState, customStateCallback?: (customState: any) => void): void {
+  async applyState(state: SavedState, customStateCallback?: (customState: any) => void | Promise<void>): Promise<void> {
     if (!state || typeof state !== 'object') return;
+
+    document.documentElement.dataset.restoringAgenda = 'true';
+    try {
 
     // 1) 表單
     const form = state.form || {};
@@ -86,9 +92,15 @@ export class DataManager {
       el.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    // 2) 自訂全域狀態
-    if (state.customState && customStateCallback) {
-      customStateCallback(state.customState);
+      // 2) 自訂全域狀態。表單事件已同步完畢，之後只允許狀態套用器做一次完整重繪。
+      delete document.documentElement.dataset.restoringAgenda;
+      if (state.customState && customStateCallback) {
+        await customStateCallback(state.customState);
+      } else {
+        document.getElementById('conferenceTitle')?.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    } finally {
+      delete document.documentElement.dataset.restoringAgenda;
     }
   }
 
@@ -105,7 +117,7 @@ export class DataManager {
   }
 
   // 從 localStorage 讀回
-  tempLoad(customStateCallback?: (customState: any) => void): void {
+  async tempLoad(customStateCallback?: (customState: any) => void | Promise<void>): Promise<void> {
     try {
       const raw = localStorage.getItem(this.LS_KEY);
       if (!raw) {
@@ -113,7 +125,7 @@ export class DataManager {
         return;
       }
       const state = JSON.parse(raw) as SavedState;
-      this.applyState(state, customStateCallback);
+      await this.applyState(state, customStateCallback);
       this.showToast('已讀取暫存並還原。');
     } catch (e) {
       console.error(e);
@@ -142,17 +154,17 @@ export class DataManager {
   }
 
   // 匯入 JSON 檔
-  importJson(file: File, customStateCallback?: (customState: any) => void): void {
+  importJson(file: File, customStateCallback?: (customState: any) => void | Promise<void>): void {
     const reader = new FileReader();
     reader.onerror = () => alert('讀檔失敗。');
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const state = JSON.parse(String(reader.result)) as SavedState;
         if (!state || !state.form) {
           alert('檔案格式不符：找不到表單內容。');
           return;
         }
-        this.applyState(state, customStateCallback);
+        await this.applyState(state, customStateCallback);
         this.showToast('已開啟檔案並還原。');
       } catch (e) {
         console.error(e);

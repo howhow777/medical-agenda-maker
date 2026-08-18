@@ -3,7 +3,7 @@ import { TemplateManager } from '../logic/templateManager.js';
 export class TemplateController {
   private templateManager: TemplateManager;
   private collectCurrentAppState: () => any = () => ({});
-  private applyCustomState: (customState: any) => void = () => {};
+  private applyCustomState: (customState: any) => void | Promise<void> = () => {};
 
   constructor() {
     this.templateManager = new TemplateManager();
@@ -81,7 +81,7 @@ export class TemplateController {
   }
 
   // 設定狀態套用器（從main.ts調用）
-  setStateApplier(applier: (customState: any) => void): void {
+  setStateApplier(applier: (customState: any) => void | Promise<void>): void {
     this.applyCustomState = applier;
   }
 }

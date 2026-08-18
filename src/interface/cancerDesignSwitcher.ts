@@ -1,13 +1,23 @@
+import { CancerDesignStateV2, HeaderContourId } from '../assets/types.js';
 import {
   CancerDesignPresetId,
   cancerDesignPresetList,
   cancerDesignPresets,
-  isCancerDesignPresetId
+  createDefaultCancerDesignState,
+  normalizeCancerDesignState
 } from '../logic/cancerDesignPresets.js';
+import { headerContourIds, headerContourLabels, renderContourPreview } from '../logic/headerContours.js';
 
-type SelectionHandler = (presetId: CancerDesignPresetId, motifId: string) => Promise<void>;
+export type CancerDesignAction =
+  | { type: 'select-cancer'; presetId: CancerDesignPresetId }
+  | { type: 'select-primary'; presetId: CancerDesignPresetId; motifId: string }
+  | { type: 'add-copy'; presetId: CancerDesignPresetId; motifId: string }
+  | { type: 'select-contour'; presetId: CancerDesignPresetId; contourId: HeaderContourId };
 
-const STORAGE_KEY = 'medical-agenda-maker:cancer-design-selection:v1';
+type ActionHandler = (action: CancerDesignAction) => Promise<void>;
+
+export const CANCER_DESIGN_STORAGE_KEY_V2 = 'medical-agenda-maker:cancer-design-selection:v2';
+export const CANCER_DESIGN_STORAGE_KEY_V1 = 'medical-agenda-maker:cancer-design-selection:v1';
 
 export class CancerDesignSwitcher {
   private trigger: HTMLButtonElement;
@@ -17,11 +27,11 @@ export class CancerDesignSwitcher {
   private cardGrid: HTMLElement;
   private motifGrid: HTMLElement;
   private motifTitle: HTMLElement;
-  private selectedPresetId: CancerDesignPresetId = 'lung';
-  private selectedMotifs = new Map<CancerDesignPresetId, string>();
+  private contourGrid: HTMLElement;
+  private state: CancerDesignStateV2 = createDefaultCancerDesignState();
   private lastFocusedElement: HTMLElement | null = null;
 
-  constructor(private onSelection: SelectionHandler) {
+  constructor(private onAction: ActionHandler) {
     this.trigger = this.requireElement<HTMLButtonElement>('designSwitcherTrigger');
     this.drawer = this.requireElement<HTMLElement>('designSwitcherDrawer');
     this.backdrop = this.requireElement<HTMLElement>('designSwitcherBackdrop');
@@ -29,17 +39,29 @@ export class CancerDesignSwitcher {
     this.cardGrid = this.requireElement<HTMLElement>('designPresetGrid');
     this.motifGrid = this.requireElement<HTMLElement>('designMotifGrid');
     this.motifTitle = this.requireElement<HTMLElement>('designMotifTitle');
-
-    cancerDesignPresetList.forEach(preset => {
-      this.selectedMotifs.set(preset.id, preset.motifs[0].id);
-    });
+    this.contourGrid = this.requireElement<HTMLElement>('designContourGrid');
   }
 
   async initialize(): Promise<void> {
-    this.restoreSelection();
+    this.state = this.restoreSelection();
     this.render();
     this.bindEvents();
-    await this.applySelection();
+    await this.onAction({ type: 'select-cancer', presetId: this.activePresetId });
+  }
+
+  getState(): CancerDesignStateV2 {
+    return JSON.parse(JSON.stringify(this.state)) as CancerDesignStateV2;
+  }
+
+  restoreState(value: unknown, persist = true): CancerDesignStateV2 {
+    this.state = normalizeCancerDesignState(value);
+    if (persist) this.saveSelection();
+    this.render();
+    return this.getState();
+  }
+
+  private get activePresetId(): CancerDesignPresetId {
+    return this.state.activePresetId as CancerDesignPresetId;
   }
 
   private bindEvents(): void {
@@ -68,52 +90,97 @@ export class CancerDesignSwitcher {
       button.className = 'design-preset-card';
       button.dataset.presetId = preset.id;
       button.setAttribute('role', 'radio');
-      button.setAttribute('aria-checked', String(preset.id === this.selectedPresetId));
+      button.setAttribute('aria-checked', String(preset.id === this.activePresetId));
       button.setAttribute('aria-label', `${preset.label}，${preset.designName}`);
 
       const preview = document.createElement('span');
       preview.className = 'design-preset-preview';
-      preview.style.background = `linear-gradient(145deg, ${preset.palette[0]}, ${preset.palette[1]} 56%, ${preset.palette[2]})`;
+      const contour = document.createElement('canvas');
+      contour.className = 'design-preset-contour';
+      contour.width = 300;
+      contour.height = 112;
+      const selectedMotifId = this.state.primaryMotifByCancer[preset.id];
+      const selectedMotif = preset.motifs.find(item => item.id === selectedMotifId) || preset.motifs[0];
       const image = document.createElement('img');
-      image.src = preset.motifs[0].src;
+      image.src = selectedMotif.src;
       image.alt = '';
       image.loading = 'eager';
-      preview.append(image, this.createPalette(preset.palette));
+      preview.append(contour, image, this.createPalette(preset.palette));
 
       const label = document.createElement('span');
       label.className = 'design-preset-label';
-      label.innerHTML = `<strong>${preset.label}</strong><span>${preset.designName}</span>`;
+      label.innerHTML = `<strong>${preset.label}</strong><span>${headerContourLabels[this.state.contourByCancer[preset.id]]} · ${selectedMotif.name}</span>`;
       button.append(preview, label);
       button.addEventListener('click', async () => {
-        this.selectedPresetId = preset.id;
+        this.state.activePresetId = preset.id;
+        this.saveSelection();
         this.render();
-        await this.applySelection();
+        await this.onAction({ type: 'select-cancer', presetId: preset.id });
       });
+      window.requestAnimationFrame(() => renderContourPreview(contour, this.state.contourByCancer[preset.id], preset.palette));
       return button;
     }));
 
-    const selectedPreset = cancerDesignPresets[this.selectedPresetId];
+    const selectedPreset = cancerDesignPresets[this.activePresetId];
     this.motifTitle.textContent = `${selectedPreset.label}搭配圖案`;
-    const selectedMotifId = this.selectedMotifs.get(this.selectedPresetId) || selectedPreset.motifs[0].id;
+    const selectedMotifId = this.state.primaryMotifByCancer[this.activePresetId];
     this.motifGrid.replaceChildren(...selectedPreset.motifs.map(motif => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'design-motif-card';
-      button.dataset.motifId = motif.id;
-      button.setAttribute('role', 'radio');
-      button.setAttribute('aria-checked', String(motif.id === selectedMotifId));
-      button.setAttribute('aria-label', motif.name);
+      const card = document.createElement('article');
+      card.className = 'design-motif-card';
+      card.dataset.motifId = motif.id;
+      card.setAttribute('aria-current', String(motif.id === selectedMotifId));
+
+      const primaryButton = document.createElement('button');
+      primaryButton.type = 'button';
+      primaryButton.className = 'design-motif-primary';
+      primaryButton.setAttribute('aria-label', `設為主圖：${motif.name}`);
+      primaryButton.setAttribute('aria-pressed', String(motif.id === selectedMotifId));
       const image = document.createElement('img');
       image.src = motif.src;
       image.alt = '';
       const name = document.createElement('span');
       name.textContent = motif.name;
-      button.append(image, name);
-      button.addEventListener('click', async () => {
-        this.selectedMotifs.set(this.selectedPresetId, motif.id);
+      primaryButton.append(image, name);
+      primaryButton.addEventListener('click', async () => {
+        this.state.primaryMotifByCancer[this.activePresetId] = motif.id;
+        this.saveSelection();
         this.render();
-        await this.applySelection();
+        await this.onAction({ type: 'select-primary', presetId: this.activePresetId, motifId: motif.id });
       });
+
+      const addButton = document.createElement('button');
+      addButton.type = 'button';
+      addButton.className = 'design-motif-add';
+      addButton.textContent = '＋ 加入';
+      addButton.setAttribute('aria-label', `加入一份${motif.name}`);
+      addButton.addEventListener('click', async () => {
+        await this.onAction({ type: 'add-copy', presetId: this.activePresetId, motifId: motif.id });
+      });
+      card.append(primaryButton, addButton);
+      return card;
+    }));
+
+    const activeContour = this.state.contourByCancer[this.activePresetId];
+    this.contourGrid.replaceChildren(...headerContourIds.map(contourId => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'design-contour-card';
+      button.setAttribute('aria-pressed', String(contourId === activeContour));
+      button.setAttribute('aria-label', `套用${headerContourLabels[contourId]}`);
+      const canvas = document.createElement('canvas');
+      canvas.width = 240;
+      canvas.height = 76;
+      canvas.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.textContent = headerContourLabels[contourId];
+      button.append(canvas, label);
+      button.addEventListener('click', async () => {
+        this.state.contourByCancer[this.activePresetId] = contourId;
+        this.saveSelection();
+        this.render();
+        await this.onAction({ type: 'select-contour', presetId: this.activePresetId, contourId });
+      });
+      window.requestAnimationFrame(() => renderContourPreview(canvas, contourId, selectedPreset.palette));
       return button;
     }));
   }
@@ -127,13 +194,6 @@ export class CancerDesignSwitcher {
       palette.append(swatch);
     });
     return palette;
-  }
-
-  private async applySelection(): Promise<void> {
-    const preset = cancerDesignPresets[this.selectedPresetId];
-    const motifId = this.selectedMotifs.get(this.selectedPresetId) || preset.motifs[0].id;
-    this.saveSelection();
-    await this.onSelection(this.selectedPresetId, motifId);
   }
 
   private open(): void {
@@ -175,24 +235,24 @@ export class CancerDesignSwitcher {
     }
   }
 
-  private restoreSelection(): void {
+  private restoreSelection(): CancerDesignStateV2 {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') as { presetId?: string; motifId?: string };
-      const presetId = saved.presetId || null;
-      if (!isCancerDesignPresetId(presetId)) return;
-      this.selectedPresetId = presetId;
-      const preset = cancerDesignPresets[this.selectedPresetId];
-      if (saved.motifId && preset.motifs.some(motif => motif.id === saved.motifId)) {
-        this.selectedMotifs.set(this.selectedPresetId, saved.motifId);
+      const v2 = localStorage.getItem(CANCER_DESIGN_STORAGE_KEY_V2);
+      if (v2) return normalizeCancerDesignState(JSON.parse(v2));
+      const v1 = localStorage.getItem(CANCER_DESIGN_STORAGE_KEY_V1);
+      if (v1) {
+        const migrated = normalizeCancerDesignState(JSON.parse(v1));
+        localStorage.setItem(CANCER_DESIGN_STORAGE_KEY_V2, JSON.stringify(migrated));
+        return migrated;
       }
     } catch {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(CANCER_DESIGN_STORAGE_KEY_V2);
     }
+    return createDefaultCancerDesignState();
   }
 
   private saveSelection(): void {
-    const motifId = this.selectedMotifs.get(this.selectedPresetId);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ presetId: this.selectedPresetId, motifId }));
+    localStorage.setItem(CANCER_DESIGN_STORAGE_KEY_V2, JSON.stringify(this.state));
   }
 
   private requireElement<T extends HTMLElement>(id: string): T {

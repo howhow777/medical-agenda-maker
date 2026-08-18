@@ -22,7 +22,8 @@ export declare class UIController {
      * 初始化整個應用程式
      */
     initialize(): Promise<void>;
-    private applyCancerDesign;
+    private handleCancerDesignAction;
+    private insertCancerPrimary;
     private loadImage;
     /**
      * 載入議程資料並產生海報
@@ -111,4 +112,5 @@ export declare class UIController {
      * 還原基本資訊到表單（範本載入時使用）
      */
     private restoreBasicInfo;
+    private restoreCustomState;
 }

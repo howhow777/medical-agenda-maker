@@ -280,6 +280,7 @@ body {
   .design-switcher-backdrop,
   .design-preset-card,
   .design-motif-card,
+  .design-contour-card,
   .design-switcher-trigger {
     transition: none;
   }
@@ -337,7 +338,9 @@ body {
 .design-switcher-trigger:focus-visible,
 .design-switcher-close:focus-visible,
 .design-preset-card:focus-visible,
-.design-motif-card:focus-visible {
+.design-motif-primary:focus-visible,
+.design-motif-add:focus-visible,
+.design-contour-card:focus-visible {
   outline: 3px solid #f2bd55;
   outline-offset: 3px;
 }
@@ -363,6 +366,30 @@ body {
 .design-switcher-backdrop.is-open {
   opacity: 1;
   pointer-events: auto;
+}
+
+@media (min-width: 769px) {
+  body {
+    transition: padding-right 240ms ease;
+  }
+
+  body.design-switcher-open {
+    padding-right: 410px;
+  }
+
+  body.design-switcher-open .control-panel {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-right-color: transparent;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  body.design-switcher-open .design-switcher-backdrop {
+    display: none;
+  }
 }
 
 .design-switcher-drawer {
@@ -443,7 +470,8 @@ body {
 }
 
 .design-preset-card,
-.design-motif-card {
+.design-motif-card,
+.design-contour-card {
   min-width: 0;
   padding: 0;
   overflow: hidden;
@@ -454,18 +482,24 @@ body {
   box-shadow: 0 4px 14px rgba(34, 43, 76, 0.08);
   font-family: inherit;
   text-align: left;
-  cursor: pointer;
   transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
+.design-preset-card,
+.design-contour-card {
+  cursor: pointer;
+}
+
 .design-preset-card:hover,
-.design-motif-card:hover {
+.design-motif-card:hover,
+.design-contour-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(34, 43, 76, 0.14);
 }
 
 .design-preset-card[aria-checked='true'],
-.design-motif-card[aria-checked='true'] {
+.design-motif-card[aria-current='true'],
+.design-contour-card[aria-pressed='true'] {
   border-color: #6753a8;
   box-shadow: 0 0 0 3px rgba(103, 83, 168, 0.12), 0 8px 20px rgba(34, 43, 76, 0.14);
 }
@@ -475,6 +509,13 @@ body {
   height: 112px;
   display: block;
   overflow: hidden;
+}
+
+.design-preset-contour {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .design-preset-preview::after {
@@ -532,7 +573,8 @@ body {
   font-size: 11px;
 }
 
-.design-motif-section {
+.design-motif-section,
+.design-contour-section {
   margin-top: 22px;
   padding-top: 18px;
   border-top: 1px solid #dfddea;
@@ -563,10 +605,22 @@ body {
 }
 
 .design-motif-card {
+  display: flex;
+  flex-direction: column;
   text-align: center;
 }
 
-.design-motif-card img {
+.design-motif-primary {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.design-motif-primary img {
   width: 100%;
   height: 92px;
   display: block;
@@ -574,7 +628,7 @@ body {
   background: linear-gradient(145deg, #fff, #eef0f8);
 }
 
-.design-motif-card span {
+.design-motif-primary span {
   min-height: 39px;
   display: flex;
   align-items: center;
@@ -583,6 +637,49 @@ body {
   color: #4c5369;
   font-size: 10px;
   line-height: 1.25;
+}
+
+.design-motif-add {
+  min-height: 34px;
+  margin: 0 7px 7px;
+  border: 1px solid #c9c5dd;
+  border-radius: 9px;
+  color: #55468c;
+  background: #f6f3ff;
+  font: 700 11px/1 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  cursor: pointer;
+}
+
+.design-motif-add:hover {
+  border-color: #6753a8;
+  background: #eee9ff;
+}
+
+.design-contour-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.design-contour-card {
+  text-align: center;
+}
+
+.design-contour-card canvas {
+  width: 100%;
+  height: 64px;
+  display: block;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+}
+
+.design-contour-card span {
+  display: block;
+  padding: 7px 5px 8px;
+  color: #4c5369;
+  font-size: 11px;
 }
 
 .design-motif-section > p {
@@ -1366,8 +1463,8 @@ input:focus, select:focus, textarea:focus {
   }
 
   .design-switcher-drawer {
-    width: min(380px, calc(100vw - 8px));
-    border-radius: 18px 0 0 18px;
+    width: 100vw;
+    border-radius: 0;
   }
 
   .design-switcher-header {
@@ -1386,7 +1483,7 @@ input:focus, select:focus, textarea:focus {
     height: 98px;
   }
 
-  .design-motif-card img {
+  .design-motif-primary img {
     height: 78px;
   }
   

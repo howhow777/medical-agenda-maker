@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎗%ufe0f%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
   <!-- Excel 處理程式庫 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260813a" />
+  <link rel="stylesheet" href="./styles.css?v=20260819-cancer-v3" />
   <link rel="stylesheet" href="src/assets/feedback-modal.css" />
 </head>
 <body>
@@ -347,7 +347,7 @@
     <div class="design-switcher-header">
       <div>
         <h2 id="designSwitcherTitle">快速切換設計</h2>
-        <p>選擇後立即套用，議程與上傳圖片不變</p>
+        <p>選主圖、加入副本或切換輪廓；議程與上傳圖片不變</p>
       </div>
       <button id="designSwitcherClose" class="design-switcher-close" type="button" aria-label="關閉快速切換設計">×</button>
     </div>
@@ -356,10 +356,17 @@
       <section class="design-motif-section" aria-labelledby="designMotifTitle">
         <div class="design-motif-heading">
           <h3 id="designMotifTitle">搭配圖案</h3>
-          <span>建議位置已設定</span>
+          <span>點縮圖替換主圖</span>
         </div>
         <div id="designMotifGrid" class="design-motif-grid" role="radiogroup" aria-label="癌別搭配圖案"></div>
-        <p>圖案插入後仍可在畫布拖曳、縮放、旋轉或隱藏。</p>
+        <p>「＋加入」可建立多個獨立副本；每份都能拖曳、縮放、旋轉、裁切或刪除。</p>
+      </section>
+      <section class="design-contour-section" aria-labelledby="designContourTitle">
+        <div class="design-motif-heading">
+          <h3 id="designContourTitle">頂部輪廓</h3>
+          <span>預覽與海報一致</span>
+        </div>
+        <div id="designContourGrid" class="design-contour-grid" role="group" aria-label="頂部輪廓"></div>
       </section>
     </div>
   </aside>
@@ -367,6 +374,7 @@
 
 
   <!-- 載入主程式 -->
-  <script type="module" src="./dist/main.js?v=20260813a"></script>
+  <meta name="medical-agenda-build" content="cancer-design-v3">
+  <script type="module" src="./dist/main.js?v=20260819-cancer-v3"></script>
 </body>
 </html>

@@ -1,4 +1,6 @@
-import { AgendaItem, ColorScheme, CancerTemplate, CustomColors, Overlay } from '../assets/types.js';
+import { AgendaItem, ColorScheme, CancerTemplate, CustomColors, HeaderContourId, Overlay } from '../assets/types.js';
+export declare const AGENDA_START_Y = 350;
+export declare const AGENDA_START_Y_WITH_MEETUP = 380;
 type PosterRenderOptions = {
     hideModerator?: boolean;
     mergeSameModerator?: boolean;
@@ -21,7 +23,9 @@ export declare class PosterRenderer {
     protected ctx: CanvasRenderingContext2D;
     protected useHighQualityOverlays: boolean;
     protected processedOverlayCache: Map<number, HTMLCanvasElement>;
+    private headerContourId;
     constructor(canvas: HTMLCanvasElement);
+    setHeaderContour(contourId: HeaderContourId): void;
     createGradient(w: number, h: number, colors: string[], direction: string): CanvasGradient;
     calculateTextLinesWithBreaks(text: string, maxWidth: number): number;
     wrapTextWithBreaks(text: string, x: number, y: number, maxWidth: number, lineHeight: number, align?: string): number;

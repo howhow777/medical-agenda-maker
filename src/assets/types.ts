@@ -30,6 +30,10 @@ export interface ColorScheme {
   tableOpacity: number; // Table 整體透明度 (0-1);
 }
 
+export type HeaderContourId = 'soft-wave' | 'arc-sweep' | 'layered-ribbon' | 'clean-diagonal';
+export type OverlaySourceKind = 'upload' | 'cancer-preset';
+export type MotifRole = 'primary' | 'copy';
+
 // PNG圖層
 export interface Overlay {
   id: number;
@@ -47,6 +51,10 @@ export interface Overlay {
   visible: boolean;
   lockAspect: boolean;
   zIndex: number; // 0 = 背景層（Table下方），1 = 前景層（Table上方，預設）
+  sourceKind?: OverlaySourceKind;
+  cancerPresetId?: string;
+  motifId?: string;
+  motifRole?: MotifRole;
 }
 
 // 自訂配色
@@ -109,6 +117,7 @@ export interface TemplateData {
     time: string;
     location: string;
   };
+  cancerDesignState?: CancerDesignStateV2;
 }
 
 export interface Template {
@@ -135,6 +144,17 @@ export interface OverlayData {
   visible: boolean;
   lockAspect: boolean;
   zIndex?: number;
+  sourceKind?: OverlaySourceKind;
+  cancerPresetId?: string;
+  motifId?: string;
+  motifRole?: MotifRole;
+}
+
+export interface CancerDesignStateV2 {
+  version: 2;
+  activePresetId: string;
+  primaryMotifByCancer: Record<string, string>;
+  contourByCancer: Record<string, HeaderContourId>;
 }
 
 // 應用程式狀態

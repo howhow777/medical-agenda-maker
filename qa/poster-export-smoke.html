@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Poster export smoke test</title>
+<canvas id="posterCanvas" width="800" height="600"></canvas>
+<output id="result">running</output>
+<script type="module">
+  import { PosterRenderer } from '../dist/logic/posterRenderer.js';
+  import { cancerDesignPresetList } from '../dist/logic/cancerDesignPresets.js';
+  import { headerContourIds } from '../dist/logic/headerContours.js';
+
+  const canvas = document.querySelector('canvas');
+  const renderer = new PosterRenderer(canvas);
+  const customColors = {
+    headerC1: '#123B5D', headerC2: '#2F8FA8', headerC3: '#E8F8F7',
+    agendaBg: '#E8F5E8', agendaBorder: '#123B5D', agendaAccent: '#123B5D',
+    bgC1: '#ffffff', bgC2: '#ffffff', bgGradientDir: 'none'
+  };
+  const agendaItems = [{ time: '09:00', topic: 'Opening', speaker: 'Speaker', moderator: 'Moderator' }];
+  const conferenceData = {
+    title: '2026 年精準醫療與跨領域癌症免疫治療最新進展國際研討會',
+    subtitle: 'Cancer Forum', date: '2026/08/19', time: '09:00–12:00', location: 'Taipei'
+  };
+  let renderedVariants = 0;
+  for (const preset of cancerDesignPresetList) {
+    for (const contourId of headerContourIds) {
+      renderer.setHeaderContour(contourId);
+      renderer.drawPoster(agendaItems, preset.id, preset.colorScheme, 'horizontal', customColors, conferenceData, false, '', [], 1);
+      renderedVariants += 1;
+    }
+  }
+  window.app = {
+    getAppState: () => ({
+      agendaItems, currentTemplate: 'lung', currentColorScheme: 'cancer_lung',
+      currentGradientDirection: 'horizontal', customColors, overlays: []
+    }),
+    getConferenceData: () => conferenceData,
+    formControls: { getTableOpacity: () => 1 }
+  };
+  renderer.setHeaderContour('soft-wave');
+  const exported = await renderer.exportHighQuality('jpeg', 0.95, 3);
+  const bitmap = await createImageBitmap(exported.blob);
+  document.querySelector('#result').textContent = JSON.stringify({
+    renderedVariants,
+    mime: exported.blob.type,
+    original: exported.originalSize,
+    highQuality: exported.highQualitySize,
+    bitmap: { width: bitmap.width, height: bitmap.height }
+  });
+</script>

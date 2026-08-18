@@ -7,5 +7,5 @@ export declare class TemplateController {
     renderTemplateButtons(): void;
     private setupButtons;
     setStateCollector(collector: () => any): void;
-    setStateApplier(applier: (customState: any) => void): void;
+    setStateApplier(applier: (customState: any) => void | Promise<void>): void;
 }

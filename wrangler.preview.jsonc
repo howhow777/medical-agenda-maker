@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "medical-agenda-preview",
+  "compatibility_date": "2026-08-19",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "medical-agenda-preview.promelink.link",
+      "custom_domain": true
+    }
+  ]
+}

@@ -2,7 +2,7 @@ export declare class TemplateManager {
     private dataManager;
     constructor();
     saveTemplate(name: string, customState?: any): void;
-    loadTemplateFromFile(file: File, customStateCallback?: (customState: any) => void): Promise<void>;
+    loadTemplateFromFile(file: File, customStateCallback?: (customState: any) => void | Promise<void>): Promise<void>;
     private downloadFile;
     private collectCurrentState;
     private validateTemplate;

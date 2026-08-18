@@ -1,10 +1,20 @@
-import { Overlay } from '../assets/types.js';
+import { Overlay, MotifRole } from '../assets/types.js';
 import { OverlayProcessor } from './overlay-processor.js';
+
+export const CANCER_MOTIF_SAFE_ZONE = { x: 560, y: 145, width: 200, height: 170 } as const;
+
+type CancerOverlayMetadata = {
+  sourceKind: 'cancer-preset';
+  cancerPresetId: string;
+  motifId: string;
+  motifRole: MotifRole;
+};
 
 export class OverlayManager {
   private overlays: Overlay[] = [];
   private selectedIndex: number = -1;
   private canvas: HTMLCanvasElement;
+  private activeCancerPresetId: string = 'lung';
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -13,6 +23,26 @@ export class OverlayManager {
   // 取得所有圖層
   getOverlays(): Overlay[] {
     return this.overlays;
+  }
+
+  getRenderableOverlays(): Overlay[] {
+    return this.overlays.filter(overlay => this.isOverlayRenderable(overlay));
+  }
+
+  getRenderableEntries(): Array<{ overlay: Overlay; index: number }> {
+    return this.overlays
+      .map((overlay, index) => ({ overlay, index }))
+      .filter(({ overlay }) => this.isOverlayRenderable(overlay));
+  }
+
+  setActiveCancerPresetId(presetId: string): void {
+    this.activeCancerPresetId = presetId;
+    const selected = this.getSelectedOverlay();
+    if (selected && !this.isOverlayRenderable(selected)) this.selectedIndex = -1;
+  }
+
+  isOverlayRenderable(overlay: Overlay): boolean {
+    return overlay.sourceKind !== 'cancer-preset' || overlay.cancerPresetId === this.activeCancerPresetId;
   }
 
   // 取得選中的圖層索引
@@ -31,7 +61,12 @@ export class OverlayManager {
   }
 
   // 新增圖層
-  addOverlay(img: HTMLImageElement, name: string, src: string): Overlay {
+  addOverlay(
+    img: HTMLImageElement,
+    name: string,
+    src: string,
+    metadata: Partial<Pick<Overlay, 'sourceKind' | 'cancerPresetId' | 'motifId' | 'motifRole'>> = {}
+  ): Overlay {
     const overlay: Overlay = {
       id: Date.now() + Math.random(),
       name: name || 'overlay.png',
@@ -47,11 +82,116 @@ export class OverlayManager {
       opacity: 1,
       visible: true,
       lockAspect: true,
-      zIndex: 1 // 預設為前景層（Table上方）
+      zIndex: 1, // 預設為前景層（Table上方）
+      sourceKind: metadata.sourceKind || 'upload',
+      cancerPresetId: metadata.cancerPresetId,
+      motifId: metadata.motifId,
+      motifRole: metadata.motifRole
     };
     this.overlays.push(overlay);
     this.selectedIndex = this.overlays.length - 1;
     return overlay;
+  }
+
+  upsertCancerPrimary(
+    presetId: string,
+    motifId: string,
+    img: HTMLImageElement,
+    name: string,
+    src: string
+  ): Overlay {
+    const metadata: CancerOverlayMetadata = {
+      sourceKind: 'cancer-preset', cancerPresetId: presetId, motifId, motifRole: 'primary'
+    };
+    let overlay = this.overlays.find(item =>
+      item.sourceKind === 'cancer-preset' && item.cancerPresetId === presetId && item.motifRole === 'primary'
+    );
+    const naturalWidth = img.naturalWidth || img.width;
+    const naturalHeight = img.naturalHeight || img.height;
+
+    if (overlay) {
+      const visualWidth = overlay.w * overlay.scaleX;
+      const preserved = {
+        x: overlay.x,
+        y: overlay.y,
+        rotation: overlay.rotation,
+        opacity: overlay.opacity,
+        visible: overlay.visible,
+        zIndex: overlay.zIndex
+      };
+      Object.assign(overlay, metadata, preserved, {
+        name: `內建主圖｜${name}`,
+        img,
+        src,
+        w: naturalWidth,
+        h: naturalHeight,
+        scaleX: Math.max(0.05, visualWidth / naturalWidth),
+        scaleY: Math.max(0.05, visualWidth / naturalWidth),
+        lockAspect: true
+      });
+    } else {
+      overlay = this.createCancerOverlay(img, name, src, metadata, 0);
+      this.overlays.push(overlay);
+    }
+    this.selectedIndex = this.overlays.indexOf(overlay);
+    return overlay;
+  }
+
+  addCancerCopy(
+    presetId: string,
+    motifId: string,
+    img: HTMLImageElement,
+    name: string,
+    src: string
+  ): Overlay {
+    const existingCopies = this.overlays.filter(item =>
+      item.sourceKind === 'cancer-preset' && item.cancerPresetId === presetId && item.motifRole === 'copy'
+    ).length;
+    const overlay = this.createCancerOverlay(img, name, src, {
+      sourceKind: 'cancer-preset', cancerPresetId: presetId, motifId, motifRole: 'copy'
+    }, existingCopies + 1);
+    this.overlays.push(overlay);
+    this.selectedIndex = this.overlays.length - 1;
+    return overlay;
+  }
+
+  private createCancerOverlay(
+    img: HTMLImageElement,
+    name: string,
+    src: string,
+    metadata: CancerOverlayMetadata,
+    offsetIndex: number
+  ): Overlay {
+    const naturalWidth = img.naturalWidth || img.width;
+    const naturalHeight = img.naturalHeight || img.height;
+    const widthScale = this.canvas.width / 800;
+    const zone = {
+      x: CANCER_MOTIF_SAFE_ZONE.x * widthScale,
+      y: CANCER_MOTIF_SAFE_ZONE.y * widthScale,
+      width: CANCER_MOTIF_SAFE_ZONE.width * widthScale,
+      height: CANCER_MOTIF_SAFE_ZONE.height * widthScale
+    };
+    const containScale = Math.min(zone.width / naturalWidth, zone.height / naturalHeight);
+    const offsets = [[0, 0], [12, -12], [-12, 12], [12, 12], [-12, -12], [0, 12], [12, 0]];
+    const offset = offsets[offsetIndex % offsets.length];
+    return {
+      id: Date.now() + Math.random(),
+      name: `${metadata.motifRole === 'primary' ? '內建主圖' : '內建副本'}｜${name}`,
+      img,
+      src,
+      x: zone.x + zone.width / 2 + offset[0] * widthScale,
+      y: zone.y + zone.height / 2 + offset[1] * widthScale,
+      w: naturalWidth,
+      h: naturalHeight,
+      scaleX: containScale,
+      scaleY: containScale,
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      lockAspect: true,
+      zIndex: 0,
+      ...metadata
+    };
   }
 
   // 內建癌別圖案與使用者上傳圖層共用同一套拖曳／縮放控制，但以穩定 ID 避免重複插入。
@@ -229,7 +369,7 @@ export class OverlayManager {
   hitTest(point: { x: number; y: number }): { idx: number; hit: string; handle?: string } {
     for (let i = this.overlays.length - 1; i >= 0; i--) {
       const overlay = this.overlays[i];
-      if (!overlay.visible) continue;
+      if (!overlay.visible || !this.isOverlayRenderable(overlay)) continue;
 
       const size = this.getOverlaySize(overlay);
       const localPoint = this.toLocal(overlay, point);
@@ -260,7 +400,7 @@ export class OverlayManager {
 
   // 繪製圖層
   drawOverlay(ctx: CanvasRenderingContext2D, overlay: Overlay, isSelected: boolean): void {
-    if (!overlay.img || !overlay.visible) return;
+    if (!overlay.img || !overlay.visible || !this.isOverlayRenderable(overlay)) return;
 
     const size = this.getOverlaySize(overlay);
     ctx.save();

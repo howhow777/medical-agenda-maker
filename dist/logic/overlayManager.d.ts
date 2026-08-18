@@ -1,14 +1,31 @@
 import { Overlay } from '../assets/types.js';
+export declare const CANCER_MOTIF_SAFE_ZONE: {
+    readonly x: 560;
+    readonly y: 145;
+    readonly width: 200;
+    readonly height: 170;
+};
 export declare class OverlayManager {
     private overlays;
     private selectedIndex;
     private canvas;
+    private activeCancerPresetId;
     constructor(canvas: HTMLCanvasElement);
     getOverlays(): Overlay[];
+    getRenderableOverlays(): Overlay[];
+    getRenderableEntries(): Array<{
+        overlay: Overlay;
+        index: number;
+    }>;
+    setActiveCancerPresetId(presetId: string): void;
+    isOverlayRenderable(overlay: Overlay): boolean;
     getSelectedIndex(): number;
     setSelectedIndex(index: number): void;
     getSelectedOverlay(): Overlay | null;
-    addOverlay(img: HTMLImageElement, name: string, src: string): Overlay;
+    addOverlay(img: HTMLImageElement, name: string, src: string, metadata?: Partial<Pick<Overlay, 'sourceKind' | 'cancerPresetId' | 'motifId' | 'motifRole'>>): Overlay;
+    upsertCancerPrimary(presetId: string, motifId: string, img: HTMLImageElement, name: string, src: string): Overlay;
+    addCancerCopy(presetId: string, motifId: string, img: HTMLImageElement, name: string, src: string): Overlay;
+    private createCancerOverlay;
     upsertManagedOverlay(managedId: string, img: HTMLImageElement, name: string, src: string, placement: {
         x: number;
         y: number;

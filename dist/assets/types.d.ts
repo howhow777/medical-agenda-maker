@@ -24,6 +24,9 @@ export interface ColorScheme {
     };
     tableOpacity: number;
 }
+export type HeaderContourId = 'soft-wave' | 'arc-sweep' | 'layered-ribbon' | 'clean-diagonal';
+export type OverlaySourceKind = 'upload' | 'cancer-preset';
+export type MotifRole = 'primary' | 'copy';
 export interface Overlay {
     id: number;
     name: string;
@@ -40,6 +43,10 @@ export interface Overlay {
     visible: boolean;
     lockAspect: boolean;
     zIndex: number;
+    sourceKind?: OverlaySourceKind;
+    cancerPresetId?: string;
+    motifId?: string;
+    motifRole?: MotifRole;
 }
 export interface CustomColors {
     headerC1: string;
@@ -94,6 +101,7 @@ export interface TemplateData {
         time: string;
         location: string;
     };
+    cancerDesignState?: CancerDesignStateV2;
 }
 export interface Template {
     id: string;
@@ -118,6 +126,16 @@ export interface OverlayData {
     visible: boolean;
     lockAspect: boolean;
     zIndex?: number;
+    sourceKind?: OverlaySourceKind;
+    cancerPresetId?: string;
+    motifId?: string;
+    motifRole?: MotifRole;
+}
+export interface CancerDesignStateV2 {
+    version: 2;
+    activePresetId: string;
+    primaryMotifByCancer: Record<string, string>;
+    contourByCancer: Record<string, HeaderContourId>;
 }
 export interface AppState {
     agendaItems: AgendaItem[];
