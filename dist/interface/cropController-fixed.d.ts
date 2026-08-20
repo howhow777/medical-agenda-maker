@@ -99,6 +99,7 @@ export declare class CropController {
      */
     private canvasPointFromMouse;
     private canvasPointFromTouch;
+    private canvasPixelsForCssPixels;
     /**
      * 監聽PNG選取狀態變化
      */

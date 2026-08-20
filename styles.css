@@ -308,6 +308,11 @@ body {
   max-height: 800px;
 }
 
+.canvas-area {
+  flex: 0 0 auto;
+  width: 800px;
+}
+
 /* === 右上角快速設計切換器 === */
 .design-switcher-trigger {
   position: sticky;
@@ -689,6 +694,7 @@ body {
 
 /* === Canvas === */
 canvas {
+  display: block;
   border: 2px solid #e0e0e0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .1);
   border-radius: 10px;
@@ -1994,6 +2000,6 @@ canvas.dragging {
 }
 
 canvas:not(.dragging) {
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: pan-x pan-y;
   cursor: grab;
 }

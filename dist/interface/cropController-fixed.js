@@ -177,7 +177,7 @@ export class CropController {
         if (!this.cropState.isActive || e.touches.length !== 1)
             return;
         const point = this.canvasPointFromTouch(e.touches[0]);
-        const hitResult = this.cropHitTest(point, 30);
+        const hitResult = this.cropHitTest(point, this.canvasPixelsForCssPixels(30));
         // 裁切模式由這個控制器獨占，避免底層 PNG 拖曳同時啟動。
         e.stopImmediatePropagation();
         if (!hitResult.hit)
@@ -342,6 +342,10 @@ export class CropController {
             x: (touch.clientX - rect.left) * (this.canvas.width / rect.width),
             y: (touch.clientY - rect.top) * (this.canvas.height / rect.height)
         };
+    }
+    canvasPixelsForCssPixels(cssPixels) {
+        const rect = this.canvas.getBoundingClientRect();
+        return cssPixels * (this.canvas.width / Math.max(1, rect.width));
     }
     /**
      * 監聽PNG選取狀態變化
@@ -626,20 +630,22 @@ export class CropController {
         const handles = this.getCropHandles(overlay);
         ctx.restore();
         // 3. 推桿改在 Canvas 座標繪製，無論 PNG 縮放多小都維持 24px 直徑的觸控提示。
+        const viewScale = Math.max(0.01, this.canvas.getBoundingClientRect().width / this.canvas.width);
+        const handleRadius = 12 / viewScale;
         ctx.save();
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#ff4444';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / viewScale;
         handles.forEach(handle => {
             const globalHandle = this.transformPoint(overlay, handle);
             ctx.beginPath();
-            ctx.arc(globalHandle.x, globalHandle.y, 12, 0, Math.PI * 2);
+            ctx.arc(globalHandle.x, globalHandle.y, handleRadius, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             if (this.cropState.isDragging && this.cropState.dragHandle === handle.name) {
                 ctx.fillStyle = '#ffff00';
                 ctx.beginPath();
-                ctx.arc(globalHandle.x, globalHandle.y, 8, 0, Math.PI * 2);
+                ctx.arc(globalHandle.x, globalHandle.y, 8 / viewScale, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = '#ffffff';
             }
@@ -647,11 +653,11 @@ export class CropController {
         // 4. 畫指示文字
         const instructionPoint = this.transformPoint(overlay, { x: 0, y: -hh });
         ctx.fillStyle = '#ff4444';
-        ctx.font = 'bold 16px Arial';
+        ctx.font = `bold ${16 / viewScale}px Arial`;
         ctx.textAlign = 'center';
         ctx.shadowColor = 'rgba(255,255,255,0.8)';
         ctx.shadowBlur = 3;
-        ctx.fillText('✂️ 拖拉推桿調整裁切區域', instructionPoint.x, instructionPoint.y - 30);
+        ctx.fillText('✂️ 拖拉推桿調整裁切區域', instructionPoint.x, instructionPoint.y - 30 / viewScale);
         ctx.restore();
     }
 }

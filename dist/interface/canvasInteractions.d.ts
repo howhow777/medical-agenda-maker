@@ -7,6 +7,7 @@ export declare function isTapGesture(start: {
     y: number;
 }, threshold?: number): boolean;
 export declare function getPinchScale(startDistance: number, currentDistance: number): number;
+export declare function clampPosterViewZoom(value: number): number;
 export declare class CanvasInteractions {
     private canvas;
     private updateCallback;
@@ -20,6 +21,8 @@ export declare class CanvasInteractions {
     private outsideMouseStart;
     private outsideMouseMoved;
     private pinch;
+    private viewZoom;
+    private eventsBound;
     constructor(canvas: HTMLCanvasElement, overlayManager: OverlayManager, updateCallback: () => void, syncOverlayControlsCallback: () => void, refreshOverlayListCallback: () => void);
     bindEvents(): void;
     private onTouchStart;
@@ -36,4 +39,9 @@ export declare class CanvasInteractions {
     private beginPinch;
     private midpoint;
     private clampScale;
+    private canvasPointFromClient;
+    private applyViewZoomAtAnchor;
+    private applyViewZoom;
+    private onDocumentClick;
+    getViewZoom(): number;
 }

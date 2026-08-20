@@ -8,6 +8,9 @@ export function getPinchScale(startDistance, currentDistance) {
         return 1;
     return currentDistance / startDistance;
 }
+export function clampPosterViewZoom(value) {
+    return Math.max(0.3, Math.min(3, value));
+}
 export class CanvasInteractions {
     constructor(canvas, overlayManager, updateCallback, syncOverlayControlsCallback, refreshOverlayListCallback) {
         this.canvas = canvas;
@@ -27,12 +30,18 @@ export class CanvasInteractions {
         this.outsideMouseStart = null;
         this.outsideMouseMoved = false;
         this.pinch = null;
+        this.viewZoom = 1;
+        this.eventsBound = false;
         this.overlayManager = overlayManager;
         this.touchDebug = new TouchDebugController();
+        this.applyViewZoom(this.viewZoom);
         this.bindEvents();
     }
     // 綁定 Canvas 事件
     bindEvents() {
+        if (this.eventsBound)
+            return;
+        this.eventsBound = true;
         // 使用Touch Events替代Pointer Events
         this.canvas.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
         this.canvas.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
@@ -43,6 +52,7 @@ export class CanvasInteractions {
         this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
         this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
         this.canvas.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+        document.addEventListener('click', this.onDocumentClick.bind(this), true);
     }
     // 指標按下
     // Touch 開始
@@ -114,22 +124,12 @@ export class CanvasInteractions {
     onTouchMove(e) {
         if (this.pinch && e.touches.length >= 2) {
             const [first, second] = [e.touches[0], e.touches[1]];
-            const firstPoint = this.canvasPointFromTouch(first);
-            const secondPoint = this.canvasPointFromTouch(second);
-            const center = this.midpoint(firstPoint, secondPoint);
-            const distance = Math.hypot(secondPoint.x - firstPoint.x, secondPoint.y - firstPoint.y);
+            const clientCenter = this.midpoint({ x: first.clientX, y: first.clientY }, { x: second.clientX, y: second.clientY });
+            const distance = Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
             const ratio = getPinchScale(this.pinch.startDistance, distance);
-            const overlay = this.overlayManager.getOverlays()[this.pinch.idx];
-            if (!overlay)
-                return;
-            overlay.scaleX = this.clampScale(this.pinch.startOverlay.scaleX * ratio);
-            overlay.scaleY = overlay.lockAspect
-                ? overlay.scaleX
-                : this.clampScale(this.pinch.startOverlay.scaleY * ratio);
-            overlay.x = this.pinch.startOverlay.x + center.x - this.pinch.startCenter.x;
-            overlay.y = this.pinch.startOverlay.y + center.y - this.pinch.startCenter.y;
+            const nextZoom = clampPosterViewZoom(this.pinch.startZoom * ratio);
+            this.applyViewZoomAtAnchor(nextZoom, this.pinch.anchorCanvasPoint, clientCenter);
             e.preventDefault();
-            this.updateCallback();
             return;
         }
         if (e.touches.length > 1)
@@ -413,14 +413,13 @@ export class CanvasInteractions {
     }
     // 滾輪縮放
     onWheel(e) {
-        const overlay = this.overlayManager.getSelectedOverlay();
-        if (!overlay)
+        // 一般滾輪只負責頁面捲動；觸控板縮放（ctrl/meta + wheel）則縮放整張海報。
+        if (!e.ctrlKey && !e.metaKey)
             return;
         e.preventDefault();
-        const delta = (e.deltaY < 0) ? 1.06 : 0.94;
-        overlay.scaleX = Math.max(0.05, Math.min(20, overlay.scaleX * delta));
-        overlay.scaleY = overlay.lockAspect ? overlay.scaleX : Math.max(0.05, Math.min(20, overlay.scaleY * delta));
-        this.updateCallback();
+        const factor = Math.exp(-e.deltaY * 0.01);
+        const anchorCanvasPoint = this.canvasPointFromClient(e.clientX, e.clientY);
+        this.applyViewZoomAtAnchor(clampPosterViewZoom(this.viewZoom * factor), anchorCanvasPoint, { x: e.clientX, y: e.clientY });
     }
     // 取得 Canvas 相對座標
     canvasPoint(evt) {
@@ -433,47 +432,67 @@ export class CanvasInteractions {
     beginPinch(e) {
         const firstPoint = this.canvasPointFromTouch(e.touches[0]);
         const secondPoint = this.canvasPointFromTouch(e.touches[1]);
-        const midpoint = this.midpoint(firstPoint, secondPoint);
-        const hits = [
-            this.overlayManager.hitTest(firstPoint),
-            this.overlayManager.hitTest(secondPoint),
-            this.overlayManager.hitTest(midpoint)
-        ];
-        const selectedIndex = this.overlayManager.getSelectedIndex();
-        const targetIndex = hits.some(hit => hit.idx === selectedIndex)
-            ? selectedIndex
-            : (hits.find(hit => hit.idx >= 0)?.idx ?? -1);
-        if (targetIndex < 0) {
-            // Canvas 空白處保留瀏覽器原生雙指頁面縮放。
-            this.pinch = null;
-            this.canvas.classList.remove('dragging');
-            return;
-        }
-        const overlay = this.overlayManager.getOverlays()[targetIndex];
-        if (!overlay)
-            return;
         this.outsideTouchStart = null;
         this.outsideTouchMoved = false;
-        this.drag.mode = 'pinch';
-        this.drag.idx = targetIndex;
-        this.overlayManager.setSelectedIndex(targetIndex);
+        this.drag.mode = 'view-pinch';
+        this.drag.idx = -1;
         this.pinch = {
-            idx: targetIndex,
-            startDistance: Math.hypot(secondPoint.x - firstPoint.x, secondPoint.y - firstPoint.y),
-            startCenter: midpoint,
-            startOverlay: { ...overlay }
+            startDistance: Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY),
+            startZoom: this.viewZoom,
+            anchorCanvasPoint: this.midpoint(firstPoint, secondPoint)
         };
         this.canvas.classList.add('dragging');
-        this.refreshOverlayListCallback();
-        this.syncOverlayControlsCallback();
         e.preventDefault();
-        this.updateCallback();
     }
     midpoint(a, b) {
         return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     }
     clampScale(value) {
         return Math.max(0.05, Math.min(50, value));
+    }
+    canvasPointFromClient(clientX, clientY) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: (clientX - rect.left) * (this.canvas.width / rect.width),
+            y: (clientY - rect.top) * (this.canvas.height / rect.height)
+        };
+    }
+    applyViewZoomAtAnchor(zoom, anchorCanvasPoint, anchorClientPoint) {
+        const scrollContainer = this.canvas.closest('.canvas-container');
+        this.applyViewZoom(zoom);
+        if (!scrollContainer)
+            return;
+        const rect = this.canvas.getBoundingClientRect();
+        const anchoredClientX = rect.left + anchorCanvasPoint.x * (rect.width / this.canvas.width);
+        const anchoredClientY = rect.top + anchorCanvasPoint.y * (rect.height / this.canvas.height);
+        scrollContainer.scrollLeft += anchoredClientX - anchorClientPoint.x;
+        scrollContainer.scrollTop += anchoredClientY - anchorClientPoint.y;
+    }
+    applyViewZoom(zoom) {
+        this.viewZoom = clampPosterViewZoom(zoom);
+        const scaledWidth = this.canvas.width * this.viewZoom;
+        this.canvas.style.width = `${scaledWidth}px`;
+        this.canvas.style.height = 'auto';
+        this.canvas.style.minWidth = '0';
+        const canvasArea = this.canvas.parentElement;
+        if (canvasArea)
+            canvasArea.style.width = `${scaledWidth}px`;
+    }
+    onDocumentClick(e) {
+        const target = e.target;
+        if (!(target instanceof Element) || target === this.canvas)
+            return;
+        if (target.closest('#overlayControlsPanel, .crop-controls'))
+            return;
+        if (this.overlayManager.getSelectedIndex() < 0)
+            return;
+        this.overlayManager.setSelectedIndex(-1);
+        this.refreshOverlayListCallback();
+        this.syncOverlayControlsCallback();
+        this.updateCallback();
+    }
+    getViewZoom() {
+        return this.viewZoom;
     }
 }
 //# sourceMappingURL=canvasInteractions.js.map

@@ -18,7 +18,11 @@ import {
   OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER,
   OverlayManager
 } from '../dist/logic/overlayManager.js';
-import { getPinchScale, isTapGesture } from '../dist/interface/canvasInteractions.js';
+import {
+  clampPosterViewZoom,
+  getPinchScale,
+  isTapGesture
+} from '../dist/interface/canvasInteractions.js';
 import {
   AGENDA_POSTER_STATE_VERSION,
   AGENDA_POSTER_STORAGE_KEY,
@@ -161,11 +165,14 @@ test('header and agenda table form independent fixed compositor dividers', () =>
   assert.equal(middle.zIndex, OVERLAY_LAYER_ABOVE_HEADER);
 });
 
-test('touch gestures distinguish a tap from page dragging and calculate pinch scale', () => {
+test('touch gestures distinguish a tap from page dragging and clamp poster view zoom', () => {
   assert.equal(isTapGesture({ x: 10, y: 10 }, { x: 16, y: 17 }), true);
   assert.equal(isTapGesture({ x: 10, y: 10 }, { x: 10, y: 24 }), false);
   assert.equal(getPinchScale(100, 150), 1.5);
   assert.equal(getPinchScale(0, 150), 1);
+  assert.equal(clampPosterViewZoom(0.1), 0.3);
+  assert.equal(clampPosterViewZoom(1.25), 1.25);
+  assert.equal(clampPosterViewZoom(5), 3);
 });
 
 test('v2 payload keeps the v1 autosave key and accepts a v1 restore callback', async () => {
