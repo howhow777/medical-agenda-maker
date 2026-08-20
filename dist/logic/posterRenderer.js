@@ -7,9 +7,9 @@ export const AGENDA_START_Y = 350;
 export const AGENDA_START_Y_WITH_MEETUP = 380;
 export function partitionOverlayLayers(overlays) {
     return {
-        belowHeader: overlays.filter(overlay => overlay.zIndex < 0),
-        belowTable: overlays.filter(overlay => overlay.zIndex === 0),
-        aboveTable: overlays.filter(overlay => overlay.zIndex === undefined || overlay.zIndex > 0)
+        belowTable: overlays.filter(overlay => overlay.zIndex < 0),
+        betweenTableAndHeader: overlays.filter(overlay => overlay.zIndex === 0),
+        aboveHeader: overlays.filter(overlay => overlay.zIndex === undefined || overlay.zIndex > 0)
     };
 }
 export class PosterRenderer {
@@ -304,32 +304,8 @@ export class PosterRenderer {
         }
         this.ctx.fillRect(0, 0, W, H);
         const overlayLayers = partitionOverlayLayers(overlays);
-        // 屋簷下層先畫，再把 Canvas 屋簷蓋上去，形成一致的遮擋關係。
-        this.drawOverlays(overlayLayers.belowHeader);
-        this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
-        // 癌症圖標
-        // this.ctx.font = '50px Arial';
-        // this.ctx.fillStyle = scheme.header.text;
-        // this.ctx.textAlign = 'left';
-        // this.ctx.fillText(template.icon, 40, 65);
-        // 主標題
-        const title = conferenceData.title || `${template.title}醫學會議`;
-        this.ctx.fillStyle = scheme.header.text;
-        let titleSize = 36;
-        while (titleSize > 24) {
-            this.ctx.font = `bold ${titleSize}px Microsoft JhengHei`;
-            if (this.ctx.measureText(title).width <= W - 80)
-                break;
-            titleSize -= 1;
-        }
-        this.ctx.font = `bold ${titleSize}px Microsoft JhengHei`;
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(title, W / 2, 50);
-        // 副標題
-        if (conferenceData.subtitle) {
-            this.ctx.font = '20px Microsoft JhengHei';
-            this.ctx.fillText(conferenceData.subtitle, W / 2, 85);
-        }
+        // 最底層 PNG 先畫；其後的 Agenda 表格會遮住它。
+        this.drawOverlays(overlayLayers.belowTable);
         // 日期地點資訊
         const infoCardY = 140;
         this.ctx.fillStyle = '#333';
@@ -348,8 +324,6 @@ export class PosterRenderer {
             this.ctx.fillText('📍 ' + meetupText, 60, nextY);
             nextY += 30;
         }
-        // 屋簷上、Table 下方的 PNG 圖層。
-        this.drawOverlays(overlayLayers.belowTable);
         // 議程表
         let afterAgendaY = conferenceData.showMeetupPoint ? AGENDA_START_Y_WITH_MEETUP : AGENDA_START_Y;
         if (agendaItems.length > 0) {
@@ -365,8 +339,28 @@ export class PosterRenderer {
         // 底部裝飾條 (已移除)
         // this.ctx.fillStyle = scheme.agenda.background;
         // this.ctx.fillRect(0, H - 60, W, 60);
-        // Table 上方的 PNG 圖層。
-        this.drawOverlays(overlayLayers.aboveTable);
+        // 中間圖層：在 Agenda 表格上方，同時仍由屋簷遮住。
+        this.drawOverlays(overlayLayers.betweenTableAndHeader);
+        // 屋簷是獨立的固定圖層，最後蓋住中間 PNG 的半透明邊緣。
+        this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
+        const title = conferenceData.title || `${template.title}醫學會議`;
+        this.ctx.fillStyle = scheme.header.text;
+        let titleSize = 36;
+        while (titleSize > 24) {
+            this.ctx.font = `bold ${titleSize}px Microsoft JhengHei`;
+            if (this.ctx.measureText(title).width <= W - 80)
+                break;
+            titleSize -= 1;
+        }
+        this.ctx.font = `bold ${titleSize}px Microsoft JhengHei`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(title, W / 2, 50);
+        if (conferenceData.subtitle) {
+            this.ctx.font = '20px Microsoft JhengHei';
+            this.ctx.fillText(conferenceData.subtitle, W / 2, 85);
+        }
+        // 最上層 PNG 可覆蓋屋簷；undefined 保持舊上傳圖層的相容行為。
+        this.drawOverlays(overlayLayers.aboveHeader);
     }
     /**
      * 生成集合地點顯示文字

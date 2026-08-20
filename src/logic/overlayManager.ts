@@ -2,9 +2,9 @@ import { Overlay, MotifRole } from '../assets/types.js';
 import { OverlayProcessor } from './overlay-processor.js';
 
 export const CANCER_MOTIF_SAFE_ZONE = { x: 560, y: 145, width: 200, height: 170 } as const;
-export const OVERLAY_LAYER_BELOW_HEADER = -1;
-export const OVERLAY_LAYER_BELOW_TABLE = 0;
-export const OVERLAY_LAYER_ABOVE_TABLE = 1;
+export const OVERLAY_LAYER_BELOW_TABLE = -1;
+export const OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER = 0;
+export const OVERLAY_LAYER_ABOVE_HEADER = 1;
 
 type CancerOverlayMetadata = {
   sourceKind: 'cancer-preset';
@@ -85,7 +85,7 @@ export class OverlayManager {
       opacity: 1,
       visible: true,
       lockAspect: true,
-      zIndex: OVERLAY_LAYER_ABOVE_TABLE,
+      zIndex: OVERLAY_LAYER_ABOVE_HEADER,
       sourceKind: metadata.sourceKind || 'upload',
       cancerPresetId: metadata.cancerPresetId,
       motifId: metadata.motifId,
@@ -192,7 +192,7 @@ export class OverlayManager {
       opacity: 1,
       visible: true,
       lockAspect: true,
-      zIndex: OVERLAY_LAYER_BELOW_TABLE,
+      zIndex: OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER,
       ...metadata
     };
   }
@@ -302,20 +302,20 @@ export class OverlayManager {
   // 切換選中圖層到前景層（Table上方）
   moveSelectedToForeground(): void {
     if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_ABOVE_TABLE;
+      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER;
     }
   }
 
-  // 屋簷是固定合成物件；圖片可移到它的下方，避免透明邊緣蓋住屋簷。
+  // 屋簷與表格是兩個固定圖層；中間帶同時位於屋簷下、表格上。
   moveSelectedBelowHeader(): void {
     if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BELOW_HEADER;
+      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER;
     }
   }
 
   moveSelectedAboveHeader(): void {
     if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BELOW_TABLE;
+      this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_ABOVE_HEADER;
     }
   }
 

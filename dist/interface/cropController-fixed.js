@@ -23,6 +23,9 @@ export class CropController {
         this.cropMouseDown = this.onCropMouseDown.bind(this);
         this.cropMouseMove = this.onCropMouseMove.bind(this);
         this.cropMouseUp = this.onCropMouseUp.bind(this);
+        this.cropTouchStart = this.onCropTouchStart.bind(this);
+        this.cropTouchMove = this.onCropTouchMove.bind(this);
+        this.cropTouchEnd = this.onCropTouchEnd.bind(this);
         this.initializeUI();
         this.bindEvents();
         console.log('✅ CropController Bug修復版本初始化完成');
@@ -84,6 +87,10 @@ export class CropController {
         this.canvas.addEventListener('mousedown', this.cropMouseDown, { capture: true });
         this.canvas.addEventListener('mousemove', this.cropMouseMove, { capture: true });
         this.canvas.addEventListener('mouseup', this.cropMouseUp, { capture: true });
+        this.canvas.addEventListener('touchstart', this.cropTouchStart, { capture: true, passive: false });
+        this.canvas.addEventListener('touchmove', this.cropTouchMove, { capture: true, passive: false });
+        this.canvas.addEventListener('touchend', this.cropTouchEnd, { capture: true, passive: false });
+        this.canvas.addEventListener('touchcancel', this.cropTouchEnd, { capture: true, passive: false });
         console.log('🔒 裁切事件已綁定（capture模式）');
     }
     /**
@@ -93,6 +100,10 @@ export class CropController {
         this.canvas.removeEventListener('mousedown', this.cropMouseDown, { capture: true });
         this.canvas.removeEventListener('mousemove', this.cropMouseMove, { capture: true });
         this.canvas.removeEventListener('mouseup', this.cropMouseUp, { capture: true });
+        this.canvas.removeEventListener('touchstart', this.cropTouchStart, { capture: true });
+        this.canvas.removeEventListener('touchmove', this.cropTouchMove, { capture: true });
+        this.canvas.removeEventListener('touchend', this.cropTouchEnd, { capture: true });
+        this.canvas.removeEventListener('touchcancel', this.cropTouchEnd, { capture: true });
         console.log('🔓 裁切事件已移除');
     }
     /**
@@ -162,10 +173,47 @@ export class CropController {
             // 事件已阻止
         }
     }
+    onCropTouchStart(e) {
+        if (!this.cropState.isActive || e.touches.length !== 1)
+            return;
+        const point = this.canvasPointFromTouch(e.touches[0]);
+        const hitResult = this.cropHitTest(point, 30);
+        // 裁切模式由這個控制器獨占，避免底層 PNG 拖曳同時啟動。
+        e.stopImmediatePropagation();
+        if (!hitResult.hit)
+            return;
+        this.cropState.isDragging = true;
+        this.cropState.dragHandle = hitResult.handle;
+        this.cropState.dragStart = point;
+        this.cropState.originalRect = { ...this.cropState.cropRect };
+        this.canvas.classList.add('dragging');
+        e.preventDefault();
+    }
+    onCropTouchMove(e) {
+        if (!this.cropState.isActive)
+            return;
+        e.stopImmediatePropagation();
+        if (!this.cropState.isDragging || !this.cropState.dragHandle || e.touches.length !== 1)
+            return;
+        this.updateCropRect(this.canvasPointFromTouch(e.touches[0]));
+        this.updateCallback();
+        e.preventDefault();
+    }
+    onCropTouchEnd(e) {
+        if (!this.cropState.isActive)
+            return;
+        e.stopImmediatePropagation();
+        if (!this.cropState.isDragging)
+            return;
+        this.cropState.isDragging = false;
+        this.cropState.dragHandle = null;
+        this.canvas.classList.remove('dragging');
+        e.preventDefault();
+    }
     /**
      * 裁切推桿碰撞檢測 - 修復推桿位置計算
      */
-    cropHitTest(point) {
+    cropHitTest(point, hitRadius = 15) {
         if (!this.cropState.isActive || this.cropState.selectedIndex < 0) {
             return { hit: false, handle: '' };
         }
@@ -176,7 +224,7 @@ export class CropController {
         for (const handle of handles) {
             const globalHandle = this.transformPoint(overlay, handle);
             const distance = Math.hypot(point.x - globalHandle.x, point.y - globalHandle.y);
-            if (distance <= 15) {
+            if (distance <= hitRadius) {
                 console.log('🎯 推桿命中:', handle.name, '距離:', Math.round(distance));
                 return { hit: true, handle: handle.name };
             }
@@ -284,8 +332,15 @@ export class CropController {
     canvasPointFromMouse(e) {
         const rect = this.canvas.getBoundingClientRect();
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x: (e.clientX - rect.left) * (this.canvas.width / rect.width),
+            y: (e.clientY - rect.top) * (this.canvas.height / rect.height)
+        };
+    }
+    canvasPointFromTouch(touch) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: (touch.clientX - rect.left) * (this.canvas.width / rect.width),
+            y: (touch.clientY - rect.top) * (this.canvas.height / rect.height)
         };
     }
     /**
@@ -355,6 +410,7 @@ export class CropController {
         this.cropState.selectedIndex = -1;
         this.cropState.isDragging = false;
         this.canvas.style.cursor = 'default';
+        this.canvas.classList.remove('dragging');
         this.unbindCropEvents();
         this.updateCropUI(false);
         this.updateCallback();
@@ -541,12 +597,13 @@ export class CropController {
         ctx.translate(overlay.x, overlay.y);
         ctx.rotate(overlay.rotation);
         ctx.scale(overlay.scaleX, overlay.scaleY);
+        const visualScale = Math.max(0.01, (Math.abs(overlay.scaleX) + Math.abs(overlay.scaleY)) / 2);
         const rect = this.cropState.cropRect;
         const hw = overlay.w / 2;
         const hh = overlay.h / 2;
         // 1. 畫裁切框（紅色虛線）
         ctx.strokeStyle = '#ff4444';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / visualScale;
         ctx.setLineDash([8, 4]);
         ctx.strokeRect(-hw + rect.x, -hh + rect.y, rect.w, rect.h);
         // 2. 畫半透明遮罩
@@ -566,31 +623,35 @@ export class CropController {
         if (rightX < overlay.w) {
             ctx.fillRect(-hw + rightX, -hh + rect.y, overlay.w - rightX, rect.h);
         }
-        // 3. 畫裁切推桿
         const handles = this.getCropHandles(overlay);
+        ctx.restore();
+        // 3. 推桿改在 Canvas 座標繪製，無論 PNG 縮放多小都維持 24px 直徑的觸控提示。
+        ctx.save();
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#ff4444';
         ctx.lineWidth = 2;
         handles.forEach(handle => {
+            const globalHandle = this.transformPoint(overlay, handle);
             ctx.beginPath();
-            ctx.arc(handle.x, handle.y, 8, 0, Math.PI * 2);
+            ctx.arc(globalHandle.x, globalHandle.y, 12, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             if (this.cropState.isDragging && this.cropState.dragHandle === handle.name) {
                 ctx.fillStyle = '#ffff00';
                 ctx.beginPath();
-                ctx.arc(handle.x, handle.y, 6, 0, Math.PI * 2);
+                ctx.arc(globalHandle.x, globalHandle.y, 8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = '#ffffff';
             }
         });
         // 4. 畫指示文字
+        const instructionPoint = this.transformPoint(overlay, { x: 0, y: -hh });
         ctx.fillStyle = '#ff4444';
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.shadowColor = 'rgba(255,255,255,0.8)';
         ctx.shadowBlur = 3;
-        ctx.fillText('✂️ 拖拉推桿調整裁切區域', 0, -hh - 30);
+        ctx.fillText('✂️ 拖拉推桿調整裁切區域', instructionPoint.x, instructionPoint.y - 30);
         ctx.restore();
     }
 }

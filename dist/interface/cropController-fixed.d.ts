@@ -35,6 +35,9 @@ export declare class CropController {
     private cropMouseDown;
     private cropMouseMove;
     private cropMouseUp;
+    private cropTouchStart;
+    private cropTouchMove;
+    private cropTouchEnd;
     constructor(canvas: HTMLCanvasElement, overlayManager: OverlayManager, updateCallback: () => void);
     /**
      * 初始化裁切UI按鈕
@@ -64,6 +67,9 @@ export declare class CropController {
      * 裁切模式滑鼠釋放事件 - 修復版本
      */
     private onCropMouseUp;
+    private onCropTouchStart;
+    private onCropTouchMove;
+    private onCropTouchEnd;
     /**
      * 裁切推桿碰撞檢測 - 修復推桿位置計算
      */
@@ -92,6 +98,7 @@ export declare class CropController {
      * 滑鼠座標轉換
      */
     private canvasPointFromMouse;
+    private canvasPointFromTouch;
     /**
      * 監聽PNG選取狀態變化
      */

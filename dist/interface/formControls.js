@@ -790,7 +790,11 @@ export class FormControls {
         list.innerHTML = '';
         const appendOverlay = ({ overlay, index }) => {
             const div = document.createElement('button');
-            const layerLabel = overlay.zIndex < 0 ? '屋簷下' : overlay.zIndex === 0 ? '表格下' : '表格上';
+            const layerLabel = overlay.zIndex < 0
+                ? '表格下'
+                : overlay.zIndex === 0
+                    ? '屋簷下／表格上'
+                    : '屋簷上';
             div.type = 'button';
             div.className = `overlay-item ${index === selectedIndex ? 'selected' : ''}`;
             div.setAttribute('aria-label', `${overlay.name}，${layerLabel}`);
@@ -809,12 +813,18 @@ export class FormControls {
             });
             list.appendChild(div);
         };
-        entries.filter(({ overlay }) => overlay.zIndex === undefined || overlay.zIndex >= 0).forEach(appendOverlay);
+        entries.filter(({ overlay }) => overlay.zIndex === undefined || overlay.zIndex > 0).forEach(appendOverlay);
         const headerLayer = document.createElement('div');
         headerLayer.className = 'overlay-fixed-layer';
         headerLayer.setAttribute('aria-label', '固定圖層：頂部造型屋簷');
         headerLayer.innerHTML = '<span aria-hidden="true">🏠</span><span>頂部造型屋簷</span><span class="overlay-fixed-badge">固定</span>';
         list.appendChild(headerLayer);
+        entries.filter(({ overlay }) => overlay.zIndex === 0).forEach(appendOverlay);
+        const tableLayer = document.createElement('div');
+        tableLayer.className = 'overlay-fixed-layer';
+        tableLayer.setAttribute('aria-label', '固定圖層：Agenda 表格');
+        tableLayer.innerHTML = '<span aria-hidden="true">📋</span><span>Agenda 表格</span><span class="overlay-fixed-badge">固定</span>';
+        list.appendChild(tableLayer);
         entries.filter(({ overlay }) => overlay.zIndex < 0).forEach(appendOverlay);
         this.syncOverlayControls();
     }

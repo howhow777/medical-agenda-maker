@@ -44,16 +44,36 @@
   const roofTestOverlay = {
     id: 999, name: 'roof compositor test', img: layerImage, src: layerImage.src,
     x: 400, y: 75, w: 800, h: 150, scaleX: 1, scaleY: 1,
-    rotation: 0, opacity: 1, visible: true, lockAspect: true, zIndex: -1
+    rotation: 0, opacity: 1, visible: true, lockAspect: true, zIndex: 0
   };
   renderer.setHeaderContour('soft-wave');
   renderer.drawPoster([], 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [roofTestOverlay], 1);
   const belowHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
-  roofTestOverlay.zIndex = 0;
+  roofTestOverlay.zIndex = 1;
   renderer.drawPoster([], 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [roofTestOverlay], 1);
   const aboveHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
   const roofOcclusionVerified = belowHeaderPixel.slice(0, 3).join(',') !== '255,0,255'
     && aboveHeaderPixel.slice(0, 3).join(',') === '255,0,255';
+
+  layerSourceCanvas.height = 100;
+  layerSourceContext.fillStyle = '#ff00ff';
+  layerSourceContext.fillRect(0, 0, 800, 100);
+  await new Promise((resolve, reject) => {
+    layerImage.onload = resolve;
+    layerImage.onerror = reject;
+    layerImage.src = layerSourceCanvas.toDataURL('image/png');
+  });
+  const tableTestOverlay = {
+    ...roofTestOverlay, id: 1000, name: 'table compositor test', img: layerImage, src: layerImage.src,
+    x: 400, y: 400, w: 800, h: 100, zIndex: -1
+  };
+  renderer.drawPoster(agendaItems, 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [tableTestOverlay], 1);
+  const belowTablePixel = Array.from(canvas.getContext('2d').getImageData(400, 400, 1, 1).data);
+  tableTestOverlay.zIndex = 0;
+  renderer.drawPoster(agendaItems, 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [tableTestOverlay], 1);
+  const aboveTablePixel = Array.from(canvas.getContext('2d').getImageData(400, 400, 1, 1).data);
+  const tableOcclusionVerified = belowTablePixel.slice(0, 3).join(',') !== '255,0,255'
+    && aboveTablePixel.slice(0, 3).join(',') === '255,0,255';
 
   window.app = {
     getAppState: () => ({
@@ -73,6 +93,7 @@
     highQuality: exported.highQualitySize,
     bitmap: { width: bitmap.width, height: bitmap.height },
     roofOcclusionVerified,
+    tableOcclusionVerified,
     belowHeaderPixel,
     aboveHeaderPixel
   });

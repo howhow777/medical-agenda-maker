@@ -2,6 +2,28 @@ import { Overlay, DragState } from '../assets/types.js';
 import { OverlayManager } from '../logic/overlayManager.js';
 import { TouchDebugController } from './touchDebugController.js';
 
+const TAP_MOVE_THRESHOLD = 10;
+
+type PinchState = {
+  idx: number;
+  startDistance: number;
+  startCenter: { x: number; y: number };
+  startOverlay: Overlay;
+};
+
+export function isTapGesture(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  threshold = TAP_MOVE_THRESHOLD
+): boolean {
+  return Math.hypot(end.x - start.x, end.y - start.y) <= threshold;
+}
+
+export function getPinchScale(startDistance: number, currentDistance: number): number {
+  if (startDistance <= 0 || !Number.isFinite(startDistance) || !Number.isFinite(currentDistance)) return 1;
+  return currentDistance / startDistance;
+}
+
 export class CanvasInteractions {
   private overlayManager: OverlayManager;
   private touchDebug: TouchDebugController;
@@ -13,6 +35,11 @@ export class CanvasInteractions {
     handle: null,
     startAngle: 0
   };
+  private outsideTouchStart: { x: number; y: number } | null = null;
+  private outsideTouchMoved = false;
+  private outsideMouseStart: { x: number; y: number } | null = null;
+  private outsideMouseMoved = false;
+  private pinch: PinchState | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -44,7 +71,10 @@ export class CanvasInteractions {
   // 指標按下
   // Touch 開始
   private onTouchStart(e: TouchEvent): void {
-    // 只處理第一個觸控點
+    if (e.touches.length >= 2) {
+      this.beginPinch(e);
+      return;
+    }
     if (e.touches.length !== 1) return;
     
     const touch = e.touches[0];
@@ -86,6 +116,8 @@ export class CanvasInteractions {
     }
     
     if (hitResult.idx >= 0) {
+      this.outsideTouchStart = null;
+      this.outsideTouchMoved = false;
       this.overlayManager.setSelectedIndex(hitResult.idx);
       this.refreshOverlayListCallback();
       this.syncOverlayControlsCallback();
@@ -99,9 +131,10 @@ export class CanvasInteractions {
         }
       }
     } else {
-      this.overlayManager.setSelectedIndex(-1);
-      this.refreshOverlayListCallback();
-      this.syncOverlayControlsCallback();
+      // 手機捲動畫面通常從 Canvas 空白處開始。先保留選取，只有 touchend
+      // 確認是短距離點按時才取消，避免捲動一開始就讓 PNG 失焦。
+      this.outsideTouchStart = point;
+      this.outsideTouchMoved = false;
     }
     
     this.updateCallback();
@@ -110,11 +143,41 @@ export class CanvasInteractions {
   // 指標移動
   // Touch 移動
   private onTouchMove(e: TouchEvent): void {
+    if (this.pinch && e.touches.length >= 2) {
+      const [first, second] = [e.touches[0], e.touches[1]];
+      const firstPoint = this.canvasPointFromTouch(first);
+      const secondPoint = this.canvasPointFromTouch(second);
+      const center = this.midpoint(firstPoint, secondPoint);
+      const distance = Math.hypot(secondPoint.x - firstPoint.x, secondPoint.y - firstPoint.y);
+      const ratio = getPinchScale(this.pinch.startDistance, distance);
+      const overlay = this.overlayManager.getOverlays()[this.pinch.idx];
+      if (!overlay) return;
+
+      overlay.scaleX = this.clampScale(this.pinch.startOverlay.scaleX * ratio);
+      overlay.scaleY = overlay.lockAspect
+        ? overlay.scaleX
+        : this.clampScale(this.pinch.startOverlay.scaleY * ratio);
+      overlay.x = this.pinch.startOverlay.x + center.x - this.pinch.startCenter.x;
+      overlay.y = this.pinch.startOverlay.y + center.y - this.pinch.startCenter.y;
+      e.preventDefault();
+      this.updateCallback();
+      return;
+    }
+
+    if (e.touches.length > 1) return;
+
+    if (this.outsideTouchStart && e.touches.length === 1) {
+      const point = this.canvasPointFromTouch(e.touches[0]);
+      if (!isTapGesture(this.outsideTouchStart, point)) this.outsideTouchMoved = true;
+      return;
+    }
+
     if (this.drag.idx < 0 || this.drag.mode === 'none') return;
     if (e.touches.length !== 1) return; // 只處理單點觸控
     
     const touch = e.touches[0];
     const point = this.canvasPointFromTouch(touch);
+    e.preventDefault();
     
     console.log('👆 [TouchMove] 拖拽進行中', {
       touchId: touch.identifier,
@@ -230,6 +293,27 @@ export class CanvasInteractions {
       dragMode: this.drag.mode
     });
     
+    if (this.pinch) {
+      if (e.touches.length >= 2) return;
+      this.pinch = null;
+      this.outsideTouchStart = null;
+      this.outsideTouchMoved = false;
+    } else if (this.outsideTouchStart && e.touches.length === 0) {
+      const changedTouch = e.changedTouches[0];
+      const endPoint = changedTouch ? this.canvasPointFromTouch(changedTouch) : this.outsideTouchStart;
+      const shouldDeselect = e.type !== 'touchcancel'
+        && !this.outsideTouchMoved
+        && isTapGesture(this.outsideTouchStart, endPoint);
+      this.outsideTouchStart = null;
+      this.outsideTouchMoved = false;
+      if (shouldDeselect) {
+        this.overlayManager.setSelectedIndex(-1);
+        this.refreshOverlayListCallback();
+        this.syncOverlayControlsCallback();
+        this.updateCallback();
+      }
+    }
+
     // 清除拖拉狀態
     console.log('🧹 [TouchEnd] 清除 dragging 類別，恢復滾動');
     this.canvas.classList.remove('dragging');
@@ -244,8 +328,8 @@ export class CanvasInteractions {
   private canvasPointFromTouch(touch: Touch): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     return {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
+      x: (touch.clientX - rect.left) * (this.canvas.width / rect.width),
+      y: (touch.clientY - rect.top) * (this.canvas.height / rect.height)
     };
   }
 
@@ -253,8 +337,8 @@ export class CanvasInteractions {
   private canvasPointFromMouse(e: MouseEvent): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: (e.clientX - rect.left) * (this.canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (this.canvas.height / rect.height)
     };
   }
 
@@ -287,6 +371,8 @@ export class CanvasInteractions {
     
     if (hitResult.idx >= 0) {
       this.canvas.classList.add('dragging');
+      this.outsideMouseStart = null;
+      this.outsideMouseMoved = false;
       this.overlayManager.setSelectedIndex(hitResult.idx);
       this.refreshOverlayListCallback();
       this.syncOverlayControlsCallback();
@@ -300,9 +386,8 @@ export class CanvasInteractions {
       }
     } else {
       this.canvas.classList.remove('dragging');
-      this.overlayManager.setSelectedIndex(-1);
-      this.refreshOverlayListCallback();
-      this.syncOverlayControlsCallback();
+      this.outsideMouseStart = point;
+      this.outsideMouseMoved = false;
     }
     
     this.updateCallback();
@@ -310,6 +395,11 @@ export class CanvasInteractions {
 
   // 滑鼠移動（桌面環境）
   private onMouseMove(e: MouseEvent): void {
+    if (this.outsideMouseStart) {
+      const point = this.canvasPointFromMouse(e);
+      if (!isTapGesture(this.outsideMouseStart, point)) this.outsideMouseMoved = true;
+      return;
+    }
     if (this.drag.idx < 0 || this.drag.mode === 'none') return;
     
     const point = this.canvasPointFromMouse(e);
@@ -356,6 +446,17 @@ export class CanvasInteractions {
       dragMode: this.drag.mode
     });
     
+    if (this.outsideMouseStart && e.button === 0) {
+      const endPoint = this.canvasPointFromMouse(e);
+      if (!this.outsideMouseMoved && isTapGesture(this.outsideMouseStart, endPoint)) {
+        this.overlayManager.setSelectedIndex(-1);
+        this.refreshOverlayListCallback();
+        this.syncOverlayControlsCallback();
+        this.updateCallback();
+      }
+    }
+    this.outsideMouseStart = null;
+    this.outsideMouseMoved = false;
     this.canvas.classList.remove('dragging');
     this.drag.mode = 'none';
     this.drag.idx = -1;
@@ -382,5 +483,54 @@ export class CanvasInteractions {
       x: evt.clientX - rect.left,
       y: evt.clientY - rect.top
     };
+  }
+
+  private beginPinch(e: TouchEvent): void {
+    const firstPoint = this.canvasPointFromTouch(e.touches[0]);
+    const secondPoint = this.canvasPointFromTouch(e.touches[1]);
+    const midpoint = this.midpoint(firstPoint, secondPoint);
+    const hits = [
+      this.overlayManager.hitTest(firstPoint),
+      this.overlayManager.hitTest(secondPoint),
+      this.overlayManager.hitTest(midpoint)
+    ];
+    const selectedIndex = this.overlayManager.getSelectedIndex();
+    const targetIndex = hits.some(hit => hit.idx === selectedIndex)
+      ? selectedIndex
+      : (hits.find(hit => hit.idx >= 0)?.idx ?? -1);
+
+    if (targetIndex < 0) {
+      // Canvas 空白處保留瀏覽器原生雙指頁面縮放。
+      this.pinch = null;
+      this.canvas.classList.remove('dragging');
+      return;
+    }
+
+    const overlay = this.overlayManager.getOverlays()[targetIndex];
+    if (!overlay) return;
+    this.outsideTouchStart = null;
+    this.outsideTouchMoved = false;
+    this.drag.mode = 'pinch';
+    this.drag.idx = targetIndex;
+    this.overlayManager.setSelectedIndex(targetIndex);
+    this.pinch = {
+      idx: targetIndex,
+      startDistance: Math.hypot(secondPoint.x - firstPoint.x, secondPoint.y - firstPoint.y),
+      startCenter: midpoint,
+      startOverlay: { ...overlay }
+    };
+    this.canvas.classList.add('dragging');
+    this.refreshOverlayListCallback();
+    this.syncOverlayControlsCallback();
+    e.preventDefault();
+    this.updateCallback();
+  }
+
+  private midpoint(a: { x: number; y: number }, b: { x: number; y: number }): { x: number; y: number } {
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+
+  private clampScale(value: number): number {
+    return Math.max(0.05, Math.min(50, value));
   }
 }

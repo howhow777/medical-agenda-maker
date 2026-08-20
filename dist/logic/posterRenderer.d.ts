@@ -7,9 +7,9 @@ type PosterRenderOptions = {
     showMeetupPoint?: boolean;
 };
 export declare function partitionOverlayLayers(overlays: Overlay[]): {
-    belowHeader: Overlay[];
     belowTable: Overlay[];
-    aboveTable: Overlay[];
+    betweenTableAndHeader: Overlay[];
+    aboveHeader: Overlay[];
 };
 type ConferencePosterData = {
     title: string;

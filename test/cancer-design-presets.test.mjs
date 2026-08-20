@@ -13,11 +13,12 @@ import {
 import { headerContourIds } from '../dist/logic/headerContours.js';
 import {
   CANCER_MOTIF_SAFE_ZONE,
-  OVERLAY_LAYER_ABOVE_TABLE,
-  OVERLAY_LAYER_BELOW_HEADER,
+  OVERLAY_LAYER_ABOVE_HEADER,
   OVERLAY_LAYER_BELOW_TABLE,
+  OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER,
   OverlayManager
 } from '../dist/logic/overlayManager.js';
+import { getPinchScale, isTapGesture } from '../dist/interface/canvasInteractions.js';
 import {
   AGENDA_POSTER_STATE_VERSION,
   AGENDA_POSTER_STORAGE_KEY,
@@ -138,26 +139,33 @@ test('cancer filtering preserves preset layers while uploads remain renderable',
   assert.equal(upload.sourceKind, 'upload');
 });
 
-test('header contour acts as a fixed compositor divider for image layers', () => {
+test('header and agenda table form independent fixed compositor dividers', () => {
   const manager = new OverlayManager(fakeCanvas);
-  const belowHeader = manager.addOverlay(fakeImage(), 'under-roof.png', 'under.png');
+  const middle = manager.addOverlay(fakeImage(), 'under-roof-over-table.png', 'middle.png');
   manager.moveSelectedBelowHeader();
   const belowTable = manager.addOverlay(fakeImage(), 'under-table.png', 'table.png');
   manager.moveSelectedToBackground();
-  const aboveTable = manager.addOverlay(fakeImage(), 'front.png', 'front.png');
+  const aboveHeader = manager.addOverlay(fakeImage(), 'over-roof.png', 'front.png');
 
-  assert.equal(belowHeader.zIndex, OVERLAY_LAYER_BELOW_HEADER);
+  assert.equal(middle.zIndex, OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER);
   assert.equal(belowTable.zIndex, OVERLAY_LAYER_BELOW_TABLE);
-  assert.equal(aboveTable.zIndex, OVERLAY_LAYER_ABOVE_TABLE);
-  assert.deepEqual(partitionOverlayLayers([aboveTable, belowHeader, belowTable]), {
-    belowHeader: [belowHeader],
+  assert.equal(aboveHeader.zIndex, OVERLAY_LAYER_ABOVE_HEADER);
+  assert.deepEqual(partitionOverlayLayers([aboveHeader, middle, belowTable]), {
     belowTable: [belowTable],
-    aboveTable: [aboveTable]
+    betweenTableAndHeader: [middle],
+    aboveHeader: [aboveHeader]
   });
 
   manager.setSelectedIndex(0);
   manager.moveSelectedAboveHeader();
-  assert.equal(belowHeader.zIndex, OVERLAY_LAYER_BELOW_TABLE);
+  assert.equal(middle.zIndex, OVERLAY_LAYER_ABOVE_HEADER);
+});
+
+test('touch gestures distinguish a tap from page dragging and calculate pinch scale', () => {
+  assert.equal(isTapGesture({ x: 10, y: 10 }, { x: 16, y: 17 }), true);
+  assert.equal(isTapGesture({ x: 10, y: 10 }, { x: 10, y: 24 }), false);
+  assert.equal(getPinchScale(100, 150), 1.5);
+  assert.equal(getPinchScale(0, 150), 1);
 });
 
 test('v2 payload keeps the v1 autosave key and accepts a v1 restore callback', async () => {
@@ -191,11 +199,11 @@ test('overlay metadata and cancer state survive a JSON round trip', () => {
   const state = createDefaultCancerDesignState();
   const manager = new OverlayManager(fakeCanvas);
   const overlay = manager.addCancerCopy('breast', 'breast-motif-02-self-embrace', fakeImage(), 'Self embrace', 'breast.png');
-  overlay.zIndex = OVERLAY_LAYER_BELOW_HEADER;
+  overlay.zIndex = OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER;
   const roundTrip = JSON.parse(JSON.stringify({ overlays: [overlay], cancerDesignState: state }));
   assert.equal(roundTrip.overlays[0].sourceKind, 'cancer-preset');
   assert.equal(roundTrip.overlays[0].cancerPresetId, 'breast');
   assert.equal(roundTrip.overlays[0].motifRole, 'copy');
-  assert.equal(roundTrip.overlays[0].zIndex, OVERLAY_LAYER_BELOW_HEADER);
+  assert.equal(roundTrip.overlays[0].zIndex, OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER);
   assert.deepEqual(roundTrip.cancerDesignState, state);
 });
