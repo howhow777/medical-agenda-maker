@@ -3,6 +3,17 @@ export const CANCER_MOTIF_SAFE_ZONE = { x: 560, y: 145, width: 200, height: 170 
 export const OVERLAY_LAYER_BELOW_TABLE = -1;
 export const OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER = 0;
 export const OVERLAY_LAYER_ABOVE_HEADER = 1;
+export function getOverlayFixedRelations(overlay) {
+    const legacyRelations = overlay.zIndex < 0
+        ? { aboveTable: false, aboveHeader: false }
+        : overlay.zIndex === 0
+            ? { aboveTable: true, aboveHeader: false }
+            : { aboveTable: true, aboveHeader: true };
+    return {
+        aboveTable: overlay.aboveTable ?? legacyRelations.aboveTable,
+        aboveHeader: overlay.aboveHeader ?? legacyRelations.aboveHeader
+    };
+}
 export class OverlayManager {
     constructor(canvas) {
         this.overlays = [];
@@ -61,6 +72,8 @@ export class OverlayManager {
             visible: true,
             lockAspect: true,
             zIndex: OVERLAY_LAYER_ABOVE_HEADER,
+            aboveTable: true,
+            aboveHeader: true,
             sourceKind: metadata.sourceKind || 'upload',
             cancerPresetId: metadata.cancerPresetId,
             motifId: metadata.motifId,
@@ -85,7 +98,9 @@ export class OverlayManager {
                 rotation: overlay.rotation,
                 opacity: overlay.opacity,
                 visible: overlay.visible,
-                zIndex: overlay.zIndex
+                zIndex: overlay.zIndex,
+                aboveTable: overlay.aboveTable,
+                aboveHeader: overlay.aboveHeader
             };
             Object.assign(overlay, metadata, preserved, {
                 name: `內建主圖｜${name}`,
@@ -143,6 +158,8 @@ export class OverlayManager {
             visible: true,
             lockAspect: true,
             zIndex: OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER,
+            aboveTable: true,
+            aboveHeader: false,
             ...metadata
         };
     }
@@ -170,7 +187,9 @@ export class OverlayManager {
             opacity: placement.opacity,
             visible: true,
             lockAspect: true,
-            zIndex: placement.zIndex ?? 0
+            zIndex: placement.zIndex ?? 0,
+            aboveTable: (placement.zIndex ?? 0) >= 0,
+            aboveHeader: (placement.zIndex ?? 0) > 0
         });
         this.selectedIndex = this.overlays.indexOf(overlay);
         return overlay;
@@ -227,26 +246,33 @@ export class OverlayManager {
     }
     // 切換選中圖層到背景層（Table下方）
     moveSelectedToBackground() {
-        if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-            this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BELOW_TABLE;
-        }
+        this.setSelectedFixedRelation('aboveTable', false);
     }
     // 切換選中圖層到前景層（Table上方）
     moveSelectedToForeground() {
-        if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-            this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER;
-        }
+        this.setSelectedFixedRelation('aboveTable', true);
     }
-    // 屋簷與表格是兩個固定圖層；中間帶同時位於屋簷下、表格上。
+    // 屋簷與表格是兩個彼此獨立的固定物件。
     moveSelectedBelowHeader() {
-        if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-            this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER;
-        }
+        this.setSelectedFixedRelation('aboveHeader', false);
     }
     moveSelectedAboveHeader() {
-        if (this.selectedIndex >= 0 && this.selectedIndex < this.overlays.length) {
-            this.overlays[this.selectedIndex].zIndex = OVERLAY_LAYER_ABOVE_HEADER;
-        }
+        this.setSelectedFixedRelation('aboveHeader', true);
+    }
+    setSelectedFixedRelation(relation, value) {
+        if (this.selectedIndex < 0 || this.selectedIndex >= this.overlays.length)
+            return;
+        const overlay = this.overlays[this.selectedIndex];
+        const relations = getOverlayFixedRelations(overlay);
+        relations[relation] = value;
+        overlay.aboveTable = relations.aboveTable;
+        overlay.aboveHeader = relations.aboveHeader;
+        // 保留舊版 zIndex，讓舊資料讀取端仍能得到最接近的三層結果。
+        overlay.zIndex = relations.aboveHeader
+            ? OVERLAY_LAYER_ABOVE_HEADER
+            : relations.aboveTable
+                ? OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER
+                : OVERLAY_LAYER_BELOW_TABLE;
     }
     // 置中選中的圖層
     centerSelectedOverlay() {

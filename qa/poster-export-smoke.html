@@ -31,49 +31,36 @@
 
   const layerSourceCanvas = document.createElement('canvas');
   layerSourceCanvas.width = 800;
-  layerSourceCanvas.height = 150;
+  layerSourceCanvas.height = 600;
   const layerSourceContext = layerSourceCanvas.getContext('2d');
   layerSourceContext.fillStyle = '#ff00ff';
-  layerSourceContext.fillRect(0, 0, 800, 150);
+  layerSourceContext.fillRect(0, 0, 800, 600);
   const layerImage = new Image();
   await new Promise((resolve, reject) => {
     layerImage.onload = resolve;
     layerImage.onerror = reject;
     layerImage.src = layerSourceCanvas.toDataURL('image/png');
   });
-  const roofTestOverlay = {
-    id: 999, name: 'roof compositor test', img: layerImage, src: layerImage.src,
-    x: 400, y: 75, w: 800, h: 150, scaleX: 1, scaleY: 1,
-    rotation: 0, opacity: 1, visible: true, lockAspect: true, zIndex: 0
+  const compositorTestOverlay = {
+    id: 999, name: 'independent compositor test', img: layerImage, src: layerImage.src,
+    x: 400, y: 300, w: 800, h: 600, scaleX: 1, scaleY: 1,
+    rotation: 0, opacity: 1, visible: true, lockAspect: true, zIndex: 1,
+    aboveTable: false, aboveHeader: true
   };
   renderer.setHeaderContour('soft-wave');
-  renderer.drawPoster([], 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [roofTestOverlay], 1);
-  const belowHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
-  roofTestOverlay.zIndex = 1;
-  renderer.drawPoster([], 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [roofTestOverlay], 1);
-  const aboveHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
-  const roofOcclusionVerified = belowHeaderPixel.slice(0, 3).join(',') !== '255,0,255'
-    && aboveHeaderPixel.slice(0, 3).join(',') === '255,0,255';
+  renderer.drawPoster(agendaItems, 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [compositorTestOverlay], 1);
+  const reverseHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
+  const reverseTablePixel = Array.from(canvas.getContext('2d').getImageData(400, 360, 1, 1).data);
 
-  layerSourceCanvas.height = 100;
-  layerSourceContext.fillStyle = '#ff00ff';
-  layerSourceContext.fillRect(0, 0, 800, 100);
-  await new Promise((resolve, reject) => {
-    layerImage.onload = resolve;
-    layerImage.onerror = reject;
-    layerImage.src = layerSourceCanvas.toDataURL('image/png');
-  });
-  const tableTestOverlay = {
-    ...roofTestOverlay, id: 1000, name: 'table compositor test', img: layerImage, src: layerImage.src,
-    x: 400, y: 400, w: 800, h: 100, zIndex: -1
-  };
-  renderer.drawPoster(agendaItems, 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [tableTestOverlay], 1);
-  const belowTablePixel = Array.from(canvas.getContext('2d').getImageData(400, 400, 1, 1).data);
-  tableTestOverlay.zIndex = 0;
-  renderer.drawPoster(agendaItems, 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [tableTestOverlay], 1);
-  const aboveTablePixel = Array.from(canvas.getContext('2d').getImageData(400, 400, 1, 1).data);
-  const tableOcclusionVerified = belowTablePixel.slice(0, 3).join(',') !== '255,0,255'
-    && aboveTablePixel.slice(0, 3).join(',') === '255,0,255';
+  compositorTestOverlay.aboveTable = true;
+  compositorTestOverlay.aboveHeader = false;
+  renderer.drawPoster(agendaItems, 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [compositorTestOverlay], 1);
+  const originalHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
+  const originalTablePixel = Array.from(canvas.getContext('2d').getImageData(400, 360, 1, 1).data);
+  const independentRelationsVerified = reverseHeaderPixel.slice(0, 3).join(',') === '255,0,255'
+    && reverseTablePixel.slice(0, 3).join(',') !== '255,0,255'
+    && originalHeaderPixel.slice(0, 3).join(',') !== '255,0,255'
+    && originalTablePixel.slice(0, 3).join(',') === '255,0,255';
 
   window.app = {
     getAppState: () => ({
@@ -92,9 +79,10 @@
     original: exported.originalSize,
     highQuality: exported.highQualitySize,
     bitmap: { width: bitmap.width, height: bitmap.height },
-    roofOcclusionVerified,
-    tableOcclusionVerified,
-    belowHeaderPixel,
-    aboveHeaderPixel
+    independentRelationsVerified,
+    reverseHeaderPixel,
+    reverseTablePixel,
+    originalHeaderPixel,
+    originalTablePixel
   });
 </script>

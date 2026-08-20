@@ -15,6 +15,33 @@ export function createContourGradient(ctx, colors, width, height) {
     colors.forEach((color, index) => gradient.addColorStop(index / Math.max(1, colors.length - 1), color));
     return gradient;
 }
+// 只建立屋簷的外輪廓路徑，不呼叫 beginPath／fill，供合成遮罩重用。
+export function traceHeaderContourPath(ctx, contourId, width, height) {
+    ctx.moveTo(0, 0);
+    ctx.lineTo(width, 0);
+    if (contourId === 'arc-sweep') {
+        ctx.lineTo(width, height * 0.58);
+        ctx.bezierCurveTo(width * 0.83, height * 0.94, width * 0.53, height * 0.55, 0, height * 0.84);
+    }
+    else if (contourId === 'layered-ribbon') {
+        const boundary = 1;
+        const amplitude = 0.1;
+        ctx.lineTo(width, height * boundary);
+        ctx.bezierCurveTo(width * 0.78, height * (boundary + amplitude), width * 0.6, height * (boundary - amplitude), width * 0.4, height * boundary);
+        ctx.bezierCurveTo(width * 0.23, height * (boundary + amplitude), width * 0.12, height * (boundary - amplitude), 0, height * boundary);
+    }
+    else if (contourId === 'clean-diagonal') {
+        ctx.lineTo(width, height * 0.56);
+        ctx.lineTo(width * 0.62, height * 0.88);
+        ctx.lineTo(0, height * 0.72);
+    }
+    else {
+        ctx.lineTo(width, height * 0.66);
+        ctx.bezierCurveTo(width * 0.78, height * 0.94, width * 0.55, height * 0.64, width * 0.35, height * 0.78);
+        ctx.bezierCurveTo(width * 0.2, height * 0.88, width * 0.1, height * 0.7, 0, height * 0.82);
+    }
+    ctx.closePath();
+}
 export function drawHeaderContour(ctx, contourId, width, height, fill) {
     ctx.save();
     ctx.fillStyle = fill;

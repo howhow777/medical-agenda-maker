@@ -8,7 +8,8 @@ type PosterRenderOptions = {
 };
 export declare function partitionOverlayLayers(overlays: Overlay[]): {
     belowTable: Overlay[];
-    betweenTableAndHeader: Overlay[];
+    aboveTable: Overlay[];
+    belowHeader: Overlay[];
     aboveHeader: Overlay[];
 };
 type ConferencePosterData = {
@@ -44,9 +45,14 @@ export declare class PosterRenderer {
      */
     private generateMeetupText;
     private drawAgendaTable;
+    private calculateAgendaRowHeights;
+    private calculateAgendaTableEndY;
     private drawFooterNote;
     private getActiveColorScheme;
     protected drawOverlays(overlays: Overlay[]): void;
+    private drawOverlaysOutsideFixedObjects;
+    private drawOverlaysClippedToRect;
+    private drawOverlaysClippedToHeader;
     /**
      * 啟用/停用高品質圖層處理
      * @param enabled - 是否啟用高品質模式

@@ -43,6 +43,8 @@ export interface Overlay {
     visible: boolean;
     lockAspect: boolean;
     zIndex: number;
+    aboveTable?: boolean;
+    aboveHeader?: boolean;
     sourceKind?: OverlaySourceKind;
     cancerPresetId?: string;
     motifId?: string;
@@ -126,6 +128,8 @@ export interface OverlayData {
     visible: boolean;
     lockAspect: boolean;
     zIndex?: number;
+    aboveTable?: boolean;
+    aboveHeader?: boolean;
     sourceKind?: OverlaySourceKind;
     cancerPresetId?: string;
     motifId?: string;

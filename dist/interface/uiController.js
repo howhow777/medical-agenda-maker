@@ -6,7 +6,7 @@ import { FormControls } from './formControls.js';
 import { TemplateController } from './templateController.js';
 import { templates } from '../logic/templates.js';
 import { DataConverter } from '../logic/dataConverter.js';
-import { OverlayManager } from '../logic/overlayManager.js';
+import { getOverlayFixedRelations, OverlayManager } from '../logic/overlayManager.js';
 import { PosterRenderer } from '../logic/posterRenderer.js';
 import { DataManager } from '../logic/dataManager.js';
 import { CropController } from './cropController-fixed.js';
@@ -238,6 +238,8 @@ export class UIController {
                     visible: overlay.visible,
                     lockAspect: overlay.lockAspect,
                     zIndex: overlay.zIndex,
+                    aboveTable: overlay.aboveTable,
+                    aboveHeader: overlay.aboveHeader,
                     sourceKind: overlay.sourceKind,
                     cancerPresetId: overlay.cancerPresetId,
                     motifId: overlay.motifId,
@@ -623,7 +625,12 @@ export class UIController {
                     motifId: overlayData.motifId,
                     motifRole: overlayData.motifRole
                 });
-                Object.assign(overlay, overlayData, { sourceKind: overlayData.sourceKind || 'upload' });
+                const fixedRelations = getOverlayFixedRelations({
+                    zIndex: overlayData.zIndex ?? overlay.zIndex,
+                    aboveTable: overlayData.aboveTable,
+                    aboveHeader: overlayData.aboveHeader
+                });
+                Object.assign(overlay, overlayData, fixedRelations, { sourceKind: overlayData.sourceKind || 'upload' });
                 return overlay;
             }
             catch (error) {

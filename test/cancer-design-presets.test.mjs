@@ -16,6 +16,7 @@ import {
   OVERLAY_LAYER_ABOVE_HEADER,
   OVERLAY_LAYER_BELOW_TABLE,
   OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER,
+  getOverlayFixedRelations,
   OverlayManager
 } from '../dist/logic/overlayManager.js';
 import {
@@ -145,24 +146,40 @@ test('cancer filtering preserves preset layers while uploads remain renderable',
 
 test('header and agenda table form independent fixed compositor dividers', () => {
   const manager = new OverlayManager(fakeCanvas);
-  const middle = manager.addOverlay(fakeImage(), 'under-roof-over-table.png', 'middle.png');
-  manager.moveSelectedBelowHeader();
-  const belowTable = manager.addOverlay(fakeImage(), 'under-table.png', 'table.png');
+  const overlay = manager.addOverlay(fakeImage(), 'independent.png', 'independent.png');
+
+  assert.deepEqual(getOverlayFixedRelations(overlay), { aboveTable: true, aboveHeader: true });
   manager.moveSelectedToBackground();
-  const aboveHeader = manager.addOverlay(fakeImage(), 'over-roof.png', 'front.png');
-
-  assert.equal(middle.zIndex, OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER);
-  assert.equal(belowTable.zIndex, OVERLAY_LAYER_BELOW_TABLE);
-  assert.equal(aboveHeader.zIndex, OVERLAY_LAYER_ABOVE_HEADER);
-  assert.deepEqual(partitionOverlayLayers([aboveHeader, middle, belowTable]), {
-    belowTable: [belowTable],
-    betweenTableAndHeader: [middle],
-    aboveHeader: [aboveHeader]
-  });
-
-  manager.setSelectedIndex(0);
+  assert.deepEqual(getOverlayFixedRelations(overlay), { aboveTable: false, aboveHeader: true });
+  manager.moveSelectedBelowHeader();
+  assert.deepEqual(getOverlayFixedRelations(overlay), { aboveTable: false, aboveHeader: false });
+  manager.moveSelectedToForeground();
+  assert.deepEqual(getOverlayFixedRelations(overlay), { aboveTable: true, aboveHeader: false });
   manager.moveSelectedAboveHeader();
-  assert.equal(middle.zIndex, OVERLAY_LAYER_ABOVE_HEADER);
+  assert.deepEqual(getOverlayFixedRelations(overlay), { aboveTable: true, aboveHeader: true });
+
+  const aboveBoth = { ...overlay, id: 1, aboveTable: true, aboveHeader: true };
+  const aboveTableOnly = { ...overlay, id: 2, aboveTable: true, aboveHeader: false };
+  const aboveHeaderOnly = { ...overlay, id: 3, aboveTable: false, aboveHeader: true };
+  const belowBoth = { ...overlay, id: 4, aboveTable: false, aboveHeader: false };
+  assert.deepEqual(partitionOverlayLayers([aboveBoth, aboveTableOnly, aboveHeaderOnly, belowBoth]), {
+    belowTable: [aboveHeaderOnly, belowBoth],
+    aboveTable: [aboveBoth, aboveTableOnly],
+    belowHeader: [aboveTableOnly, belowBoth],
+    aboveHeader: [aboveBoth, aboveHeaderOnly]
+  });
+});
+
+test('legacy zIndex states migrate to the matching two fixed-object relations', () => {
+  assert.deepEqual(getOverlayFixedRelations({ zIndex: OVERLAY_LAYER_BELOW_TABLE }), {
+    aboveTable: false, aboveHeader: false
+  });
+  assert.deepEqual(getOverlayFixedRelations({ zIndex: OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER }), {
+    aboveTable: true, aboveHeader: false
+  });
+  assert.deepEqual(getOverlayFixedRelations({ zIndex: OVERLAY_LAYER_ABOVE_HEADER }), {
+    aboveTable: true, aboveHeader: true
+  });
 });
 
 test('touch gestures distinguish a tap from page dragging and clamp poster view zoom', () => {
@@ -206,11 +223,13 @@ test('overlay metadata and cancer state survive a JSON round trip', () => {
   const state = createDefaultCancerDesignState();
   const manager = new OverlayManager(fakeCanvas);
   const overlay = manager.addCancerCopy('breast', 'breast-motif-02-self-embrace', fakeImage(), 'Self embrace', 'breast.png');
-  overlay.zIndex = OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER;
+  manager.moveSelectedToBackground();
+  manager.moveSelectedAboveHeader();
   const roundTrip = JSON.parse(JSON.stringify({ overlays: [overlay], cancerDesignState: state }));
   assert.equal(roundTrip.overlays[0].sourceKind, 'cancer-preset');
   assert.equal(roundTrip.overlays[0].cancerPresetId, 'breast');
   assert.equal(roundTrip.overlays[0].motifRole, 'copy');
-  assert.equal(roundTrip.overlays[0].zIndex, OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER);
+  assert.equal(roundTrip.overlays[0].aboveTable, false);
+  assert.equal(roundTrip.overlays[0].aboveHeader, true);
   assert.deepEqual(roundTrip.cancerDesignState, state);
 });

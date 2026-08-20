@@ -2,14 +2,16 @@ import { colorSchemes, gradientDirections } from './colorSchemes.js';
 import { templates } from './templates.js';
 import { OverlayProcessor } from './overlay-processor.js';
 import { CanvasUtils } from './canvas-utils.js';
-import { drawHeaderContour } from './headerContours.js';
+import { drawHeaderContour, traceHeaderContourPath } from './headerContours.js';
+import { getOverlayFixedRelations } from './overlayManager.js';
 export const AGENDA_START_Y = 350;
 export const AGENDA_START_Y_WITH_MEETUP = 380;
 export function partitionOverlayLayers(overlays) {
     return {
-        belowTable: overlays.filter(overlay => overlay.zIndex < 0),
-        betweenTableAndHeader: overlays.filter(overlay => overlay.zIndex === 0),
-        aboveHeader: overlays.filter(overlay => overlay.zIndex === undefined || overlay.zIndex > 0)
+        belowTable: overlays.filter(overlay => !getOverlayFixedRelations(overlay).aboveTable),
+        aboveTable: overlays.filter(overlay => getOverlayFixedRelations(overlay).aboveTable),
+        belowHeader: overlays.filter(overlay => !getOverlayFixedRelations(overlay).aboveHeader),
+        aboveHeader: overlays.filter(overlay => getOverlayFixedRelations(overlay).aboveHeader)
     };
 }
 export class PosterRenderer {
@@ -304,8 +306,18 @@ export class PosterRenderer {
         }
         this.ctx.fillRect(0, 0, W, H);
         const overlayLayers = partitionOverlayLayers(overlays);
-        // 最底層 PNG 先畫；其後的 Agenda 表格會遮住它。
-        this.drawOverlays(overlayLayers.belowTable);
+        const agendaStartY = conferenceData.showMeetupPoint ? AGENDA_START_Y_WITH_MEETUP : AGENDA_START_Y;
+        const agendaEndY = agendaItems.length > 0
+            ? this.calculateAgendaTableEndY(agendaItems, W, agendaStartY, Boolean(conferenceData.hideModerator))
+            : agendaStartY;
+        const tableBounds = agendaItems.length > 0
+            ? { x: 40, y: agendaStartY - 8, width: W - 80, height: agendaEndY - agendaStartY + 8 }
+            : null;
+        // 固定物件以外只繪製一次；屋簷與表格範圍則依各自的獨立關係分開合成。
+        this.drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds);
+        if (tableBounds)
+            this.drawOverlaysClippedToRect(overlayLayers.belowTable, tableBounds);
+        this.drawOverlaysClippedToHeader(overlayLayers.belowHeader, W);
         // 日期地點資訊
         const infoCardY = 140;
         this.ctx.fillStyle = '#333';
@@ -325,7 +337,7 @@ export class PosterRenderer {
             nextY += 30;
         }
         // 議程表
-        let afterAgendaY = conferenceData.showMeetupPoint ? AGENDA_START_Y_WITH_MEETUP : AGENDA_START_Y;
+        let afterAgendaY = agendaStartY;
         if (agendaItems.length > 0) {
             afterAgendaY = this.drawAgendaTable(agendaItems, scheme, W, afterAgendaY, {
                 hideModerator: conferenceData.hideModerator,
@@ -339,9 +351,7 @@ export class PosterRenderer {
         // 底部裝飾條 (已移除)
         // this.ctx.fillStyle = scheme.agenda.background;
         // this.ctx.fillRect(0, H - 60, W, 60);
-        // 中間圖層：在 Agenda 表格上方，同時仍由屋簷遮住。
-        this.drawOverlays(overlayLayers.betweenTableAndHeader);
-        // 屋簷是獨立的固定圖層，最後蓋住中間 PNG 的半透明邊緣。
+        // 屋簷是獨立固定物件。
         this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
         const title = conferenceData.title || `${template.title}醫學會議`;
         this.ctx.fillStyle = scheme.header.text;
@@ -359,8 +369,9 @@ export class PosterRenderer {
             this.ctx.font = '20px Microsoft JhengHei';
             this.ctx.fillText(conferenceData.subtitle, W / 2, 85);
         }
-        // 最上層 PNG 可覆蓋屋簷；undefined 保持舊上傳圖層的相容行為。
-        this.drawOverlays(overlayLayers.aboveHeader);
+        if (tableBounds)
+            this.drawOverlaysClippedToRect(overlayLayers.aboveTable, tableBounds);
+        this.drawOverlaysClippedToHeader(overlayLayers.aboveHeader, W);
     }
     /**
      * 生成集合地點顯示文字
@@ -400,6 +411,7 @@ export class PosterRenderer {
         const cTopic = xTopic + wTopic / 2;
         const cSpeaker = xSpeaker + wSpeaker / 2;
         const cModerator = xModerator + wModerator / 2;
+        const rowHeights = this.calculateAgendaRowHeights(agendaItems, W, hideModerator);
         // 欄位標題行（直接從議程開始位置繪製）
         let yPos = agendaStartY;
         const previousAlpha = this.ctx.globalAlpha;
@@ -423,13 +435,7 @@ export class PosterRenderer {
         const normalizeModerator = (value) => value.trim().replace(/\s+/g, ' ');
         agendaItems.forEach((item, idx) => {
             this.ctx.font = '16px Microsoft JhengHei';
-            // 計算行高
-            const timeLines = this.calculateTextLinesWithBreaks(item.time, Math.max(10, wTime - pad));
-            const topicLines = this.calculateTextLinesWithBreaks(item.topic, Math.max(10, wTopic - pad));
-            const speakerLines = item.speaker ? this.calculateTextLinesWithBreaks(item.speaker, Math.max(10, wSpeaker - pad)) : 1;
-            const moderatorLines = !hideModerator && item.moderator ? this.calculateTextLinesWithBreaks(item.moderator, Math.max(10, wModerator - pad)) : 1;
-            const maxLines = Math.max(timeLines, topicLines, speakerLines, moderatorLines);
-            const itemH = Math.max(45, maxLines * 22 + 15);
+            const itemH = rowHeights[idx];
             const rowTop = yPos - 18;
             // 斑馬紋背景：一般模式畫整列；Moderator 合併模式先只畫左三欄，
             // 右側 Moderator 欄稍後依 merge group 一次畫好，避免像事後拼貼覆蓋。
@@ -520,6 +526,28 @@ export class PosterRenderer {
         }
         return yPos + 10;
     }
+    calculateAgendaRowHeights(agendaItems, W, hideModerator) {
+        const innerWidth = (W - 80) - 40;
+        const wTime = Math.round(innerWidth * 0.1765);
+        const wTopic = hideModerator ? Math.round(innerWidth * 0.50) : Math.round(innerWidth * 0.4412);
+        const wSpeaker = hideModerator ? innerWidth - wTime - wTopic : Math.round(innerWidth * 0.2059);
+        const wModerator = hideModerator ? 0 : innerWidth - wTime - wTopic - wSpeaker;
+        const pad = 10;
+        this.ctx.font = '16px Microsoft JhengHei';
+        return agendaItems.map(item => {
+            const timeLines = this.calculateTextLinesWithBreaks(item.time, Math.max(10, wTime - pad));
+            const topicLines = this.calculateTextLinesWithBreaks(item.topic, Math.max(10, wTopic - pad));
+            const speakerLines = item.speaker ? this.calculateTextLinesWithBreaks(item.speaker, Math.max(10, wSpeaker - pad)) : 1;
+            const moderatorLines = !hideModerator && item.moderator
+                ? this.calculateTextLinesWithBreaks(item.moderator, Math.max(10, wModerator - pad))
+                : 1;
+            return Math.max(45, Math.max(timeLines, topicLines, speakerLines, moderatorLines) * 22 + 15);
+        });
+    }
+    calculateAgendaTableEndY(agendaItems, W, startY, hideModerator) {
+        const rowHeights = this.calculateAgendaRowHeights(agendaItems, W, hideModerator);
+        return startY + 45 + rowHeights.reduce((total, height) => total + height + 5, 0) + 10;
+    }
     // 繪製頁尾註解
     drawFooterNote(noteText, W, startY) {
         const noteX = 40;
@@ -587,6 +615,34 @@ export class PosterRenderer {
             }
             this.ctx.restore();
         });
+    }
+    drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds) {
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(0, 0, W, H);
+        traceHeaderContourPath(this.ctx, this.headerContourId, W, 150);
+        if (tableBounds) {
+            this.ctx.rect(tableBounds.x, tableBounds.y, tableBounds.width, tableBounds.height);
+        }
+        this.ctx.clip('evenodd');
+        this.drawOverlays(overlays);
+        this.ctx.restore();
+    }
+    drawOverlaysClippedToRect(overlays, bounds) {
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+        this.ctx.clip();
+        this.drawOverlays(overlays);
+        this.ctx.restore();
+    }
+    drawOverlaysClippedToHeader(overlays, W) {
+        this.ctx.save();
+        this.ctx.beginPath();
+        traceHeaderContourPath(this.ctx, this.headerContourId, W, 150);
+        this.ctx.clip();
+        this.drawOverlays(overlays);
+        this.ctx.restore();
     }
     // === 新增：高品質圖片處理支持 ===
     /**

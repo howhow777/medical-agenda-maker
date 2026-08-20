@@ -50,7 +50,9 @@ export interface Overlay {
   opacity: number;
   visible: boolean;
   lockAspect: boolean;
-  zIndex: number; // -1 = 屋簷下，0 = 屋簷上／Table下，1 = Table上（上傳圖預設）
+  zIndex: number; // 舊版三層相容值；新版本以兩個固定物件關係為準
+  aboveTable?: boolean;
+  aboveHeader?: boolean;
   sourceKind?: OverlaySourceKind;
   cancerPresetId?: string;
   motifId?: string;
@@ -144,6 +146,8 @@ export interface OverlayData {
   visible: boolean;
   lockAspect: boolean;
   zIndex?: number;
+  aboveTable?: boolean;
+  aboveHeader?: boolean;
   sourceKind?: OverlaySourceKind;
   cancerPresetId?: string;
   motifId?: string;

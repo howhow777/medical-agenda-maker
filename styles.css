@@ -1209,6 +1209,11 @@ input:focus, select:focus, textarea:focus {
   background: rgba(112, 91, 160, 0.12);
 }
 
+#overlayControlsPanel .btn[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.72), 0 0 0 2px #1f5f9e;
+  filter: brightness(0.86);
+}
+
 .overlay-thumb {
   width: 38px;
   height: 38px;
