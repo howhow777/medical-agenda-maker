@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>四款 ImageGen 完整設計｜癌症免疫療法輪廓</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #153144;
+      --muted: #607584;
+      --line: #dce8ed;
+      --surface: rgba(255, 255, 255, 0.92);
+      --deep: #244f86;
+      --cornflower: #5f8fc4;
+      --jade: #76b8ae;
+      --mist: #dceaf4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 13% 3%, rgba(118, 184, 174, 0.18), transparent 30rem),
+        radial-gradient(circle at 91% 0%, rgba(95, 143, 196, 0.2), transparent 34rem),
+        #f3f7f8;
+      font-family: "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+    }
+
+    main {
+      width: min(1480px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 42px 0 70px;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: #287c7a;
+      font: 800 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 980px;
+      margin: 0;
+      font-size: clamp(30px, 4vw, 58px);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+
+    .lead {
+      max-width: 920px;
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .audit {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 28px 0 34px;
+    }
+
+    .audit article {
+      min-height: 108px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 14px 44px rgba(31, 69, 83, 0.08);
+      backdrop-filter: blur(14px);
+    }
+
+    .audit strong { display: block; margin-bottom: 7px; font-size: 15px; }
+    .audit span { color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .concept-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: var(--surface);
+      box-shadow: 0 22px 70px rgba(31, 69, 83, 0.13);
+    }
+
+    .concept-copy { padding: 24px 26px 22px; }
+
+    .concept-number {
+      display: inline-flex;
+      min-width: 42px;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+      border-radius: 999px;
+      color: #fff;
+      background: #163d50;
+      font: 800 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+      vertical-align: 3px;
+    }
+
+    h2 { display: inline; margin: 0; font-size: clamp(22px, 2.3vw, 32px); line-height: 1.25; }
+
+    .id {
+      display: block;
+      margin: 10px 0 0;
+      color: #70818b;
+      font: 600 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .status {
+      display: inline-flex;
+      margin-top: 12px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .status.pending { color: #70501b; background: #fff2ca; }
+    .status.approved { color: #19615b; background: #dff4ef; }
+
+    .concept-copy p { margin: 15px 0 0; color: var(--muted); line-height: 1.7; }
+
+    figure { margin: 0; background: #e8eff2; }
+    figure img { display: block; width: 100%; height: auto; }
+    figcaption { padding: 12px 18px 15px; color: #6a7d88; font-size: 12px; line-height: 1.55; background: #f8fbfb; }
+
+    .traits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .traits span {
+      padding: 7px 10px;
+      border: 1px solid #cfe0e4;
+      border-radius: 999px;
+      color: #39596a;
+      background: #f3f9f9;
+      font-size: 12px;
+    }
+
+    .palette {
+      margin-top: 28px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 18px 58px rgba(31, 69, 83, 0.1);
+    }
+
+    .palette h2 { display: block; }
+    .palette > p { max-width: 900px; color: var(--muted); line-height: 1.7; }
+
+    .palette-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 26px;
+      align-items: stretch;
+      margin-top: 22px;
+    }
+
+    .swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .swatch { min-height: 136px; padding: 13px 10px; display: flex; align-items: flex-end; border-radius: 16px; color: #fff; font: 700 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+    .swatch.mist { color: #274762; }
+    .swatch.white { color: #536875; border: 1px solid #d7e3e8; }
+
+    .agenda-demo {
+      overflow: hidden;
+      min-height: 136px;
+      border: 1px solid #d5e3e9;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .agenda-head {
+      display: grid;
+      grid-template-columns: .8fr 1.6fr 1fr;
+      padding: 15px 18px;
+      color: #fff;
+      background: linear-gradient(120deg, var(--deep), var(--cornflower) 72%, var(--jade));
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .agenda-row {
+      display: grid;
+      grid-template-columns: .8fr 1.6fr 1fr;
+      align-items: center;
+      min-height: 82px;
+      padding: 14px 18px;
+      color: var(--deep);
+      background: linear-gradient(105deg, var(--mist), #fff 76%);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .decision {
+      margin-top: 28px;
+      padding: 20px 24px;
+      border-left: 5px solid #2e8a87;
+      border-radius: 4px 18px 18px 4px;
+      color: #31505f;
+      background: #eaf6f4;
+      line-height: 1.65;
+    }
+
+    .decision strong { color: #173f4f; }
+
+    @media (max-width: 900px) {
+      main { width: min(100% - 24px, 720px); padding-top: 26px; }
+      .audit, .concept-grid, .palette-grid { grid-template-columns: 1fr; }
+      .audit { gap: 8px; }
+      .audit article { min-height: 0; }
+      .concept-copy, .palette { padding: 20px; }
+      .swatches { grid-template-columns: repeat(5, minmax(66px, 1fr)); overflow-x: auto; padding-bottom: 4px; }
+      .swatch { min-height: 104px; }
+      .agenda-head, .agenda-row { grid-template-columns: .8fr 1.5fr 1fr; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">ImageGen complete design set · design only</p>
+    <h1>四款完整設計｜全數核准</h1>
+    <p class="lead">2026-09-14 四款設計已全數核准。01 聚焦訊號交織與能量傳遞，02 聚焦折射辨識與偏心焦域，03 保留有機晶面張力，04 保留偏心流場能量；腸癌同步採用 Clinical Cobalt。後續工程轉譯必須維持此頁的材質深度、平滑邊界與中央可讀留白。</p>
+
+    <section class="audit" aria-label="工具流程說明">
+      <article><strong>工具已切換</strong><span>使用內建 ImageGen compositing 與 precise-object-edit，不再以現有 SVG 路徑當創意起點。</span></article>
+      <article><strong>參考圖角色明確</strong><span>原海報是 edit target；你提供的圖片只供材質、邊界與流動方式參考，不複製完整構圖。</span></article>
+      <article><strong>01、02 已換思維</strong><span>同樣使用完整海報 compositing，不再沿用原本平直、低層次的 SVG 外觀；造型先成立，再轉譯為工程幾何。</span></article>
+      <article><strong>核准門檻已通過</strong><span>01、02、03、04 與腸癌新色均已核准。工程實作仍須保留公開型別、儲存格式、預設映射與預覽站隔離。</span></article>
+    </section>
+
+    <section class="concept-grid" aria-label="四款完整輪廓設計">
+      <article class="concept-card">
+        <div class="concept-copy">
+          <span class="concept-number">01</span><h2>免疫訊號｜光徑共振</h2>
+          <span class="id">preserved ID: soft-wave</span>
+          <span class="status approved">APPROVED · 已核准</span>
+          <p>兩片不同方向與深度的透明光膜彼此穿行，三條亮度、曲率與起點各異的細光徑在其中傳遞；只有少量訊號點落在真正的交會位置。屋簷下緣以一個非對稱深灣和延遲上揚形成活力，不再是規律波浪。</p>
+          <div class="traits"><span>不等勢光徑</span><span>稀疏訊號點</span><span>透明光膜</span><span>非對稱深灣</span><span>中央穩定</span></div>
+        </div>
+        <figure>
+          <img src="design-review-assets/contour-01-signal-resonance-imagegen.jpg" alt="01 免疫訊號光徑共振完整海報情境稿">
+          <figcaption>新思維 ImageGen 方向：以材質化光膜與非規律訊號路徑表現傳遞，Agenda 標題列同步使用青綠色系。</figcaption>
+        </figure>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-copy">
+          <span class="concept-number">02</span><h2>精準辨識｜折射焦域</h2>
+          <span class="id">preserved ID: arc-sweep</span>
+          <span class="status approved">APPROVED · 已核准</span>
+          <p>兩個不等形、不同方向的半透明折射面從兩側接近，在外側三分之一形成安靜偏心焦域；細校準光線只輕觸焦域便消散。辨識感來自折射差與空間聚焦，而不是準星、同心圓或平行弧帶。</p>
+          <div class="traits"><span>不等折射面</span><span>偏心焦域</span><span>單一校準線</span><span>柔霧焦散</span><span>非機械對稱</span></div>
+        </div>
+        <figure>
+          <img src="design-review-assets/contour-02-refractive-focus-imagegen.jpg" alt="02 精準辨識折射焦域完整海報情境稿">
+          <figcaption>新思維 ImageGen 方向：使用靛藍與長春花色的光學薄膜，保留材質張力，同時讓標題中央保持低干擾。</figcaption>
+        </figure>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-copy">
+          <span class="concept-number">03</span><h2>協同網絡｜有機晶面</h2>
+          <span class="id">preserved ID: layered-ribbon</span>
+          <span class="status approved">APPROVED · 已核准</span>
+          <p>保留較完整的透明晶面張力。大、小晶面以不等角度與間距交錯，外側材質層次較強，標題中央則靠霧化色場維持可讀；下緣仍以柔順連續曲線過渡到白色資訊區。</p>
+          <div class="traits"><span>大尺度晶面</span><span>不等角度</span><span>材質層次</span><span>中心霧化</span><span>柔順邊界</span></div>
+        </div>
+        <figure>
+          <img src="design-review-assets/contour-03-organic-facets-imagegen.jpg" alt="03 協同網絡有機晶面完整海報情境稿">
+          <figcaption>使用者選定的第一輪 ImageGen 方向：保留較完整的透明晶面層次與流動張力。</figcaption>
+        </figure>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-copy">
+          <span class="concept-number">04</span><h2>免疫級聯｜偏心流場</h2>
+          <span class="id">preserved ID: clean-diagonal</span>
+          <span class="status approved">APPROVED · 已核准</span>
+          <p>保留多股寬幅光流帶來的動勢，但不採等距同心弧。左右流向、厚度與透光度刻意不同，細光絲從兩側牽動畫面，在中央標題區形成開放而非壓迫的留白。</p>
+          <div class="traits"><span>寬幅流面</span><span>左右不等勢</span><span>光絲牽引</span><span>冷色透光</span><span>開放留白</span></div>
+        </div>
+        <figure>
+          <img src="design-review-assets/contour-04-eccentric-field-colorectal-imagegen.jpg" alt="04 免疫級聯偏心流場暨新腸癌配色情境稿">
+          <figcaption>使用者選定的第一輪 ImageGen 方向；本圖同時套用新的腸癌冷色提案與 Agenda 同色標題列。</figcaption>
+        </figure>
+      </article>
+    </section>
+
+    <section class="palette" aria-labelledby="palette-title">
+      <h2 id="palette-title">腸癌新配色｜Clinical Cobalt</h2>
+      <p>舊版橘棕、銅色與芥末色全部撤除。新的方向以深臨床鈷藍建立專業度，用矢車菊藍拉開層次，少量冷玉色只作活性提示；Agenda 標題列與重點文字同步。</p>
+      <div class="palette-grid">
+        <div class="swatches" aria-label="腸癌新色票">
+          <div class="swatch" style="background:#244f86">#244F86<br>Deep cobalt</div>
+          <div class="swatch" style="background:#5f8fc4">#5F8FC4<br>Cornflower</div>
+          <div class="swatch" style="background:#76b8ae">#76B8AE<br>Cool jade</div>
+          <div class="swatch mist" style="background:#dceaf4">#DCEAF4<br>Mist blue</div>
+          <div class="swatch white" style="background:#ffffff">#FFFFFF<br>White</div>
+        </div>
+        <div class="agenda-demo" aria-label="腸癌 Agenda 配色示意">
+          <div class="agenda-head"><span>Time</span><span>Content</span><span>Speaker</span></div>
+          <div class="agenda-row"><span>19:00–19:30</span><span>癌症免疫治療新進展</span><span>王醫師</span></div>
+        </div>
+      </div>
+    </section>
+
+    <p class="decision"><strong>核准完成：</strong>01「免疫訊號｜光徑共振」、02「精準辨識｜折射焦域」、03「協同網絡｜有機晶面」、04「免疫級聯｜偏心流場」與腸癌 Clinical Cobalt 已全數核准，正式進入產品實作。</p>
+  </main>
+</body>
+</html>

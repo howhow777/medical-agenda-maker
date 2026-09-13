@@ -272,8 +272,10 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .update-notice::before,
-  .design-switcher-discovery {
-    animation: none;
+  .design-switcher-trigger,
+  .design-switcher-trigger::before {
+    animation: none !important;
+    transform: none !important;
   }
 
   .design-switcher-drawer,
@@ -282,7 +284,12 @@ body {
   .design-motif-card,
   .design-contour-card,
   .design-switcher-trigger {
-    transition: none;
+    transition: none !important;
+  }
+
+  .design-switcher-trigger:active {
+    filter: brightness(0.96);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.48);
   }
 }
 
@@ -319,25 +326,70 @@ body {
   top: 0;
   align-self: flex-end;
   z-index: 140;
-  min-height: 42px;
+  min-height: 44px;
   margin: -12px 0 12px;
-  padding: 9px 16px;
+  padding: 10px 18px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
   border: 0;
   border-radius: 999px;
   color: #fff;
-  background: linear-gradient(135deg, #4355a7, #7c4bc1);
-  box-shadow: 0 7px 20px rgba(67, 85, 167, 0.3);
-  font: 700 14px/1 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  background: linear-gradient(135deg,
+    #667eea 0%,
+    #764ba2 25%,
+    #f093fb 50%,
+    #f5576c 75%,
+    #fda085 100%);
+  background-size: 200% 200%;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font: 700 14px/1.1 'Microsoft JhengHei', 'PingFang TC', Arial, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  isolation: isolate;
   cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: gradientShift 8s ease infinite, designSwitcherBreathing 3.6s ease-in-out infinite;
+}
+
+.design-switcher-trigger > * {
+  position: relative;
+  z-index: 1;
+}
+
+.design-switcher-trigger::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  border-radius: 999px;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  animation: shimmer 3s infinite;
+  pointer-events: none;
 }
 
 .design-switcher-trigger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px rgba(67, 85, 167, 0.38);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  animation-play-state: paused;
+}
+
+.design-switcher-trigger:hover::before {
+  animation-duration: 0.6s;
+}
+
+.design-switcher-trigger:active {
+  transform: scale(0.98);
+  animation-play-state: paused;
 }
 
 .design-switcher-trigger:focus-visible,
@@ -351,11 +403,25 @@ body {
 }
 
 .design-switcher-discovery {
-  animation: designSwitcherDiscovery 900ms ease-in-out 3;
+  animation: gradientShift 8s ease infinite, designSwitcherDiscovery 900ms ease-in-out 3;
 }
 
 @keyframes designSwitcherDiscovery {
-  50% { transform: translateY(-2px) scale(1.04); box-shadow: 0 11px 28px rgba(67, 85, 167, 0.45); }
+  50% {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 22px rgba(102, 126, 234, 0.48);
+  }
+}
+
+@keyframes designSwitcherBreathing {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    filter: brightness(1.04);
+    box-shadow: 0 7px 22px rgba(102, 126, 234, 0.48);
+  }
 }
 
 .design-switcher-backdrop {

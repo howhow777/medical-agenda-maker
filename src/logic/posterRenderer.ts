@@ -294,6 +294,32 @@ export class PosterRenderer {
     );
   }
 
+  private drawHeaderText(
+    text: string,
+    x: number,
+    y: number,
+    font: string,
+    fill: string,
+    edge: string,
+    lineWidth: number
+  ): void {
+    this.ctx.save();
+    this.ctx.font = font;
+    this.ctx.textAlign = 'center';
+    this.ctx.lineJoin = 'round';
+    this.ctx.miterLimit = 2;
+    this.ctx.strokeStyle = edge;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.shadowColor = 'rgba(15, 33, 55, 0.28)';
+    this.ctx.shadowBlur = 4;
+    this.ctx.shadowOffsetY = 1;
+    this.ctx.strokeText(text, x, y);
+    this.ctx.shadowColor = 'transparent';
+    this.ctx.fillStyle = fill;
+    this.ctx.fillText(text, x, y);
+    this.ctx.restore();
+  }
+
   // 計算所需的海報高度
   calculateRequiredHeight(
     agendaItems: AgendaItem[],
@@ -449,12 +475,25 @@ export class PosterRenderer {
       if (this.ctx.measureText(title).width <= W - 80) break;
       titleSize -= 1;
     }
-    this.ctx.font = `bold ${titleSize}px Microsoft JhengHei`;
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(title, W / 2, 50);
+    this.drawHeaderText(
+      title,
+      W / 2,
+      50,
+      `bold ${titleSize}px Microsoft JhengHei`,
+      scheme.header.text,
+      scheme.agenda.accent,
+      3 * (W / 800)
+    );
     if (conferenceData.subtitle) {
-      this.ctx.font = '20px Microsoft JhengHei';
-      this.ctx.fillText(conferenceData.subtitle, W / 2, 85);
+      this.drawHeaderText(
+        conferenceData.subtitle,
+        W / 2,
+        85,
+        '20px Microsoft JhengHei',
+        scheme.header.text,
+        scheme.agenda.accent,
+        2.5 * (W / 800)
+      );
     }
 
     if (tableBounds) this.drawOverlaysClippedToRect(overlayLayers.aboveTable, tableBounds);
@@ -518,7 +557,11 @@ export class PosterRenderer {
     
     const previousAlpha = this.ctx.globalAlpha;
     this.ctx.globalAlpha = scheme.tableOpacity;
-    this.ctx.fillStyle = scheme.agenda.border;
+    const agendaHeaderGradient = this.ctx.createLinearGradient(tableOuterLeft, 0, tableOuterRight, 0);
+    scheme.header.colors.forEach((color, index) => {
+      agendaHeaderGradient.addColorStop(index / Math.max(1, scheme.header.colors.length - 1), color);
+    });
+    this.ctx.fillStyle = agendaHeaderGradient;
     this.ctx.fillRect(tableOuterLeft, yPos - 8, W - 80, 35);
     this.ctx.globalAlpha = previousAlpha;
 

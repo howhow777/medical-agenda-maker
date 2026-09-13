@@ -7,10 +7,20 @@ import { dirname, resolve } from 'node:path';
 
 import {
   cancerDesignPresetList,
+  cancerDesignPresets,
   createDefaultCancerDesignState,
   normalizeCancerDesignState
 } from '../dist/logic/cancerDesignPresets.js';
-import { headerContourIds } from '../dist/logic/headerContours.js';
+import { colorSchemes } from '../dist/logic/colorSchemes.js';
+import {
+  createContourGradient,
+  drawHeaderContour,
+  getHeaderContourBoundarySamples,
+  headerContourIds,
+  headerContourLabels,
+  renderContourPreview,
+  traceHeaderContourPath
+} from '../dist/logic/headerContours.js';
 import {
   CANCER_MOTIF_SAFE_ZONE,
   OVERLAY_LAYER_ABOVE_HEADER,
@@ -41,6 +51,41 @@ const fakeImage = (width = 1200, height = 900) => ({
   naturalWidth: width, naturalHeight: height, width, height
 });
 
+function createRecordingContext() {
+  const paths = [];
+  let currentPath = [];
+  const context = {
+    paths,
+    beginPath() {
+      currentPath = [];
+      paths.push(currentPath);
+    },
+    moveTo(...values) { currentPath.push(['M', ...values]); },
+    lineTo(...values) { currentPath.push(['L', ...values]); },
+    bezierCurveTo(...values) { currentPath.push(['C', ...values]); },
+    closePath() { currentPath.push(['Z']); },
+    arc(...values) { currentPath.push(['A', ...values]); },
+    createLinearGradient() { return { addColorStop() {} }; },
+    createRadialGradient() { return { addColorStop() {} }; },
+    save() {}, restore() {}, fill() {}, stroke() {}, clip() {}, fillRect() {}, clearRect() {}
+  };
+  return context;
+}
+
+function normalizedPath(path, width, height) {
+  return path.map(command => [
+    command[0],
+    ...command.slice(1).map((value, index) => Number((value / (index % 2 === 0 ? width : height)).toFixed(6)))
+  ]);
+}
+
+function recordCanonicalPath(contourId, width, height) {
+  const context = createRecordingContext();
+  context.beginPath();
+  traceHeaderContourPath(context, contourId, width, height);
+  return normalizedPath(context.paths[0], width, height);
+}
+
 test('six cancer presets expose 18 unique approved transparent PNG assets', () => {
   assert.equal(cancerDesignPresetList.length, 6);
   const motifs = cancerDesignPresetList.flatMap(preset => preset.motifs);
@@ -70,6 +115,98 @@ test('default contour assignments cover all four native contour styles', () => {
   assert.equal(defaults.get('uterus'), 'layered-ribbon');
   assert.equal(defaults.get('breast'), 'layered-ribbon');
   assert.equal(defaults.get('colorectal'), 'clean-diagonal');
+});
+
+test('approved contour labels and geometry signatures stay stable and distinct', () => {
+  assert.deepEqual(headerContourLabels, {
+    'soft-wave': '免疫訊號',
+    'arc-sweep': '精準辨識',
+    'layered-ribbon': '協同網絡',
+    'clean-diagonal': '免疫級聯'
+  });
+
+  const signatures = headerContourIds.map(contourId => {
+    const samples = getHeaderContourBoundarySamples(contourId);
+    assert.equal(samples.length, 7);
+    assert.equal(samples[0][0], 0);
+    assert.equal(samples.at(-1)[0], 1);
+    samples.forEach(([x, y], index) => {
+      assert.ok(Number.isFinite(x) && Number.isFinite(y));
+      assert.ok(y >= 0.77 && y <= 0.97, `${contourId} boundary y is outside the approved range`);
+      if (index > 0) assert.ok(x > samples[index - 1][0], `${contourId} x knots must increase`);
+    });
+    return JSON.stringify(recordCanonicalPath(contourId, 800, 150));
+  });
+  assert.equal(new Set(signatures).size, 4);
+});
+
+test('canonical contour path is resolution-independent for preview, poster, clipping, and export', () => {
+  headerContourIds.forEach(contourId => {
+    const posterPath = recordCanonicalPath(contourId, 800, 150);
+    const exportPath = recordCanonicalPath(contourId, 2400, 450);
+    assert.deepEqual(exportPath, posterPath, `${contourId} changed at export scale`);
+
+    const context = createRecordingContext();
+    drawHeaderContour(context, contourId, 800, 150, '#123456');
+    assert.deepEqual(normalizedPath(context.paths[0], 800, 150), posterPath);
+
+    const previewContext = createRecordingContext();
+    const canvas = { width: 240, height: 76, getContext: () => previewContext };
+    renderContourPreview(canvas, contourId, ['#123456', '#789ABC', '#DDEEFF']);
+    assert.deepEqual(normalizedPath(previewContext.paths[0], 240, 76), recordCanonicalPath(contourId, 240, 76));
+  });
+});
+
+test('all 24 cancer and contour combinations render with canonical three-color palettes', () => {
+  let rendered = 0;
+  cancerDesignPresetList.forEach(preset => {
+    assert.equal(preset.palette.length, 3);
+    headerContourIds.forEach(contourId => {
+      const context = createRecordingContext();
+      const fill = createContourGradient(context, preset.palette, 800, 150);
+      assert.doesNotThrow(() => drawHeaderContour(context, contourId, 800, 150, fill));
+      assert.ok(context.paths[0].length > 0);
+      rendered += 1;
+    });
+  });
+  assert.equal(rendered, 24);
+});
+
+test('six approved palettes keep roof, Agenda heading, and emphasis colors synchronized', () => {
+  const expected = {
+    lung: [['#347F91', '#55AABD', '#A7DDE1'], '#EDF9F8', '#347F91', '#153E50'],
+    headneck: [['#626CA9', '#8585C0', '#BCC9E8'], '#F3F4FB', '#626CA9', '#2D356A'],
+    uterus: [['#9B587B', '#C8738E', '#E7AAB0'], '#FCEFF1', '#9B587B', '#5F2F4B'],
+    urinary: [['#3A7B84', '#54A09E', '#9ACBC0'], '#EFF9F7', '#3A7B84', '#174956'],
+    colorectal: [['#244F86', '#5F8FC4', '#76B8AE'], '#DCEAF4', '#244F86', '#244F86'],
+    breast: [['#A65372', '#CE6F8B', '#E9A5B2'], '#FFF2F5', '#A65372', '#692A43']
+  };
+  Object.entries(expected).forEach(([presetId, [palette, background, border, accent]]) => {
+    const preset = cancerDesignPresets[presetId];
+    const scheme = colorSchemes[preset.colorScheme];
+    assert.deepEqual(preset.palette, palette);
+    assert.deepEqual(scheme.header.colors, palette);
+    assert.equal(scheme.agenda.background, background);
+    assert.equal(scheme.agenda.alternateBackground, '#FFFFFF');
+    assert.equal(scheme.agenda.border, border);
+    assert.equal(scheme.agenda.accent, accent);
+  });
+});
+
+test('switcher label and animation contract match the approved control behavior', () => {
+  const indexHtml = readFileSync(resolve(projectRoot, 'index.html'), 'utf8');
+  const styles = readFileSync(resolve(projectRoot, 'styles.css'), 'utf8');
+  const triggerMarkup = indexHtml.match(/<button id="designSwitcherTrigger"[\s\S]*?<\/button>/)?.[0] || '';
+  const visibleText = triggerMarkup.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  assert.equal(visibleText, '切換 癌別/特效');
+  assert.match(indexHtml, /medical-agenda-build" content="immunotherapy-contours-v1"/);
+  assert.match(styles, /#667eea 0%[\s\S]*#764ba2 25%[\s\S]*#f093fb 50%[\s\S]*#f5576c 75%[\s\S]*#fda085 100%/);
+  assert.match(styles, /designSwitcherBreathing 3\.6s ease-in-out infinite/);
+  assert.match(styles, /designSwitcherDiscovery 900ms ease-in-out 3/);
+  assert.match(styles, /filter:\s*brightness\(1\.04\)/);
+  assert.match(styles, /\.design-switcher-trigger:hover[\s\S]*animation-play-state:\s*paused/);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.design-switcher-trigger::before[\s\S]*animation: none !important/);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*transition: none !important/);
 });
 
 test('agenda starts below the fixed motif safe zone', () => {

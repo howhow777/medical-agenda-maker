@@ -36,6 +36,11 @@ export class CancerDesignSwitcher {
         return this.state.activePresetId;
     }
     bindEvents() {
+        this.trigger.addEventListener('animationend', event => {
+            if (event.animationName === 'designSwitcherDiscovery') {
+                this.trigger.classList.remove('design-switcher-discovery');
+            }
+        });
         this.trigger.addEventListener('click', () => {
             this.trigger.classList.remove('design-switcher-discovery');
             this.open();

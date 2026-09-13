@@ -45,38 +45,38 @@ export const colorSchemes: Record<string, ColorScheme> = {
   },
   cancer_lung: {
     name: '肺癌｜清透呼吸',
-    header: { colors: ['#123B5D', '#2F8FA8', '#71C9CE'], text: '#FFFFFF' },
-    agenda: { background: '#E8F8F7', alternateBackground: '#FFFFFF', border: '#123B5D', accent: '#123B5D' },
+    header: { colors: ['#347F91', '#55AABD', '#A7DDE1'], text: '#FFFFFF' },
+    agenda: { background: '#EDF9F8', alternateBackground: '#FFFFFF', border: '#347F91', accent: '#153E50' },
     tableOpacity: 1.0
   },
   cancer_headneck: {
     name: '頭頸癌｜口腔聚焦',
-    header: { colors: ['#293C7A', '#655FA3', '#93B7D3'], text: '#FFFFFF' },
-    agenda: { background: '#EEF1FA', alternateBackground: '#FFFFFF', border: '#293C7A', accent: '#293C7A' },
+    header: { colors: ['#626CA9', '#8585C0', '#BCC9E8'], text: '#FFFFFF' },
+    agenda: { background: '#F3F4FB', alternateBackground: '#FFFFFF', border: '#626CA9', accent: '#2D356A' },
     tableOpacity: 1.0
   },
   cancer_endometrial: {
     name: '婦癌｜柔韌花瓣',
-    header: { colors: ['#6F315A', '#B64F70', '#D9828B'], text: '#FFFFFF' },
-    agenda: { background: '#FBECEF', alternateBackground: '#FFFFFF', border: '#6F315A', accent: '#6F315A' },
+    header: { colors: ['#9B587B', '#C8738E', '#E7AAB0'], text: '#FFFFFF' },
+    agenda: { background: '#FCEFF1', alternateBackground: '#FFFFFF', border: '#9B587B', accent: '#5F2F4B' },
     tableOpacity: 1.0
   },
   cancer_urinary: {
-    name: '泌尿癌｜科學軌道',
-    header: { colors: ['#174B63', '#268B8F', '#79B8A5'], text: '#FFFFFF' },
-    agenda: { background: '#EDF8F7', alternateBackground: '#FFFFFF', border: '#174B63', accent: '#174B63' },
+    name: '泌尿癌｜水光臨床',
+    header: { colors: ['#3A7B84', '#54A09E', '#9ACBC0'], text: '#FFFFFF' },
+    agenda: { background: '#EFF9F7', alternateBackground: '#FFFFFF', border: '#3A7B84', accent: '#174956' },
     tableOpacity: 1.0
   },
   cancer_colorectal: {
-    name: '腸癌｜路徑節奏',
-    header: { colors: ['#213A50', '#B65D45', '#D48A22'], text: '#FFFFFF' },
-    agenda: { background: '#FFF4DE', alternateBackground: '#FFFFFF', border: '#213A50', accent: '#213A50' },
+    name: '腸癌｜冷光路徑',
+    header: { colors: ['#244F86', '#5F8FC4', '#76B8AE'], text: '#FFFFFF' },
+    agenda: { background: '#DCEAF4', alternateBackground: '#FFFFFF', border: '#244F86', accent: '#244F86' },
     tableOpacity: 1.0
   },
   cancer_breast: {
-    name: '乳癌｜絲帶編織',
-    header: { colors: ['#7F294A', '#B94768', '#DA7C91'], text: '#FFFFFF' },
-    agenda: { background: '#FFF1F4', alternateBackground: '#FFFFFF', border: '#7F294A', accent: '#7F294A' },
+    name: '乳癌｜絲帶編輯',
+    header: { colors: ['#A65372', '#CE6F8B', '#E9A5B2'], text: '#FFFFFF' },
+    agenda: { background: '#FFF2F5', alternateBackground: '#FFFFFF', border: '#A65372', accent: '#692A43' },
     tableOpacity: 1.0
   }
 };

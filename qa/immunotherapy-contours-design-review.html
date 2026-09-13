@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>癌症免疫療法頂部輪廓｜本機設計評審板</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --anchor: #347f91;
+      --primary: #55aabd;
+      --accent: #a7dde1;
+      --pale: #edf9f8;
+      --text-edge: #153e50;
+      --ui-purple: #6753a8;
+      --ui-ink: #24314d;
+      --ui-muted: #687188;
+      --ui-surface: #ffffff;
+      --ui-canvas: #f2f3f8;
+      --safe-visible: 0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--ui-ink);
+      background:
+        radial-gradient(circle at 7% 0%, rgba(102, 126, 234, 0.13), transparent 28%),
+        var(--ui-canvas);
+      font-family: "Microsoft JhengHei", "PingFang TC", Arial, sans-serif;
+    }
+
+    button { font: inherit; }
+
+    .review-shell {
+      width: min(1480px, calc(100vw - 48px));
+      margin: 24px auto 56px;
+    }
+
+    .review-toolbar {
+      position: sticky;
+      top: 16px;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      gap: 24px;
+      align-items: center;
+      padding: 20px 22px;
+      border: 1px solid rgba(103, 83, 168, 0.14);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 16px 42px rgba(39, 48, 73, 0.12);
+      backdrop-filter: blur(16px);
+    }
+
+    .review-title { margin: 0; font-size: 23px; line-height: 1.25; }
+    .review-kicker { margin: 0 0 5px; color: var(--ui-purple); font-size: 12px; font-weight: 800; letter-spacing: 0.12em; }
+    .review-note { margin: 6px 0 0; color: var(--ui-muted); font-size: 13px; line-height: 1.55; }
+
+    .toolbar-actions { display: flex; align-items: center; gap: 12px; }
+
+    .switcher-trigger {
+      position: relative;
+      isolation: isolate;
+      min-height: 44px;
+      padding: 0 18px;
+      overflow: hidden;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fda085 100%);
+      background-size: 200% 200%;
+      box-shadow: 0 7px 22px rgba(102, 126, 234, 0.36);
+      font-weight: 800;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(44, 38, 90, 0.28);
+      animation: gradient-drift 8s ease infinite, quiet-breathe 3.6s ease-in-out 1.8s infinite;
+    }
+
+    .switcher-trigger::after {
+      position: absolute;
+      inset: -60% auto -60% -45%;
+      z-index: -1;
+      width: 38%;
+      content: "";
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+      transform: skewX(-18deg);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    .safe-toggle {
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid #d9d6e9;
+      border-radius: 11px;
+      color: #55468c;
+      background: #f8f6ff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .safe-toggle[aria-pressed="true"] { color: #fff; background: #6753a8; border-color: #6753a8; }
+
+    .palette-panel {
+      margin: 18px 0 20px;
+      padding: 18px 20px;
+      border: 1px solid #dedfea;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .palette-heading { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 12px; }
+    .palette-heading h2 { margin: 0; font-size: 16px; }
+    .contrast-readout { color: var(--ui-muted); font-size: 12px; }
+    .palette-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+
+    .palette-button {
+      min-height: 70px;
+      padding: 9px 10px;
+      border: 2px solid transparent;
+      border-radius: 13px;
+      background: #f7f8fb;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .palette-button.is-active { border-color: #6753a8; background: #f4f1ff; box-shadow: 0 5px 15px rgba(103, 83, 168, 0.15); }
+    .palette-button strong { display: block; margin-bottom: 7px; font-size: 13px; }
+    .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+    .swatches i { height: 18px; border: 1px solid rgba(28, 38, 61, 0.08); border-radius: 5px; }
+
+    .concept-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+
+    .concept-card {
+      overflow: hidden;
+      border: 1px solid #dfe1ea;
+      border-radius: 18px;
+      background: var(--ui-surface);
+      box-shadow: 0 9px 28px rgba(35, 45, 72, 0.08);
+    }
+
+    .concept-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 16px 18px 14px; }
+    .concept-name { margin: 0; font-size: 18px; }
+    .concept-id { display: inline-block; margin-top: 4px; color: var(--ui-muted); font-size: 11px; }
+    .concept-copy { max-width: 360px; margin: 0; color: var(--ui-muted); font-size: 12px; line-height: 1.55; text-align: right; }
+
+    .header-preview {
+      display: block;
+      width: 100%;
+      aspect-ratio: 800 / 150;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--anchor);
+    }
+
+    .anchor { fill: var(--anchor); }
+    .primary { fill: var(--primary); }
+    .accent { fill: var(--accent); }
+    .pale { fill: var(--pale); }
+    .primary-stroke { stroke: var(--primary); }
+    .accent-stroke { stroke: var(--accent); }
+    .pale-stroke { stroke: var(--pale); }
+
+    .safe-zone {
+      opacity: var(--safe-visible);
+      fill: rgba(255, 255, 255, 0.04);
+      stroke: rgba(255, 255, 255, 0.82);
+      stroke-width: 1;
+      stroke-dasharray: 7 5;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .poster-title { fill: #fff; font-size: 36px; font-weight: 800; text-anchor: middle; letter-spacing: -0.5px; }
+    .poster-subtitle { fill: #fff; font-size: 19px; font-weight: 500; text-anchor: middle; }
+    .title-shadow {
+      paint-order: stroke fill;
+      stroke: var(--text-edge);
+      stroke-linejoin: round;
+      stroke-opacity: 0.82;
+      filter: drop-shadow(0 1.5px 1.5px rgba(20, 29, 47, 0.28));
+    }
+    .poster-title.title-shadow { stroke-width: 3.2px; }
+    .poster-subtitle.title-shadow { stroke-width: 2.5px; }
+
+    .agenda-sync-demo {
+      margin: 12px 18px 2px;
+      overflow: hidden;
+      border: 1px solid color-mix(in srgb, var(--anchor) 22%, white);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .agenda-sync-head,
+    .agenda-sync-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1.2fr;
+      align-items: center;
+      text-align: center;
+    }
+
+    .agenda-sync-head {
+      min-height: 34px;
+      color: #fff;
+      background: linear-gradient(105deg, var(--anchor), color-mix(in srgb, var(--anchor) 72%, var(--primary)));
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 2px color-mix(in srgb, var(--text-edge) 72%, transparent);
+    }
+
+    .agenda-sync-row {
+      min-height: 35px;
+      color: var(--text-edge);
+      background: linear-gradient(90deg, color-mix(in srgb, var(--pale) 62%, white), #fff 48%, color-mix(in srgb, var(--pale) 50%, white));
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .agenda-sync-row span + span { border-left: 1px solid color-mix(in srgb, var(--anchor) 13%, white); }
+
+    .signature-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 12px 18px 16px; }
+    .signature { color: var(--ui-muted); font-size: 11px; }
+    .safe-status { color: #356a5c; font-size: 11px; font-weight: 800; }
+
+    .matrix-panel {
+      margin-top: 20px;
+      overflow: hidden;
+      border: 1px solid #dfe1ea;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 9px 28px rgba(35, 45, 72, 0.08);
+    }
+
+    .matrix-panel summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 58px;
+      padding: 0 20px;
+      color: var(--ui-ink);
+      cursor: pointer;
+      font-weight: 800;
+      list-style: none;
+    }
+
+    .matrix-panel summary::-webkit-details-marker { display: none; }
+    .matrix-panel summary::after { content: "展開／收合"; color: var(--ui-muted); font-size: 11px; font-weight: 600; }
+    .matrix-content { padding: 2px 18px 18px; border-top: 1px solid #ececf2; }
+
+    .matrix-head,
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 104px repeat(4, minmax(0, 1fr));
+      gap: 9px;
+      align-items: center;
+    }
+
+    .matrix-head { padding: 13px 0 8px; color: var(--ui-muted); font-size: 10px; font-weight: 800; text-align: center; }
+    .matrix-head span:first-child { text-align: left; }
+    .matrix-row { padding: 8px 0; border-top: 1px solid #f0f1f5; }
+    .matrix-cancer strong { display: block; font-size: 13px; }
+    .matrix-cancer span { color: var(--ui-muted); font-size: 9px; }
+
+    .matrix-preview {
+      display: block;
+      width: 100%;
+      aspect-ratio: 800 / 150;
+      overflow: hidden;
+      border: 1px solid rgba(31, 43, 67, 0.1);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .approval-gate {
+      display: none;
+      margin: 18px 0 0;
+      padding: 14px 18px;
+      border: 1px solid rgba(36, 79, 134, 0.2);
+      border-radius: 14px;
+      color: #244f86;
+      background: linear-gradient(105deg, rgba(220, 234, 244, 0.9), rgba(239, 249, 247, 0.92));
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+
+    .final-approval .approval-gate { display: block; }
+    .final-approval .concept-card:nth-child(n + 3),
+    .final-approval .matrix-panel { display: none; }
+
+    @keyframes gradient-drift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    @keyframes shimmer { 0%, 48% { left: -45%; } 78%, 100% { left: 118%; } }
+    @keyframes quiet-breathe {
+      0%, 100% { filter: brightness(1); box-shadow: 0 7px 22px rgba(102, 126, 234, 0.34); }
+      50% { filter: brightness(1.035); box-shadow: 0 8px 27px rgba(118, 75, 162, 0.44); }
+    }
+
+    @media (max-width: 760px) {
+      .review-shell {
+        width: calc(100vw - 24px);
+        margin: 12px auto 32px;
+      }
+
+      .review-toolbar {
+        position: static;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+        padding: 17px 16px;
+      }
+
+      .review-title { font-size: 20px; }
+      .review-kicker { line-height: 1.45; }
+      .toolbar-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .safe-toggle, .switcher-trigger { width: 100%; }
+
+      .palette-panel { padding: 16px; }
+      .palette-heading { display: grid; gap: 6px; }
+      .palette-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+      .concept-grid { grid-template-columns: minmax(0, 1fr); }
+      .concept-meta { display: grid; gap: 8px; padding: 15px 16px 12px; }
+      .concept-copy { max-width: none; text-align: left; }
+      .agenda-sync-demo { margin: 10px 14px 2px; }
+      .signature-row { grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 11px 16px 14px; }
+
+      .matrix-content { padding: 2px 12px 14px; }
+      .matrix-head { display: none; }
+      .matrix-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 12px 0;
+      }
+      .matrix-cancer { grid-column: 1 / -1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .switcher-trigger, .switcher-trigger::after { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="review-shell">
+    <header class="review-toolbar">
+      <div>
+        <p class="review-kicker">LOCAL SVG DESIGN REVIEW · NO EXTERNAL CREDITS</p>
+        <h1 class="review-title">癌症免疫療法頂部輪廓｜四種視覺氣質</h1>
+        <p class="review-note">從參考圖重組光流、寬幅柔弧、晶格溶解與弧場匯聚；每款 Agenda 標題列同步使用目前癌別色盤。</p>
+      </div>
+      <div class="toolbar-actions">
+        <button id="safeToggle" class="safe-toggle" type="button" aria-pressed="false">顯示標題安全區</button>
+        <button class="switcher-trigger" type="button">🎨 切換 癌別/特效</button>
+      </div>
+    </header>
+
+    <section class="approval-gate" aria-label="最後設計核准狀態">
+      03「協同網絡｜有機晶面」、04「免疫級聯｜偏心流場」與腸癌 Clinical Cobalt 已核准。此頁現在只保留 01、02，作為開始產品實作前的最後設計門檻。
+    </section>
+
+    <section class="palette-panel" aria-labelledby="paletteTitle">
+      <div class="palette-heading">
+        <h2 id="paletteTitle">六癌別色系｜同步套用屋簷與 Agenda 標題列</h2>
+        <span id="contrastReadout" class="contrast-readout"></span>
+      </div>
+      <div id="paletteGrid" class="palette-grid"></div>
+    </section>
+
+    <section class="concept-grid" aria-label="四款頂部輪廓">
+      <article class="concept-card">
+        <div class="concept-meta">
+          <div><h2 class="concept-name">01 免疫訊號｜光流交織</h2><span class="concept-id">soft-wave</span></div>
+          <p class="concept-copy">寬幅透明流面搭配三條克制光絲，形成有能量感但不干擾標題的免疫訊號流。</p>
+        </div>
+        <svg class="header-preview" viewBox="0 0 800 150" role="img" aria-label="免疫訊號光流交織預覽">
+          <rect width="800" height="150" fill="#fff"/>
+          <path class="pale" opacity=".5" d="M0 0H800V136C707 144 624 149 524 144C392 137 282 151 164 146C88 143 35 136 0 140Z"/>
+          <path class="accent" opacity=".56" d="M0 0H800V130C709 138 626 143 527 139C394 132 284 146 164 141C89 138 35 131 0 135Z"/>
+          <path class="primary" opacity=".72" d="M0 0H800V123C711 131 629 137 530 133C397 126 286 140 164 135C90 132 35 125 0 129Z"/>
+          <path class="anchor" d="M0 0H800V116C713 124 631 131 533 127C400 120 288 134 164 129C91 126 35 119 0 123Z"/>
+          <path class="primary" opacity=".3" d="M0 0H800V31C667 9 577 48 455 31C323 13 201 55 0 20Z"/>
+          <path class="accent" opacity=".2" d="M0 0H800V14C631 52 520 3 377 21C233 40 119 17 0 52Z"/>
+          <path class="accent-stroke" opacity=".16" d="M-25 15C132 82 272 5 429 24C586 42 703 105 829 68" fill="none" stroke-width="8"/>
+          <path class="pale-stroke" opacity=".76" d="M-25 15C132 82 272 5 429 24C586 42 703 105 829 68" fill="none" stroke-width="1.7"/>
+          <path class="pale-stroke" opacity=".48" d="M-20 93C153 39 305 121 479 79C608 48 701 18 824 31" fill="none" stroke-width="1.35"/>
+          <path class="accent-stroke" opacity=".5" d="M0 115C131 91 237 136 373 116C529 93 644 130 800 104" fill="none" stroke-width="1.55"/>
+          <path class="pale-stroke" opacity=".82" d="M0 140C35 136 88 143 164 146C282 151 392 137 524 144C624 149 707 144 800 136" fill="none" stroke-width="1.5"/>
+          <rect class="safe-zone" x="104" y="16" width="592" height="96" rx="6"/>
+          <text class="poster-title title-shadow" x="400" y="67">2025年度肺癌醫學研討會</text>
+          <text class="poster-subtitle title-shadow" x="400" y="101">清透呼吸：精準診療新篇章</text>
+        </svg>
+        <div class="agenda-sync-demo" aria-label="Agenda 標題列同步示意">
+          <div class="agenda-sync-head"><span>Time</span><span>Content</span><span>Speaker</span></div>
+          <div class="agenda-sync-row"><span>19:00–19:30</span><span>癌症免疫治療新進展</span><span>王醫師</span></div>
+        </div>
+        <div class="signature-row"><span class="signature">signature：光流交織／三條細光絲／寬幅透明流面／柔順淡出</span><span class="safe-status">Agenda 同色</span></div>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-meta">
+          <div><h2 class="concept-name">02 精準辨識｜寬幅柔弧</h2><span class="concept-id">arc-sweep</span></div>
+          <p class="concept-copy">大尺度弧帶由兩側交錯推進，以寬闊呼吸感取代細碎裝飾，輪廓更接近完整海報語言。</p>
+        </div>
+        <svg class="header-preview" viewBox="0 0 800 150" role="img" aria-label="精準辨識寬幅柔弧預覽">
+          <rect width="800" height="150" fill="#fff"/>
+          <path class="pale" opacity=".5" d="M0 0H800V127C705 116 625 144 511 144C374 144 286 119 164 127C89 132 34 142 0 147Z"/>
+          <path class="accent" opacity=".55" d="M0 0H800V121C708 110 627 138 513 138C377 138 288 113 164 121C90 126 35 136 0 141Z"/>
+          <path class="primary" opacity=".71" d="M0 0H800V114C711 104 630 132 516 132C380 132 290 107 164 115C91 120 35 130 0 135Z"/>
+          <path class="anchor" d="M0 0H800V107C714 97 633 126 519 126C383 126 292 101 164 109C92 114 35 124 0 129Z"/>
+          <path class="primary" opacity=".38" d="M0 0H800V21C679 62 568 17 449 34C319 53 189 14 0 72Z"/>
+          <path class="accent" opacity=".28" d="M0 0H800V43C656 15 533 76 393 52C252 28 122 70 0 94Z"/>
+          <path class="pale" opacity=".18" d="M0 0H800V64C658 32 549 91 412 73C274 55 144 88 0 110Z"/>
+          <path class="primary-stroke" opacity=".42" d="M0 105C151 71 264 126 403 102C551 76 670 111 800 83" fill="none" stroke-width="2.1"/>
+          <path class="pale-stroke" opacity=".86" d="M0 147C34 142 89 132 164 127C286 119 374 144 511 144C625 144 705 116 800 127" fill="none" stroke-width="1.55"/>
+          <rect class="safe-zone" x="104" y="16" width="592" height="96" rx="6"/>
+          <text class="poster-title title-shadow" x="400" y="67">2025年度肺癌醫學研討會</text>
+          <text class="poster-subtitle title-shadow" x="400" y="101">清透呼吸：精準診療新篇章</text>
+        </svg>
+        <div class="agenda-sync-demo" aria-label="Agenda 標題列同步示意">
+          <div class="agenda-sync-head"><span>Time</span><span>Content</span><span>Speaker</span></div>
+          <div class="agenda-sync-row"><span>19:00–19:30</span><span>癌症免疫治療新進展</span><span>王醫師</span></div>
+        </div>
+        <div class="signature-row"><span class="signature">signature：寬幅交錯弧帶／左低右高／大尺度呼吸／柔順白場</span><span class="safe-status">Agenda 同色</span></div>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-meta">
+          <div><h2 class="concept-name">03 協同網絡｜晶格溶解</h2><span class="concept-id">layered-ribbon</span></div>
+          <p class="concept-copy">大面積半透明晶格由上方逐層消散，保留科技結構，同時讓中央標題維持低干擾。</p>
+        </div>
+        <svg class="header-preview" viewBox="0 0 800 150" role="img" aria-label="協同網絡晶格溶解預覽">
+          <rect width="800" height="150" fill="#fff"/>
+          <path class="pale" opacity=".5" d="M0 0H800V136C699 146 607 145 512 139C402 132 321 146 220 143C125 140 57 131 0 137Z"/>
+          <path class="accent" opacity=".55" d="M0 0H800V130C701 140 609 139 514 133C405 126 323 140 220 137C126 134 57 125 0 131Z"/>
+          <path class="primary" opacity=".7" d="M0 0H800V124C703 134 611 133 516 127C408 120 325 134 220 131C127 128 57 119 0 125Z"/>
+          <path class="anchor" d="M0 0H800V118C705 128 613 127 518 121C411 114 327 128 220 125C128 122 57 113 0 119Z"/>
+          <g opacity=".5">
+            <path class="primary" d="M0 0H92L48 43Z"/><path class="accent" d="M92 0H184L139 48Z"/><path class="pale" opacity=".55" d="M184 0H276L230 41Z"/>
+            <path class="primary" opacity=".55" d="M276 0H368L323 47Z"/><path class="accent" opacity=".42" d="M368 0H460L414 38Z"/><path class="pale" opacity=".48" d="M460 0H552L506 48Z"/>
+            <path class="primary" opacity=".55" d="M552 0H644L599 40Z"/><path class="accent" d="M644 0H736L691 48Z"/><path class="pale" opacity=".55" d="M736 0H800V43Z"/>
+          </g>
+          <g opacity=".28">
+            <path class="accent" d="M0 43L48 43L94 80L0 69Z"/><path class="pale" d="M48 43L139 48L94 80Z"/><path class="primary" d="M139 48L230 41L185 80L94 80Z"/>
+            <path class="accent" opacity=".62" d="M230 41L323 47L276 78L185 80Z"/><path class="pale" opacity=".5" d="M323 47L414 38L369 72L276 78Z"/>
+            <path class="primary" opacity=".5" d="M414 38L506 48L460 78L369 72Z"/><path class="accent" opacity=".62" d="M506 48L599 40L553 79L460 78Z"/>
+            <path class="pale" d="M599 40L691 48L646 80L553 79Z"/><path class="primary" d="M691 48L800 43V69L736 81L646 80Z"/>
+          </g>
+          <g opacity=".11">
+            <path class="accent" d="M0 69L94 80L47 113L0 100Z"/><path class="pale" d="M94 80L185 80L139 109L47 113Z"/>
+            <path class="primary" d="M185 80L276 78L231 108L139 109Z"/><path class="pale" d="M553 79L646 80L600 109L508 107Z"/>
+            <path class="accent" d="M646 80L736 81L800 100V118L691 109L600 109Z"/>
+          </g>
+          <path class="pale-stroke" opacity=".78" d="M0 137C57 131 125 140 220 143C321 146 402 132 512 139C607 145 699 146 800 136" fill="none" stroke-width="1.5"/>
+          <rect class="safe-zone" x="104" y="16" width="592" height="96" rx="6"/>
+          <text class="poster-title title-shadow" x="400" y="67">2025年度肺癌醫學研討會</text>
+          <text class="poster-subtitle title-shadow" x="400" y="101">清透呼吸：精準診療新篇章</text>
+        </svg>
+        <div class="agenda-sync-demo" aria-label="Agenda 標題列同步示意">
+          <div class="agenda-sync-head"><span>Time</span><span>Content</span><span>Speaker</span></div>
+          <div class="agenda-sync-row"><span>19:00–19:30</span><span>癌症免疫治療新進展</span><span>王醫師</span></div>
+        </div>
+        <div class="signature-row"><span class="signature">signature：上方晶格／逐層溶解／中央低對比／平滑外緣</span><span class="safe-status">Agenda 同色</span></div>
+      </article>
+
+      <article class="concept-card">
+        <div class="concept-meta">
+          <div><h2 class="concept-name">04 免疫級聯｜弧場匯聚</h2><span class="concept-id">clean-diagonal</span></div>
+          <p class="concept-copy">多組大半徑弧場向中央匯聚，以層層推進的曲率表現級聯，不使用鋸齒或山形切面。</p>
+        </div>
+        <svg class="header-preview" viewBox="0 0 800 150" role="img" aria-label="免疫級聯弧場匯聚預覽">
+          <rect width="800" height="150" fill="#fff"/>
+          <path class="pale" opacity=".5" d="M0 0H800V137C697 127 616 145 516 147C429 149 365 137 279 141C171 146 82 132 0 139Z"/>
+          <path class="accent" opacity=".55" d="M0 0H800V131C699 121 618 139 518 141C432 143 366 131 279 135C172 140 82 126 0 133Z"/>
+          <path class="primary" opacity=".71" d="M0 0H800V124C701 114 620 133 520 135C435 137 368 125 279 129C173 134 82 120 0 127Z"/>
+          <path class="anchor" d="M0 0H800V117C703 107 622 127 522 129C438 131 370 119 279 123C174 128 82 114 0 121Z"/>
+          <path class="primary" opacity=".42" d="M0 0H800V27C669 76 552 15 420 38C282 62 166 18 0 73Z"/>
+          <path class="accent" opacity=".28" d="M0 0H800V49C660 90 548 38 415 57C279 76 149 44 0 96Z"/>
+          <path class="pale" opacity=".15" d="M0 0H800V72C659 102 546 61 413 77C277 94 147 67 0 112Z"/>
+          <path class="primary-stroke" d="M-30 107C124 64 248 126 394 102C548 76 675 119 830 75" fill="none" opacity=".42" stroke-width="2.4"/>
+          <path class="accent-stroke" d="M-20 121C136 82 257 137 401 116C551 94 675 131 820 92" fill="none" opacity=".52" stroke-width="1.8"/>
+          <path class="pale-stroke" d="M0 139C82 132 171 146 279 141C365 137 429 149 516 147C616 145 697 127 800 137" fill="none" opacity=".86" stroke-width="1.55"/>
+          <rect class="safe-zone" x="104" y="16" width="592" height="96" rx="6"/>
+          <text class="poster-title title-shadow" x="400" y="67">2025年度肺癌醫學研討會</text>
+          <text class="poster-subtitle title-shadow" x="400" y="101">清透呼吸：精準診療新篇章</text>
+        </svg>
+        <div class="agenda-sync-demo" aria-label="Agenda 標題列同步示意">
+          <div class="agenda-sync-head"><span>Time</span><span>Content</span><span>Speaker</span></div>
+          <div class="agenda-sync-row"><span>19:00–19:30</span><span>癌症免疫治療新進展</span><span>王醫師</span></div>
+        </div>
+        <div class="signature-row"><span class="signature">signature：多組大半徑弧場／中央匯聚／三層推進／柔順外緣</span><span class="safe-status">Agenda 同色</span></div>
+      </article>
+    </section>
+
+    <details class="matrix-panel" open>
+      <summary>24 組癌別 × 輪廓總覽</summary>
+      <div class="matrix-content">
+        <div class="matrix-head" aria-hidden="true">
+          <span>癌別色系</span><span>免疫訊號</span><span>精準辨識</span><span>協同網絡</span><span>免疫級聯</span>
+        </div>
+        <div id="matrixRows"></div>
+      </div>
+    </details>
+  </main>
+
+  <script>
+    const reviewMode = new URLSearchParams(window.location.search).get('rev');
+    if (reviewMode === 'final-01-02') {
+      window.location.replace('immunotherapy-contours-imagegen-review.html?rev=all-four-imagegen');
+    }
+
+    const palettes = [
+      { id: 'lung', label: '肺癌', colors: ['#347F91', '#55AABD', '#A7DDE1', '#EDF9F8'], textEdge: '#153E50' },
+      { id: 'headneck', label: '頭頸癌', colors: ['#626CA9', '#8585C0', '#BCC9E8', '#F3F4FB'], textEdge: '#2D356A' },
+      { id: 'gyn', label: '婦癌', colors: ['#9B587B', '#C8738E', '#E7AAB0', '#FCEFF1'], textEdge: '#5F2F4B' },
+      { id: 'urinary', label: '泌尿癌', colors: ['#3A7B84', '#54A09E', '#9ACBC0', '#EFF9F7'], textEdge: '#174956' },
+      { id: 'colorectal', label: '腸癌', colors: ['#244F86', '#5F8FC4', '#76B8AE', '#DCEAF4'], textEdge: '#18375E' },
+      { id: 'breast', label: '乳癌', colors: ['#A65372', '#CE6F8B', '#E9A5B2', '#FFF2F5'], textEdge: '#692A43' }
+    ];
+
+    const paletteGrid = document.getElementById('paletteGrid');
+    const contrastReadout = document.getElementById('contrastReadout');
+    const safeToggle = document.getElementById('safeToggle');
+    const matrixRows = document.getElementById('matrixRows');
+
+    function contrastWithWhite(hex) {
+      const channels = hex.slice(1).match(/.{2}/g).map(value => parseInt(value, 16) / 255).map(value =>
+        value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+      );
+      const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+      return 1.05 / (luminance + 0.05);
+    }
+
+    function applyPalette(palette, button) {
+      const [anchor, primary, accent, pale] = palette.colors;
+      const root = document.documentElement.style;
+      root.setProperty('--anchor', anchor);
+      root.setProperty('--primary', primary);
+      root.setProperty('--accent', accent);
+      root.setProperty('--pale', pale);
+      root.setProperty('--text-edge', palette.textEdge);
+      document.querySelectorAll('.palette-button').forEach(item => item.classList.toggle('is-active', item === button));
+      contrastReadout.textContent = `${palette.label}｜白字 ${contrastWithWhite(anchor).toFixed(1)}:1 ＋ 同色系深描邊`;
+    }
+
+    palettes.forEach((palette, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `palette-button${index === 0 ? ' is-active' : ''}`;
+      button.innerHTML = `<strong>${palette.label}</strong><span class="swatches">${palette.colors.map(color => `<i style="background:${color}"></i>`).join('')}</span>`;
+      button.addEventListener('click', () => applyPalette(palette, button));
+      paletteGrid.appendChild(button);
+    });
+
+    const sourcePreviews = [...document.querySelectorAll('.header-preview')];
+
+    function makeMatrixPreview(source, palette, rowIndex, conceptIndex) {
+      const preview = source.cloneNode(true);
+      const suffix = `matrix-${rowIndex}-${conceptIndex}`;
+      const idMap = new Map();
+      preview.classList.remove('header-preview');
+      preview.classList.add('matrix-preview');
+      preview.querySelectorAll('[id]').forEach(node => {
+        const nextId = `${node.id}-${suffix}`;
+        idMap.set(node.id, nextId);
+        node.id = nextId;
+      });
+      preview.querySelectorAll('[clip-path]').forEach(node => {
+        const match = node.getAttribute('clip-path').match(/^url\(#(.+)\)$/);
+        if (match && idMap.has(match[1])) node.setAttribute('clip-path', `url(#${idMap.get(match[1])})`);
+      });
+      preview.querySelectorAll('[href]').forEach(node => {
+        const current = node.getAttribute('href');
+        const targetId = current && current.startsWith('#') ? current.slice(1) : '';
+        if (idMap.has(targetId)) node.setAttribute('href', `#${idMap.get(targetId)}`);
+      });
+      preview.querySelector('.poster-title').textContent = `2025年度${palette.label}醫學研討會`;
+      preview.querySelector('.poster-subtitle').textContent = '癌症免疫療法專業議程';
+      preview.querySelectorAll('.safe-zone').forEach(node => node.remove());
+      return preview;
+    }
+
+    palettes.forEach((palette, rowIndex) => {
+      const row = document.createElement('div');
+      row.className = 'matrix-row';
+      row.style.setProperty('--anchor', palette.colors[0]);
+      row.style.setProperty('--primary', palette.colors[1]);
+      row.style.setProperty('--accent', palette.colors[2]);
+      row.style.setProperty('--pale', palette.colors[3]);
+      row.style.setProperty('--text-edge', palette.textEdge);
+      const label = document.createElement('div');
+      label.className = 'matrix-cancer';
+      label.innerHTML = `<strong>${palette.label}</strong><span>${contrastWithWhite(palette.colors[0]).toFixed(1)}:1</span>`;
+      row.appendChild(label);
+      sourcePreviews.forEach((source, conceptIndex) => row.appendChild(makeMatrixPreview(source, palette, rowIndex, conceptIndex)));
+      matrixRows.appendChild(row);
+    });
+
+    applyPalette(palettes[0], paletteGrid.firstElementChild);
+
+    safeToggle.addEventListener('click', () => {
+      const pressed = safeToggle.getAttribute('aria-pressed') !== 'true';
+      safeToggle.setAttribute('aria-pressed', String(pressed));
+      safeToggle.textContent = pressed ? '隱藏標題安全區' : '顯示標題安全區';
+      document.documentElement.style.setProperty('--safe-visible', pressed ? '1' : '0');
+    });
+  </script>
+</body>
+</html>
