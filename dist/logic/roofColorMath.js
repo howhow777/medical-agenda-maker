@@ -53,7 +53,7 @@ export function transferRoofChroma(a, b, baseA, baseB, targetA, targetB) {
 /** Inferred white-matte coverage, not physical extraction of painted layers. */
 export function buildRoofMaps(pixels, width, height, sourceColors) {
     if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0 || pixels.length !== width * height * 4) {
-        throw new Error('屋簷像素尺寸不完整');
+        throw new Error('主視覺像素尺寸不完整');
     }
     const anchors = sourceColors.map(hexLab);
     const values = new Float32Array(width * height * 7);

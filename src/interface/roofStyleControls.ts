@@ -147,13 +147,13 @@ export class RoofStyleControls {
 
     this.status = roofMaterialLibrary.isReady(selection.styleId)
       ? ''
-      : '屋簷載入中；完成前保留上一個畫面。';
+      : '頂部主視覺載入中；完成前保留上一個畫面。';
     this.updateStatus();
     const result = await this.coordinator.select(selection);
     if (!result.current) return;
     this.retryable = Boolean(result.error);
     if (result.error) {
-      this.status = `${result.error.message}。目前顯示最初版波浪屋簷作為暫時 fallback；選擇未被改寫，請重試後再下載。`;
+      this.status = `${result.error.message}。目前顯示最初版波浪主視覺作為暫時 fallback；選擇未被改寫，請重試後再下載。`;
       this.onChange(this.cancerId, recommendedClassicRoofSelection(this.cancerId));
     } else {
       this.status = '';
@@ -172,11 +172,11 @@ export class RoofStyleControls {
 
     this.hosts.forEach((host, index) => {
       const heading = document.createElement('h3');
-      heading.textContent = `${preset.label}｜核准屋簷`;
+      heading.textContent = `${preset.label}｜主視覺設計`;
       const grid = document.createElement('div');
       grid.className = 'roof-style-grid';
       grid.setAttribute('role', 'group');
-      grid.setAttribute('aria-label', `${preset.label}屋簷款式`);
+      grid.setAttribute('aria-label', `${preset.label}主視覺款式`);
 
       getRoofStylesForCancer(this.cancerId).forEach(style => {
         const button = document.createElement('button');
@@ -259,7 +259,7 @@ export class RoofStyleControls {
       status.setAttribute('aria-live', 'polite');
       const retry = document.createElement('button');
       retry.type = 'button';
-      retry.textContent = '重試載入屋簷';
+      retry.textContent = '重試載入主視覺';
       retry.dataset.roofRetry = '';
       retry.addEventListener('click', () => {
         void this.loadSelection(this.store.get(this.cancerId));
@@ -327,8 +327,8 @@ export class RoofStyleControls {
       note.textContent = selection.mode === 'custom'
         ? '自訂三色尚未經藝術／對比審核。光膜或經典波浪會保留各自幾何；過亮、過暗或跨冷暖可能降低辨識度，可恢復建議配色。'
         : optical
-          ? `建議配色 · ${getRoofStyle(selection.styleId)!.label}。屋簷與議程標題列同步。`
-          : '最初版波浪屋簷 · 配色仍會跟隨目前癌別；新款光影屋簷可由上方卡片主動切回。';
+          ? `建議配色 · ${getRoofStyle(selection.styleId)!.label}。頂部主視覺與議程標題列同步。`
+          : '最初版波浪主視覺 · 配色仍會跟隨目前癌別；新款光影主視覺可由上方卡片主動切回。';
     });
     this.updateStatus();
   }

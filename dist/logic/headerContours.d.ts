@@ -1,5 +1,5 @@
 /** Exact geometry from GitHub Pages commit e786b829 at an 800px logical width. */
-export declare const CLASSIC_ROOF_LABEL = "\u6700\u521D\u7248\u6CE2\u6D6A\u5C4B\u7C37";
+export declare const CLASSIC_ROOF_LABEL = "\u6700\u521D\u7248\u6CE2\u6D6A\u4E3B\u8996\u89BA";
 export declare const CLASSIC_ROOF_BASE_WIDTH = 800;
 export declare const CLASSIC_ROOF_HEADER_HEIGHT = 120;
 export declare const CLASSIC_ROOF_MAX_Y = 130;

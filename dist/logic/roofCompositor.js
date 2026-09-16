@@ -4,7 +4,7 @@ import { getRoofPlacement } from './roofStyles.js';
  */
 export function mixRoofCoverage(outside, inside, coverage) {
     if (outside.length !== inside.length || outside.length !== coverage.length * 4)
-        throw new Error('屋簷遮罩尺寸不符');
+        throw new Error('主視覺遮罩尺寸不符');
     const result = new Uint8ClampedArray(outside.length);
     for (let p = 0; p < coverage.length; p++) {
         const k = p * 4, weight = coverage[p] / 255;
@@ -19,7 +19,7 @@ export function mixRoofCoverage(outside, inside, coverage) {
 }
 export function extractRoofCoverage(pixels) {
     if (pixels.length % 4)
-        throw new Error('屋簷像素不完整');
+        throw new Error('主視覺像素不完整');
     const coverage = new Uint8ClampedArray(pixels.length / 4);
     const complement = new Uint8ClampedArray(coverage.length);
     for (let p = 0; p < coverage.length; p++) {
@@ -36,7 +36,7 @@ export function extractRoofCoverage(pixels) {
 export function compositeOpticalRoof(target, source, styleId, logicalWidth, paintInside) {
     const transform = target.getTransform();
     if (transform.b !== 0 || transform.c !== 0 || transform.e !== 0 || transform.f !== 0 || transform.a <= 0 || transform.d !== transform.a) {
-        throw new Error('屋簷合成只接受等比例輸出座標');
+        throw new Error('主視覺合成只接受等比例輸出座標');
     }
     const scale = transform.a;
     const placement = getRoofPlacement(styleId, logicalWidth);

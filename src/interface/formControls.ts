@@ -876,7 +876,7 @@ export class FormControls {
     const appendOverlay = ({ overlay, index }: { overlay: Overlay; index: number }): void => {
       const div = document.createElement('button');
       const relations = getOverlayFixedRelations(overlay);
-      const layerLabel = `${relations.aboveTable ? '表格上' : '表格下'} · ${relations.aboveHeader ? '屋簷上' : '屋簷下'}`;
+      const layerLabel = `${relations.aboveTable ? '表格上' : '表格下'} · ${relations.aboveHeader ? '主視覺上' : '主視覺下'}`;
       div.type = 'button';
       div.className = `overlay-item ${index === selectedIndex ? 'selected' : ''}`;
       div.setAttribute('aria-label', `${overlay.name}，${layerLabel}`);
@@ -898,8 +898,8 @@ export class FormControls {
 
     const headerLayer = document.createElement('div');
     headerLayer.className = 'overlay-fixed-layer';
-    headerLayer.setAttribute('aria-label', '固定圖層：頂部造型屋簷');
-    headerLayer.innerHTML = '<span aria-hidden="true">🏠</span><span>頂部造型屋簷</span><span class="overlay-fixed-badge">固定</span>';
+    headerLayer.setAttribute('aria-label', '固定圖層：頂部主視覺');
+    headerLayer.innerHTML = '<span aria-hidden="true">🏠</span><span>頂部主視覺</span><span class="overlay-fixed-badge">固定</span>';
     list.appendChild(headerLayer);
 
     const tableLayer = document.createElement('div');

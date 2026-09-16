@@ -97,16 +97,16 @@ function parseV2(value: Record<string, unknown>): { state: RoofSelectionStateV2;
   const state = createClassicRoofSelectionState();
   const issues: string[] = [];
   if (!value.byCancer || typeof value.byCancer !== 'object' || Array.isArray(value.byCancer)) {
-    return { state, issues: ['屋簷癌別設定格式不正確；已安全使用最初版屋簷'] };
+    return { state, issues: ['主視覺癌別設定格式不正確；已安全使用最初版主視覺'] };
   }
   const byCancer = value.byCancer as Record<string, unknown>;
   cancerDesignPresetList.forEach(cancer => {
     const parsed = parseSelection(cancer.id, byCancer[cancer.id]);
     if (parsed) state.byCancer[cancer.id] = parsed;
-    else issues.push(`屋簷設定缺漏或不適用：${cancer.id}；已安全使用最初版屋簷`);
+    else issues.push(`主視覺設定缺漏或不適用：${cancer.id}；已安全使用最初版主視覺`);
   });
   Object.keys(byCancer).forEach(id => {
-    if (!cancerDesignPresets[id as CancerDesignPresetId]) issues.push(`未知癌別屋簷設定：${id}`);
+    if (!cancerDesignPresets[id as CancerDesignPresetId]) issues.push(`未知癌別主視覺設定：${id}`);
   });
   return { state, issues };
 }
@@ -115,7 +115,7 @@ function parseV1(value: Record<string, unknown>): { state: RoofSelectionStateV2;
   const state = createClassicRoofSelectionState();
   const issues: string[] = [];
   if (!value.byCancer || typeof value.byCancer !== 'object' || Array.isArray(value.byCancer)) {
-    return { state, issues: ['舊版屋簷癌別設定格式不正確；已安全使用最初版屋簷'] };
+    return { state, issues: ['舊版主視覺癌別設定格式不正確；已安全使用最初版主視覺'] };
   }
   const byCancer = value.byCancer as Record<string, unknown>;
   for (const [id, raw] of Object.entries(byCancer)) {
@@ -124,7 +124,7 @@ function parseV1(value: Record<string, unknown>): { state: RoofSelectionStateV2;
     if (!cancerDesignPresets[cancerId] || !entry || typeof entry !== 'object' ||
         !isApprovedRoofPair(cancerId, entry.styleId) ||
         !['recommended', 'custom'].includes(String(entry.mode)) || !isRoofColors(entry.colors)) {
-      issues.push(`未識別或不適用的舊版屋簷設定：${id}`);
+      issues.push(`未識別或不適用的舊版主視覺設定：${id}`);
       continue;
     }
     state.byCancer[cancerId] = entry.mode === 'recommended'
@@ -138,12 +138,12 @@ function parseV1(value: Record<string, unknown>): { state: RoofSelectionStateV2;
 export function parseRoofSelectionState(value: unknown): { state: RoofSelectionStateV2; issues: string[] } {
   if (value === undefined || value === null) return { state: createClassicRoofSelectionState(), issues: [] };
   if (typeof value !== 'object' || Array.isArray(value)) {
-    return { state: createClassicRoofSelectionState(), issues: ['屋簷設定不是物件；已安全使用最初版屋簷'] };
+    return { state: createClassicRoofSelectionState(), issues: ['主視覺設定不是物件；已安全使用最初版主視覺'] };
   }
   const input = value as Record<string, unknown>;
   if (input.version === 2) return parseV2(input);
   if (input.version === 1) return parseV1(input);
-  return { state: createClassicRoofSelectionState(), issues: ['未知屋簷設定版本；原資料已保留'] };
+  return { state: createClassicRoofSelectionState(), issues: ['未知主視覺設定版本；原資料已保留'] };
 }
 
 /** Isolated compatibility check; legacy IDs never escape into renderer or current state. */
@@ -176,7 +176,7 @@ export class RoofSelectionStore {
       this.persist();
     } catch {
       this.state = createFreshRoofSelectionState();
-      this.issues = ['無法讀取屋簷設定；本次使用最新建議屋簷'];
+      this.issues = ['無法讀取主視覺設定；本次使用最新建議主視覺'];
     }
   }
 
@@ -190,7 +190,7 @@ export class RoofSelectionStore {
 
   select(cancerId: CancerDesignPresetId, selection: RoofSelection): void {
     const parsed = parseSelection(cancerId, selection);
-    if (!parsed) throw new Error('未識別或不適用的屋簷設定');
+    if (!parsed) throw new Error('未識別或不適用的主視覺設定');
     this.state.byCancer[cancerId] = parsed;
     this.persist();
   }
@@ -210,7 +210,7 @@ export class RoofSelectionStore {
     } catch {
       this.state = createClassicRoofSelectionState();
       this.unrecognizedRaw = raw;
-      this.issues = ['屋簷設定無法解析；原資料已保留'];
+      this.issues = ['主視覺設定無法解析；原資料已保留'];
       return;
     }
     const result = parseRoofSelectionState(parsed);
@@ -228,7 +228,7 @@ export class RoofSelectionStore {
       }
       this.storage.setItem(ROOF_SELECTION_STORAGE_KEY, JSON.stringify(this.state));
     } catch {
-      this.issues = [...this.issues, '屋簷設定未能儲存；本次選擇仍有效'];
+      this.issues = [...this.issues, '主視覺設定未能儲存；本次選擇仍有效'];
     }
   }
 }

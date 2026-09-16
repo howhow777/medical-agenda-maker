@@ -21,7 +21,7 @@ export async function decodeRoofImage(style: RoofStyle): Promise<RoofImage> {
       const canvas = document.createElement('canvas');
       canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) throw new Error('瀏覽器無法建立屋簷畫布');
+      if (!ctx) throw new Error('瀏覽器無法建立主視覺畫布');
       ctx.drawImage(image, 0, 0);
       return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     }
@@ -48,7 +48,7 @@ export class RoofSurfaceCache<T> {
 
 export function roofSurfaceKey(styleId: RoofStyleId, colors: RoofColors, width: number, height: number): string {
   if (!getRoofStyle(styleId) || !isRoofColors(colors) || !Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
-    throw new Error('無效屋簷渲染參數');
+    throw new Error('無效主視覺渲染參數');
   }
   return `${styleId}:${colors.join(',')}:${width}x${height}`;
 }
@@ -65,7 +65,7 @@ export class RoofMaterialLibrary {
 
   preload(styleId: RoofStyleId): Promise<RoofImage> {
     const style = getRoofStyle(styleId);
-    if (!style) return Promise.reject(new Error('未知屋簷款式'));
+    if (!style) return Promise.reject(new Error('未知主視覺款式'));
     const existing = this.pending.get(styleId);
     if (existing) return existing;
     this.errors.delete(styleId);
@@ -153,7 +153,7 @@ export class RoofLoadCoordinator {
     const selection = this.selection;
     if (this.lastError) throw this.lastError;
     if (selection && isOpticalRoofSelection(selection)) await this.library.preload(selection.styleId);
-    if (revision !== this.revision) throw new Error('屋簷選擇已改變，請重新下載');
+    if (revision !== this.revision) throw new Error('主視覺選擇已改變，請重新下載');
     return selection ? { ...selection, colors: [...selection.colors] } : undefined;
   }
 }

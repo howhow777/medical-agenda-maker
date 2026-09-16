@@ -33,20 +33,24 @@
 
         <section id="updateNotice" class="update-notice" aria-label="近期更新通知">
           <div class="update-notice-inner">
-            <div class="update-notice-kicker">近期更新</div>
-            <div class="update-notice-title">手機審閱、議程編輯與 Moderator 顯示已優化</div>
-            <p class="update-notice-summary">這次更新讓手機畫面更清爽，議程修改更直覺，也改善主持人欄位顯示。</p>
-            <div id="updateNoticeDetails" class="update-notice-details" hidden>
-              <ul>
-                <li>設定區可收合，手機預覽空間更大。</li>
-                <li>議程項目先看清單，點 ✏️ 再到下方編輯。</li>
-                <li>可隱藏 Moderator 欄，Speaker 自動置中延展。</li>
-                <li>相同 Moderator 可垂直合併置中，背景色更自然。</li>
-                <li>修正集合地點在高畫質下載時遺失的問題。</li>
-              </ul>
+            <div class="update-notice-period-tabs" role="tablist" aria-label="更新期別">
+              <button id="updateNoticeCurrentTab" class="update-notice-period-tab" type="button" role="tab" aria-selected="true" aria-controls="updateNoticePanel" data-update-period="current">本期更新</button>
+              <button id="updateNoticePreviousTab" class="update-notice-period-tab" type="button" role="tab" aria-selected="false" aria-controls="updateNoticePanel" data-update-period="previous" tabindex="-1">上期更新</button>
+            </div>
+            <div id="updateNoticePanel" class="update-notice-panel" role="tabpanel" aria-live="polite" aria-labelledby="updateNoticeCurrentTab">
+              <div id="updateNoticeTitle" class="update-notice-title">全新光影主視覺已成為預設設計</div>
+              <p id="updateNoticeSummary" class="update-notice-summary">各癌別進入後會先顯示最新核准的頂部主視覺；需要原始風格時，仍可在「視覺設計」中切換。</p>
+              <div id="updateNoticeDetails" class="update-notice-details" hidden>
+                <ul id="updateNoticeItems">
+                  <li>各癌別進入後優先顯示最新核准的光影主視覺。</li>
+                  <li>每個癌別可在核准的新款主視覺間切換。</li>
+                  <li>最初版波浪主視覺仍保留在「視覺設計」選單中。</li>
+                  <li>建議配色與自訂三色均可搭配新款主視覺，Agenda 標題列同步配色。</li>
+                </ul>
+              </div>
             </div>
             <div class="update-notice-actions">
-              <button id="updateNoticeToggle" class="update-notice-button update-notice-button-primary" type="button" aria-expanded="false" aria-controls="updateNoticeDetails">查看更新內容</button>
+              <button id="updateNoticeReadMore" class="update-notice-button update-notice-button-primary" type="button" aria-expanded="false" aria-controls="updateNoticeDetails">閱讀更多</button>
               <button id="updateNoticeRemindLater" class="update-notice-button update-notice-button-secondary" type="button">下次提醒</button>
               <button id="updateNoticeDismiss" class="update-notice-button update-notice-button-secondary" type="button">我知道了</button>
             </div>
@@ -194,11 +198,11 @@
           </div>
           <div class="accordion-content">
             <!-- 配色方案 -->
-            <section class="roof-style-controls" data-roof-style-host="panel" aria-label="視覺設計屋簷"></section>
+            <section class="roof-style-controls" data-roof-style-host="panel" aria-label="頂部主視覺設計"></section>
             <h3 class="sub-section-title">🎨 配色方案</h3>
             <div class="row">
               <select id="colorScheme">
-                <option value="optical_recommended" disabled>所選屋簷｜建議配色</option>
+                <option value="optical_recommended" disabled>所選主視覺｜建議配色</option>
                 <option value="medical_green">經典醫療綠</option>
                 <option value="business_green">專業商務綠</option>
                 <option value="tech_green">現代科技綠</option>
@@ -306,12 +310,12 @@
                 <button class="btn btn-secondary" id="sendBack" title="移到最下層">⬇️ 最下</button>
               </div>
               <div class="row" style="margin-top:6px;">
-                <button class="btn btn-primary" id="moveToBackground" title="移到 Agenda 表格下方，不改變與屋簷的關係">📋⬇️ 移到表格下</button>
-                <button class="btn btn-primary" id="moveToForeground" title="移到 Agenda 表格上方，不改變與屋簷的關係">📋⬆️ 移到表格上</button>
+                <button class="btn btn-primary" id="moveToBackground" title="移到 Agenda 表格下方，不改變與頂部主視覺的關係">📋⬇️ 移到表格下</button>
+                <button class="btn btn-primary" id="moveToForeground" title="移到 Agenda 表格上方，不改變與頂部主視覺的關係">📋⬆️ 移到表格上</button>
               </div>
               <div class="row" style="margin-top:6px;">
-                <button class="btn btn-primary" id="moveBelowHeader" title="移到頂部屋簷下方，不改變與 Agenda 表格的關係">🏠⬇️ 移到屋簷下</button>
-                <button class="btn btn-primary" id="moveAboveHeader" title="移到頂部屋簷上方，不改變與 Agenda 表格的關係">🏠⬆️ 移到屋簷上</button>
+                <button class="btn btn-primary" id="moveBelowHeader" title="移到頂部主視覺下方，不改變與 Agenda 表格的關係">🏠⬇️ 移到主視覺下</button>
+                <button class="btn btn-primary" id="moveAboveHeader" title="移到頂部主視覺上方，不改變與 Agenda 表格的關係">🏠⬆️ 移到主視覺上</button>
               </div>
               <div class="row" style="margin-top:6px;">
                 <label style="flex:none; width:88px;">透明度</label>
@@ -353,7 +357,7 @@
     <div class="design-switcher-header">
       <div>
         <h2 id="designSwitcherTitle">快速切換設計</h2>
-        <p>選主圖、加入副本或切換屋簷；議程與上傳圖片不變</p>
+        <p>選主圖、加入副本或切換頂部主視覺；議程與上傳圖片不變</p>
       </div>
       <button id="designSwitcherClose" class="design-switcher-close" type="button" aria-label="關閉快速切換設計">×</button>
     </div>
@@ -367,14 +371,14 @@
         <div id="designMotifGrid" class="design-motif-grid" role="radiogroup" aria-label="癌別搭配圖案"></div>
         <p>「＋加入」可建立多個獨立副本；每份都能拖曳、縮放、旋轉、裁切或刪除。</p>
       </section>
-      <section class="roof-style-controls" data-roof-style-host="drawer" aria-label="切換屋簷款式"></section>
+      <section class="roof-style-controls" data-roof-style-host="drawer" aria-label="切換頂部主視覺"></section>
     </div>
   </aside>
 
 
 
   <!-- 載入主程式 -->
-  <meta name="medical-agenda-build" content="roof-default-consolidation-v2-fresh-defaults">
+  <meta name="medical-agenda-build" content="update-notice-period-tabs-v1">
   <script>
     (() => {
       const events = [];

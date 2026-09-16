@@ -73,13 +73,13 @@ export const defaultRoofStyleByCancer: Readonly<Record<CancerDesignPresetId, Roo
 
 export function getRoofAssetURL(styleId: RoofStyleId): string {
   const style = getRoofStyle(styleId);
-  if (!style) throw new Error('未知屋簷款式');
+  if (!style) throw new Error('未知主視覺款式');
   return new URL(`../../assets/header-contour-materials-v2/${style.filename}`, import.meta.url).href;
 }
 
 /** Return copies so selecting/customizing a roof cannot mutate legacy schemes. */
 export function getRecommendedRoofScheme(cancerId: CancerDesignPresetId, styleId: RoofStyleId): ColorScheme {
-  if (!isApprovedRoofPair(cancerId, styleId)) throw new Error('此癌別沒有核准這款屋簷');
+  if (!isApprovedRoofPair(cancerId, styleId)) throw new Error('此癌別沒有核准這款主視覺');
   const style = getRoofStyle(styleId)!;
   if (style.family === 'warm') return {
     name: style.label, header: { colors: [...style.sourceColors], text: style.titleFill! },
@@ -97,6 +97,6 @@ export function getRecommendedRoofScheme(cancerId: CancerDesignPresetId, styleId
 /** One placement for thumbnails, normal Canvas and scaled export. Never 150px. */
 export function getRoofPlacement(styleId: RoofStyleId, width: number): { x: number; y: number; width: number; height: number } {
   const style = getRoofStyle(styleId);
-  if (!style || !Number.isFinite(width) || width <= 0) throw new Error('無效屋簷尺寸');
+  if (!style || !Number.isFinite(width) || width <= 0) throw new Error('無效主視覺尺寸');
   return { x: 0, y: 0, width, height: width * style.height / style.width };
 }

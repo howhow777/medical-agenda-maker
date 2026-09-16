@@ -1,5 +1,5 @@
 /** Exact geometry from GitHub Pages commit e786b829 at an 800px logical width. */
-export const CLASSIC_ROOF_LABEL = '最初版波浪屋簷';
+export const CLASSIC_ROOF_LABEL = '最初版波浪主視覺';
 export const CLASSIC_ROOF_BASE_WIDTH = 800;
 export const CLASSIC_ROOF_HEADER_HEIGHT = 120;
 export const CLASSIC_ROOF_MAX_Y = 130;
@@ -14,7 +14,7 @@ export const classicRoofPathSignature = [
 /** One canonical path shared by preview, poster, clipping, fallback and export. */
 export function traceClassicRoofPath(ctx, width) {
     if (!Number.isFinite(width) || width <= 0)
-        throw new Error('無效的最初版屋簷寬度');
+        throw new Error('無效的最初版主視覺寬度');
     const scale = width / CLASSIC_ROOF_BASE_WIDTH;
     ctx.moveTo(0, 0);
     ctx.lineTo(width, 0);

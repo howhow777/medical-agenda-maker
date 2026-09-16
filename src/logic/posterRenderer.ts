@@ -65,7 +65,7 @@ export class PosterRenderer {
 
   setRoofSelection(cancerId: CancerDesignPresetId, selection: RoofSelection): void {
     if (isOpticalRoofSelection(selection) && !isApprovedRoofPair(cancerId, selection.styleId)) {
-      throw new Error('不適用的屋簷款式');
+      throw new Error('不適用的主視覺款式');
     }
     this.roofCancerId = cancerId;
     this.roofSelection = { ...selection, colors: [...selection.colors] };
@@ -432,7 +432,7 @@ export class PosterRenderer {
       ? roofMaterialLibrary.getSurface(this.roofSelection.styleId, this.roofSelection.colors)
       : null;
 
-    // 固定物件以外只繪製一次；屋簷與表格範圍則依各自的獨立關係分開合成。
+    // 固定物件以外只繪製一次；頂部主視覺與表格範圍則依各自的獨立關係分開合成。
     this.drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds, Boolean(material));
     if (tableBounds) this.drawOverlaysClippedToRect(overlayLayers.belowTable, tableBounds);
     if (material && this.roofSelection && isOpticalRoofSelection(this.roofSelection)) {
@@ -487,7 +487,7 @@ export class PosterRenderer {
     // this.ctx.fillStyle = scheme.agenda.background;
     // this.ctx.fillRect(0, H - 60, W, 60);
 
-    // 屋簷是獨立固定物件。
+    // 頂部主視覺是獨立固定物件。
     if (!material) {
       this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
       this.drawPosterTitle(conferenceData, template, scheme, W);
@@ -978,7 +978,7 @@ export class PosterRenderer {
       await roofMaterialLibrary.preload(this.roofSelection.styleId);
     }
     if (typeof document !== 'undefined') await document.fonts?.ready;
-    if (roofAtStart !== JSON.stringify(this.roofSelection)) throw new Error('屋簷選擇已改變，請重新下載');
+    if (roofAtStart !== JSON.stringify(this.roofSelection)) throw new Error('主視覺選擇已改變，請重新下載');
     const originalWidth = this.canvas.width;
     const originalHeight = this.canvas.height;
     const highQualityWidth = originalWidth * scaleFactor;

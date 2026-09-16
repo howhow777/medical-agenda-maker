@@ -259,7 +259,7 @@ export class OverlayManager {
     moveSelectedToForeground() {
         this.setSelectedFixedRelation('aboveTable', true);
     }
-    // 屋簷與表格是兩個彼此獨立的固定物件。
+    // 頂部主視覺與表格是兩個彼此獨立的固定物件。
     moveSelectedBelowHeader() {
         this.setSelectedFixedRelation('aboveHeader', false);
     }

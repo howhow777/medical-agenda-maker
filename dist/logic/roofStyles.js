@@ -50,13 +50,13 @@ export const defaultRoofStyleByCancer = {
 export function getRoofAssetURL(styleId) {
     const style = getRoofStyle(styleId);
     if (!style)
-        throw new Error('未知屋簷款式');
+        throw new Error('未知主視覺款式');
     return new URL(`../../assets/header-contour-materials-v2/${style.filename}`, import.meta.url).href;
 }
 /** Return copies so selecting/customizing a roof cannot mutate legacy schemes. */
 export function getRecommendedRoofScheme(cancerId, styleId) {
     if (!isApprovedRoofPair(cancerId, styleId))
-        throw new Error('此癌別沒有核准這款屋簷');
+        throw new Error('此癌別沒有核准這款主視覺');
     const style = getRoofStyle(styleId);
     if (style.family === 'warm')
         return {
@@ -76,7 +76,7 @@ export function getRecommendedRoofScheme(cancerId, styleId) {
 export function getRoofPlacement(styleId, width) {
     const style = getRoofStyle(styleId);
     if (!style || !Number.isFinite(width) || width <= 0)
-        throw new Error('無效屋簷尺寸');
+        throw new Error('無效主視覺尺寸');
     return { x: 0, y: 0, width, height: width * style.height / style.width };
 }
 //# sourceMappingURL=roofStyles.js.map
