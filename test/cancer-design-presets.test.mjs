@@ -183,7 +183,7 @@ test('switcher label and animation contract match the approved control behavior'
   const triggerMarkup = indexHtml.match(/<button id="designSwitcherTrigger"[\s\S]*?<\/button>/)?.[0] || '';
   const visibleText = triggerMarkup.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   assert.equal(visibleText, '切換 癌別/特效');
-  assert.match(indexHtml, /medical-agenda-build" content="roof-default-consolidation-v1"/);
+  assert.match(indexHtml, /medical-agenda-build" content="roof-default-consolidation-v2-fresh-defaults"/);
   assert.doesNotMatch(indexHtml, /原有向量輪廓|使用原輪廓|designContourGrid/);
   assert.match(styles, /#667eea 0%[\s\S]*#764ba2 25%[\s\S]*#f093fb 50%[\s\S]*#f5576c 75%[\s\S]*#fda085 100%/);
   assert.match(styles, /designSwitcherBreathing 3\.6s ease-in-out infinite/);

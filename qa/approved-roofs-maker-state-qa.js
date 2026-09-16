@@ -4,6 +4,7 @@ import { createClassicRoofSelectionState, createFreshRoofSelectionState } from '
 import { roofFixture } from './approved-roofs-fixture.js';
 
 const STORAGE_KEYS = [
+  'agendaPoster.roofs.v3',
   'agendaPoster.roofs.v2',
   'agendaPoster.opticalRoofs.v1',
   'agendaPoster.roofs.unrecognized',
@@ -18,7 +19,8 @@ const V1_KEY = 'medical-agenda-maker:cancer-design-selection:v1';
 const V2_KEY = 'medical-agenda-maker:cancer-design-selection:v2';
 const V3_KEY = 'medical-agenda-maker:cancer-design-selection:v3';
 const LEGACY_ROOF_KEY = 'agendaPoster.opticalRoofs.v1';
-const ROOF_KEY = 'agendaPoster.roofs.v2';
+const RETIRED_ROOF_KEY = 'agendaPoster.roofs.v2';
+const ROOF_KEY = 'agendaPoster.roofs.v3';
 const UPDATE_NOTICE_KEY = 'medical-agenda-maker:update-notice:2026-07-09';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -218,8 +220,9 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
   const before = storageBackup(), report = {
     version: 2, startedAt: new Date().toISOString(), makerURL: new URL('../index.html', location.href).href,
     noResearchQuery: true, combinations: [], classicCombinations: [], persistenceByCancer: {}, contentPreserved: false,
-    freshDefaultVerified: false, firstVisibleFrameOptical: false, paletteStateRestored: false,
-    legacyMigrationPreserved: false, v1PartialMigrationVerified: false, v2ContourMigrationVerified: false,
+    freshDefaultVerified: false, firstVisibleFrameOptical: false, releaseResetVerified: false,
+    retiredV1StorageIgnored: false, retiredV2StorageIgnored: false, paletteStateRestored: false,
+    legacyTemplateCompatibilityVerified: false, v1CancerDesignMigrationVerified: false, v2ContourMigrationVerified: false,
     oldTemplateClassicVerified: false, newTemplateRoundTripVerified: false, sameDocumentSwitchingVerified: false,
     staleLoadCannotOverrideSelection: false, applicationConsoleErrors: 'unverified', applicationConsoleEvents: [],
     failures: []
@@ -228,6 +231,12 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
   try {
     for (const key of STORAGE_KEYS) localStorage.removeItem(key);
     localStorage.setItem(UPDATE_NOTICE_KEY, 'dismissed');
+    const retiredV1Raw = JSON.stringify({ version: 1, byCancer: {
+      lung: { styleId: 'waterlight', mode: 'custom', colors: ['#123456', '#789ABC', '#DDEEFF'] }
+    } });
+    const retiredV2Raw = JSON.stringify(createClassicRoofSelectionState());
+    localStorage.setItem(LEGACY_ROOF_KEY, retiredV1Raw);
+    localStorage.setItem(RETIRED_ROOF_KEY, retiredV2Raw);
     maker = await createMakerFrame(host, 'fresh 預設、24 組與狀態');
     assert(new URL(maker.frame.src).search === '', 'Formal Maker used a query parameter');
     const fresh = maker.app.roofStyleControls.store.getState();
@@ -236,11 +245,15 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
     assert(fresh.byCancer.lung.styleId === defaultRoofStyleByCancer.lung &&
       maker.app.posterRenderer.roofSelection?.styleId === defaultRoofStyleByCancer.lung,
     'Fresh first visible poster was not the latest lung optical roof');
+    assert(localStorage.getItem(LEGACY_ROOF_KEY) === retiredV1Raw &&
+      localStorage.getItem(RETIRED_ROOF_KEY) === retiredV2Raw,
+    'Release reset mutated retired browser roof bytes');
     assert(!maker.doc.body.classList.contains('roof-initializing') &&
       maker.win.getComputedStyle(maker.doc.getElementById('posterCanvas')).visibility !== 'hidden',
     'Poster remained hidden after active roof initialization');
     report.freshDefaultVerified = true;
     report.firstVisibleFrameOptical = true;
+    report.releaseResetVerified = true;
     const fixture = setFixtureContent(maker);
     const expectedState = { version: 2, byCancer: {} };
     for (let cancerIndex = 0; cancerIndex < cancerDesignPresetList.length; cancerIndex++) {
@@ -324,6 +337,7 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
     assert(maker.doc.querySelector('[data-roof-style-host="drawer"] [data-roof-choice-id="classic"]').getAttribute('aria-pressed') === 'true',
       'Legacy agenda classic state was not visible in the UI');
     report.oldTemplateClassicVerified = true;
+    report.legacyTemplateCompatibilityVerified = true;
     report.applicationConsoleEvents.push(...diagnostics(maker));
 
     maker.frame.remove(); maker = null;
@@ -333,19 +347,18 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
     localStorage.setItem(LEGACY_ROOF_KEY, JSON.stringify({ version: 1, byCancer: {
       lung: { styleId: 'waterlight', mode: 'custom', colors: ['#123456', '#789ABC', '#DDEEFF'] }
     } }));
-    maker = await createMakerFrame(host, 'V1 partial migration');
+    const v1RoofRaw = localStorage.getItem(LEGACY_ROOF_KEY);
+    maker = await createMakerFrame(host, 'V1 browser roof reset');
     const partial = maker.app.roofStyleControls.store.getState();
-    assert(partial.version === 2 && partial.byCancer.lung.kind === 'optical' &&
-      partial.byCancer.lung.styleId === 'waterlight' && same(partial.byCancer.lung.colors, ['#123456', '#789ABC', '#DDEEFF']),
-    'V1 partial explicit optical selection was not preserved');
-    for (const cancer of cancerDesignPresetList.filter(item => item.id !== 'lung')) {
-      assert(partial.byCancer[cancer.id].kind === 'classic', `V1 missing ${cancer.id} was not migrated to classic`);
-    }
+    assert(same(partial, createFreshRoofSelectionState()), 'Retired V1 browser roof state overrode fresh defaults');
+    assert(localStorage.getItem(LEGACY_ROOF_KEY) === v1RoofRaw,
+      'Retired V1 browser roof bytes were changed');
     const migratedDesign = JSON.parse(localStorage.getItem(V3_KEY));
     assert(migratedDesign.version === 3 && migratedDesign.activePresetId === 'headneck' &&
       migratedDesign.primaryMotifByCancer.headneck === 'headneck-motif-02-closed-lip-diagnostic',
     'CancerDesign V1 did not migrate to V3 through the real Maker');
-    report.v1PartialMigrationVerified = true;
+    report.retiredV1StorageIgnored = true;
+    report.v1CancerDesignMigrationVerified = true;
     report.applicationConsoleEvents.push(...diagnostics(maker));
 
     maker.frame.remove(); maker = null;
@@ -355,15 +368,22 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
       lung: 'soft-wave', headneck: 'arc-sweep', uterus: 'layered-ribbon', urinary: 'clean-diagonal',
       colorectal: 'soft-wave', breast: 'arc-sweep'
     } }));
-    maker = await createMakerFrame(host, 'V2 contour migration');
-    assert(same(maker.app.roofStyleControls.store.getState(), createClassicRoofSelectionState()),
-      'CancerDesign V2 contours did not migrate to all-classic');
+    const retiredV2ResetRaw = JSON.stringify(createClassicRoofSelectionState());
+    localStorage.setItem(RETIRED_ROOF_KEY, retiredV2ResetRaw);
+    maker = await createMakerFrame(host, 'V2 contour migration and browser roof reset');
+    assert(same(maker.app.roofStyleControls.store.getState(), createFreshRoofSelectionState()),
+      'Retired V2 browser roof state overrode fresh optical defaults');
+    assert(localStorage.getItem(RETIRED_ROOF_KEY) === retiredV2ResetRaw,
+      'Retired V2 browser roof bytes were changed');
     const v3 = maker.app.cancerDesignSwitcher.getState();
     assert(v3.version === 3 && !('contourByCancer' in v3), 'Retired contour IDs escaped into CancerDesign V3');
     report.v2ContourMigrationVerified = true;
-    report.legacyMigrationPreserved = report.v1PartialMigrationVerified && report.v2ContourMigrationVerified && report.oldTemplateClassicVerified;
-    report.legacy = { v1PartialOpticalPreserved: true, v1MissingEntriesClassic: true,
-      v2RetiredContoursClassic: true, oldTemplateClassic: true };
+    report.retiredV2StorageIgnored = true;
+    report.releaseResetVerified = report.releaseResetVerified && report.retiredV1StorageIgnored && report.retiredV2StorageIgnored;
+    report.legacyTemplateCompatibilityVerified = report.legacyTemplateCompatibilityVerified && report.oldTemplateClassicVerified;
+    report.compatibility = { retiredV1BrowserRoofIgnored: true, retiredV2BrowserRoofIgnored: true,
+      retiredBrowserBytesPreserved: true, v1CancerDesignMigratedToV3: true,
+      v2ContourIdsRemovedFromCancerDesignV3: true, oldTemplateClassic: true };
     report.applicationConsoleEvents.push(...diagnostics(maker));
     report.applicationConsoleEvents = report.applicationConsoleEvents.filter((event, index, all) =>
       all.findIndex(other => same(other, event)) === index);

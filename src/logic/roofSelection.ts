@@ -17,11 +17,14 @@ import {
   isApprovedRoofPair
 } from './roofStyles.js';
 
-export const ROOF_SELECTION_STORAGE_KEY = 'agendaPoster.roofs.v2';
+// Storage generation v3 deliberately starts every browser on the approved
+// optical defaults. The payload schema remains V2 so saved templates stay
+// compatible; the former browser preference is left untouched for rollback.
+export const ROOF_SELECTION_STORAGE_KEY = 'agendaPoster.roofs.v3';
+export const RETIRED_ROOF_SELECTION_STORAGE_KEY_V2 = 'agendaPoster.roofs.v2';
 export const LEGACY_ROOF_SELECTION_STORAGE_KEY_V1 = 'agendaPoster.opticalRoofs.v1';
 export const ROOF_SELECTION_DIAGNOSTIC_KEY = 'agendaPoster.roofs.unrecognized';
 
-const LEGACY_CANCER_DESIGN_STORAGE_KEY_V2 = 'medical-agenda-maker:cancer-design-selection:v2';
 const LEGACY_CONTOUR_IDS = new Set(['soft-wave', 'arc-sweep', 'layered-ribbon', 'clean-diagonal']);
 
 interface LegacyOpticalSelection {
@@ -166,26 +169,9 @@ export class RoofSelectionStore {
         return;
       }
 
-      const legacyRaw = storage.getItem(LEGACY_ROOF_SELECTION_STORAGE_KEY_V1);
-      if (legacyRaw !== null) {
-        this.readRaw(legacyRaw);
-        if (this.unrecognizedRaw === null) this.persist();
-        return;
-      }
-
-      const legacyCancerRaw = storage.getItem(LEGACY_CANCER_DESIGN_STORAGE_KEY_V2);
-      if (legacyCancerRaw !== null) {
-        try {
-          if (hasLegacyContourSelection(JSON.parse(legacyCancerRaw))) {
-            this.state = createClassicRoofSelectionState();
-            this.persist();
-            return;
-          }
-        } catch {
-          // A malformed unrelated legacy store must not prevent fresh defaults.
-        }
-      }
-
+      // Do not migrate V1/V2 browser roof preferences into this release. The
+      // product decision is that every browser starts this generation as new.
+      // Explicitly loaded templates still use restore() and retain compatibility.
       this.state = createFreshRoofSelectionState();
       this.persist();
     } catch {

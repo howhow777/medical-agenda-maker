@@ -108,13 +108,15 @@ runButton.addEventListener('click', async () => {
   report = { version: 1, startedAt: new Date().toISOString(), pageURL: location.href, fixture: roofFixture,
     materialAssetsLoaded: '0/6', approvedCombinationsRendered: '0/18', classicCombinationsRendered: '0/6',
     totalCombinationsRendered: '0/24', pngExportsVerified: '0/24', jpegExportsVerified: '0/24', sourceAssetHashesMatch: 'unverified',
-    paletteStateRestored: 'unverified', legacyMigrationPreserved: 'unverified', sameDocumentSwitchingVerified: 'unverified',
+    paletteStateRestored: 'unverified', releaseResetVerified: 'unverified', legacyTemplateCompatibilityVerified: 'unverified',
+    sameDocumentSwitchingVerified: 'unverified',
     staleLoadCannotOverrideSelection: 'unverified', independentRelationsVerified: 'unverified', softCoverageVerified: 'unverified',
     approvedReferenceRoofMAE: 'unverified', applicationConsoleErrors: 'unverified', horizontalOverflowCases: 'unverified',
     typography: 'unverified', responsiveMotionKeyboard: 'unverified', assets: [], combinations: [], failures: [] };
   if (makerStateReport) {
     report.paletteStateRestored = makerStateReport.paletteStateRestored;
-    report.legacyMigrationPreserved = makerStateReport.legacyMigrationPreserved;
+    report.releaseResetVerified = makerStateReport.releaseResetVerified;
+    report.legacyTemplateCompatibilityVerified = makerStateReport.legacyTemplateCompatibilityVerified;
     report.sameDocumentSwitchingVerified = makerStateReport.sameDocumentSwitchingVerified;
     report.staleLoadCannotOverrideSelection = makerStateReport.staleLoadCannotOverrideSelection;
     report.applicationConsoleErrors = makerStateReport.applicationConsoleErrors;
@@ -293,7 +295,8 @@ document.getElementById('runMakerStateQA').addEventListener('click', async event
     makerOutput.textContent = JSON.stringify(makerStateReport, null, 2);
     if (report) {
       report.paletteStateRestored = makerStateReport.paletteStateRestored;
-      report.legacyMigrationPreserved = makerStateReport.legacyMigrationPreserved;
+      report.releaseResetVerified = makerStateReport.releaseResetVerified;
+      report.legacyTemplateCompatibilityVerified = makerStateReport.legacyTemplateCompatibilityVerified;
       report.sameDocumentSwitchingVerified = makerStateReport.sameDocumentSwitchingVerified;
       report.staleLoadCannotOverrideSelection = makerStateReport.staleLoadCannotOverrideSelection;
       report.applicationConsoleErrors = makerStateReport.applicationConsoleErrors;
@@ -303,7 +306,7 @@ document.getElementById('runMakerStateQA').addEventListener('click', async event
     }
     status.textContent = makerStateReport.failures.length
       ? `正式 Maker 狀態驗證有 ${makerStateReport.failures.length} 個失敗。`
-      : '正式 Maker：18/18 光影、6/6 最初版、fresh／V1／V2／模板 migration 與非同步競態全部通過。';
+      : '正式 Maker：18/18 光影、6/6 最初版、全員新版預設重置、模板相容與非同步競態全部通過。';
   } catch (error) {
     makerStateReport = { failures: [{ message: String(error), stack: error.stack || '' }] };
     makerOutput.textContent = JSON.stringify(makerStateReport, null, 2);

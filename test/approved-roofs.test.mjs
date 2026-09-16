@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { cancerDesignPresetList, cancerDesignPresets } from '../dist/logic/cancerDesignPresets.js';
 import { colorSchemes } from '../dist/logic/colorSchemes.js';
 import { roofStyles, approvedRoofPairs, defaultRoofStyleByCancer, getRoofStyle, getRoofStylesForCancer, isApprovedRoofPair, getRoofPlacement, getRecommendedRoofScheme, getRoofAssetURL } from '../dist/logic/roofStyles.js';
-import { RoofSelectionStore, createClassicRoofSelectionState, createFreshRoofSelectionState, hasLegacyContourSelection, recommendedClassicRoofSelection, recommendedRoofSelection, parseRoofSelectionState, isRoofColors, isOpticalRoofSelection, LEGACY_ROOF_SELECTION_STORAGE_KEY_V1, ROOF_SELECTION_STORAGE_KEY, ROOF_SELECTION_DIAGNOSTIC_KEY } from '../dist/logic/roofSelection.js';
+import { RoofSelectionStore, createClassicRoofSelectionState, createFreshRoofSelectionState, hasLegacyContourSelection, recommendedClassicRoofSelection, recommendedRoofSelection, parseRoofSelectionState, isRoofColors, isOpticalRoofSelection, LEGACY_ROOF_SELECTION_STORAGE_KEY_V1, RETIRED_ROOF_SELECTION_STORAGE_KEY_V2, ROOF_SELECTION_STORAGE_KEY, ROOF_SELECTION_DIAGNOSTIC_KEY } from '../dist/logic/roofSelection.js';
 import { RoofMaterialLibrary, RoofLoadCoordinator, RoofSurfaceCache, roofSurfaceKey } from '../dist/logic/roofMaterials.js';
 import { buildRoofMaps, recolorRoofPixels, rgbToLab, labToRGB, transferRoofChroma } from '../dist/logic/roofColorMath.js';
 import { extractRoofCoverage, mixRoofCoverage } from '../dist/logic/roofCompositor.js';
@@ -226,19 +226,27 @@ test('B06 a truly fresh browser persists the exact six newest optical defaults',
   assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), createFreshRoofSelectionState());
 });
 
-test('B06 partial V1 roof storage preserves explicit optical choices and maps every missing cancer to classic', () => {
+test('B06 this release treats every browser as new and leaves retired V1/V2 roof bytes untouched for rollback', () => {
   const storage = memoryStorage();
   const custom = { styleId: 'waterlight', mode: 'custom', colors: ['#123456', '#789ABC', '#DDEEFF'] };
-  storage.setItem(LEGACY_ROOF_SELECTION_STORAGE_KEY_V1, JSON.stringify({ version: 1, byCancer: { lung: custom } }));
+  const v1Raw = JSON.stringify({ version: 1, byCancer: { lung: custom } });
+  const v2Raw = JSON.stringify(createClassicRoofSelectionState());
+  const contoursRaw = JSON.stringify({ version: 2, activePresetId: 'lung', contourByCancer: {
+    lung: 'soft-wave', headneck: 'arc-sweep', uterus: 'layered-ribbon',
+    urinary: 'clean-diagonal', colorectal: 'soft-wave', breast: 'arc-sweep'
+  }, primaryMotifByCancer: {} });
+  storage.setItem(LEGACY_ROOF_SELECTION_STORAGE_KEY_V1, v1Raw);
+  storage.setItem(RETIRED_ROOF_SELECTION_STORAGE_KEY_V2, v2Raw);
+  storage.setItem('medical-agenda-maker:cancer-design-selection:v2', contoursRaw);
   const store = new RoofSelectionStore(storage);
-  assert.deepEqual(store.get('lung'), { kind: 'optical', ...custom });
-  for (const cancer of cancerDesignPresetList.filter(item => item.id !== 'lung')) {
-    assert.deepEqual(store.get(cancer.id), recommendedClassicRoofSelection(cancer.id));
-  }
-  assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), store.getState());
+  assert.deepEqual(store.getState(), createFreshRoofSelectionState());
+  assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), createFreshRoofSelectionState());
+  assert.equal(storage.getItem(LEGACY_ROOF_SELECTION_STORAGE_KEY_V1), v1Raw);
+  assert.equal(storage.getItem(RETIRED_ROOF_SELECTION_STORAGE_KEY_V2), v2Raw);
+  assert.equal(storage.getItem('medical-agenda-maker:cancer-design-selection:v2'), contoursRaw);
 });
 
-test('B06 all four retired vector contour IDs migrate to explicit classic without escaping current state', () => {
+test('B06 all four retired vector contour IDs remain detectable but cannot escape current state', () => {
   const legacyContours = {
     lung: 'soft-wave', headneck: 'arc-sweep', uterus: 'layered-ribbon',
     urinary: 'clean-diagonal', colorectal: 'soft-wave', breast: 'arc-sweep'
@@ -247,14 +255,8 @@ test('B06 all four retired vector contour IDs migrate to explicit classic withou
   for (const contourId of ['soft-wave', 'arc-sweep', 'layered-ribbon', 'clean-diagonal']) {
     assert.equal(hasLegacyContourSelection({ contourByCancer: { lung: contourId } }), true);
   }
-  const storage = memoryStorage();
-  storage.setItem('medical-agenda-maker:cancer-design-selection:v2', JSON.stringify({
-    version: 2, activePresetId: 'lung', contourByCancer: legacyContours, primaryMotifByCancer: {}
-  }));
-  const store = new RoofSelectionStore(storage);
-  assert.deepEqual(store.getState(), createClassicRoofSelectionState());
-  assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), createClassicRoofSelectionState());
-  assert.equal(JSON.stringify(store.getState()).includes('soft-wave'), false);
+  assert.equal(hasLegacyContourSelection({ contourByCancer: { lung: 'unknown' } }), false);
+  assert.equal(JSON.stringify(createFreshRoofSelectionState()).includes('soft-wave'), false);
 });
 
 test('B06 old templates without roof state restore all six classic choices idempotently', () => {

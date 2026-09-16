@@ -1,6 +1,7 @@
 import type { ClassicRoofSelection, OpticalRoofSelection, RoofColors, RoofSelection, RoofSelectionStateV2, RoofStyleId } from '../assets/roofTypes.js';
 import { type CancerDesignPresetId } from './cancerDesignPresets.js';
-export declare const ROOF_SELECTION_STORAGE_KEY = "agendaPoster.roofs.v2";
+export declare const ROOF_SELECTION_STORAGE_KEY = "agendaPoster.roofs.v3";
+export declare const RETIRED_ROOF_SELECTION_STORAGE_KEY_V2 = "agendaPoster.roofs.v2";
 export declare const LEGACY_ROOF_SELECTION_STORAGE_KEY_V1 = "agendaPoster.opticalRoofs.v1";
 export declare const ROOF_SELECTION_DIAGNOSTIC_KEY = "agendaPoster.roofs.unrecognized";
 type RoofStorage = Pick<Storage, 'getItem' | 'setItem'>;

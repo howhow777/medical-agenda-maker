@@ -1,7 +1,7 @@
 # 屋簷預設與經典版本收斂規格
 
 日期：2026-09-16
-狀態：實作前基準已通過；本文件是 migration、驗證、部署與回滾的執行規格。
+狀態：已實作；2026-09-16依使用者實際操作回饋追加「全員以新版光影屋簷重新起始」規格。
 
 ## 1. 已驗證基準
 
@@ -87,19 +87,17 @@ Z
 
 | 輸入 | 判定 | 新狀態 |
 |---|---|---|
-| 完全沒有 roof store，也沒有舊 CancerDesign V2 contour store | fresh user | 六癌別 seed 上表最新 optical defaults |
-| V1 roof store 有某癌別 optical entry | explicit optical | 保留合法 style、mode、colors |
-| V1 roof store 缺少某癌別 entry | 舊版 ambiguous/may-be-intentional legacy | 該癌別變成 explicit classic |
-| V1 roof store 為空物件 | 使用者曾明確回到 legacy | 六癌別 explicit classic |
-| 舊 CancerDesign V2 含任一舊 contour、且沒有 roof store | 舊向量使用者 | 六癌別 explicit classic；每個舊 ID 都有 migration coverage |
-| 新版本 roof state | current | 驗證後原樣 round-trip；缺漏／非法項目以 classic 安全補齊並回報 issue |
+| 沒有本版 `agendaPoster.roofs.v3` | 本版一律視為 fresh user | 不論退役V1/V2瀏覽器偏好內容，六癌別均 seed 上表最新 optical defaults |
+| 退役 `agendaPoster.opticalRoofs.v1` 或 `agendaPoster.roofs.v2` 存在 | rollback-only browser bytes | 啟動時不讀、不刪、不改寫；不能影響本版第一個可見frame |
+| 本版 `agendaPoster.roofs.v3` | current browser choice | 驗證後原樣 round-trip；缺漏／非法項目以 classic 安全補齊並回報 issue |
+| 舊 CancerDesign V1/V2存在 | motif/cancer compatibility only | 照原規則遷移癌別與器官選擇，但不得把退役輪廓轉成瀏覽器屋簷偏好 |
 | 舊模板沒有 `roofSelectionState` | legacy template | 六癌別 explicit classic |
 | 舊模板含 V1 partial state | legacy template with explicit optical | 合法 optical 保留，其餘 classic |
 | 新模板 | current template | 儲存完整六癌別 explicit optical/classic state，載入後一致 |
 | optical 素材載入中 | transient | 保留上一個可見 render，不改 persistent selection |
 | optical 素材載入失敗 | transient failure | 顯示 classic fallback、錯誤及重試；persistent selection 仍是 optical，正式下載拒絕 |
 
-Migration 必須 idempotent；不能改動 custom colors、器官圖、癌別、議程、overlay 或其他 localStorage 資料。無法辨識的原始 bytes 在第一次 explicit write 前先保存到 diagnostic key。
+本版啟動重置必須idempotent：第一次建立V3後，使用者在本版主動選擇的光影／最初版與自訂三色必須持久保存。重置不能改動退役屋簷bytes、器官圖、癌別、議程、overlay或其他localStorage資料。顯式模板解析仍保留舊schema相容；無法辨識的本版原始bytes在第一次explicit write前先保存到diagnostic key。
 
 ## 6. 首次可見畫面與載入策略
 
@@ -122,10 +120,10 @@ Migration 必須 idempotent；不能改動 custom colors、器官圖、癌別、
 
 - `npm test`：至少 45 passed／0 failed／0 skipped。
 - `npx tsc --noEmit`：退出碼 0。
-- 新增 fresh、V1 partial、四個 V2 ID、old/new template、canonical classic、runtime 無中間輪廓、custom colors、preload/fallback tests。
+- 新增 fresh、退役V1/V2瀏覽器偏好忽略且bytes不變、四個V2 ID隔離、old/new template、canonical classic、runtime 無中間輪廓、custom colors、preload/fallback tests。
 - 既有 research／visual suite：至少 46 passed／0 failed／0 skipped。
 - Browser QA：18/18 optical、6/6 classic、24/24 PNG/JPEG 高解析輸出，並覆蓋 desktop 1400×900、mobile 390×844、鍵盤、focus、drawer、一般動畫、reduced-motion、console 0。
-- 線上 smoke：fresh default、latest/classic 切換、輸出成功、HTTP 200、marker/hash 對應 implementation commit。
+- 線上 smoke：以舊版classic偏好開站仍得到fresh optical default、latest/classic切換與本版持久化、輸出成功、HTTP 200、marker/hash對應follow-up commit。
 
 ## 9. 部署與回滾
 

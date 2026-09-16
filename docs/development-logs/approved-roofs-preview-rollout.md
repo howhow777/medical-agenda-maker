@@ -1,5 +1,21 @@
 # 核准屋簷 preview rollout / rollback
 
+## 2026-09-16｜全員以新版光影屋簷重新起始
+
+使用者在既有preview實際操作後確認：這一版的所有訪客都應視為新使用者，第一眼必須看到各癌別最新核准光影屋簷；瀏覽器先前保存的「最初版」或中間版本選擇不得覆蓋本版預設。最初版仍保留為選單中的主動選項，使用者在本版點選後才由本版儲存世代持續記住。
+
+- 修正前commit與safety tag：`e1fbfd1a0b21709e8a7c37510d7872da92ab6a74`、`preview/before-fresh-roof-reset-20260916`
+- 本版瀏覽器偏好key：`agendaPoster.roofs.v3`；payload schema仍為V2，避免破壞模板格式與公開型別。
+- 退役的`agendaPoster.roofs.v2`及`agendaPoster.opticalRoofs.v1`不再於啟動時讀入，也不會被刪除或覆寫，保留供rollback查核。
+- 顯式載入模板仍走`restore()`：舊模板沒有屋簷欄位時顯示最初版；帶有合法屋簷狀態的新模板精確還原。
+- 初次本機驗收：`npm test` 45/45；正式Maker在同時預置退役V1/V2資料後仍回報`firstVisibleFrameOptical: true`、`releaseResetVerified: true`、`retiredV1StorageIgnored: true`、`retiredV2StorageIgnored: true`。
+- 完整本機瀏覽器驗收：18/18光影、6/6最初版、PNG 24/24、JPEG 24/24、2400×1800 compact export、96/96 compositor、1400×900與390×844、0 application/console error，全部0 failure。
+- 實際follow-up commit、Cloudflare version/deployment、68檔線上hash與線上QA記錄於同一外置發布報告；不amend已發布的前一commit。
+
+本次正常Git回滾使用follow-up commit執行`git revert <follow-up-commit>`。緊急preview回復可從`preview/before-fresh-roof-reset-20260916`建立detached worktree，重新部署修正前已驗證bundle；不得移動目前分支或接觸GitHub Pages。
+
+---
+
 ## 2026-09-16｜預設屋簷收斂（最新光影＋最初版波浪）
 
 狀態：本機實作、migration、45項正式測試、46項研究回歸、瀏覽器QA及新安全tag的離線緊急回滾dry-run已通過。implementation commit及preview deployment完成後，實際完整hash、deployment version、deployment ID與線上結果寫入外置發布報告，避免反覆amend造成commit自引用。
@@ -13,7 +29,7 @@
 - 規格與migration矩陣：`docs/development-logs/roof-default-consolidation-spec.md`
 - 外置發布報告：`/Users/promelink/Documents/ChatGPT/medical agenda maker/roof-integration-evidence/roof-default-consolidation-release-20260916/release-report.json`
 
-產品狀態收斂為每癌別三張已核准光影卡及一張「最初版波浪屋簷」卡。fresh storage使用各癌別最新光影預設；V1缺失癌別、四個V2中間輪廓ID及沒有屋簷欄位的舊模板遷移為explicit classic；新模板保存完整V2屋簷狀態。最初版波浪只使用GitHub Pages `e786b829...` 的canonical path，自訂三色不會因遷移或classic切換被覆寫。
+產品狀態收斂為每癌別三張已核准光影卡及一張「最初版波浪屋簷」卡。原提交曾在啟動時承接V1/V2瀏覽器偏好；依後續明確決策，這部分已由上方「全員以新版光影屋簷重新起始」修正取代。舊模板相容與新模板完整狀態保存仍維持。最初版波浪只使用GitHub Pages `e786b829...` 的canonical path，自訂三色不會因模板還原或classic切換被覆寫。
 
 提交前驗收：
 
