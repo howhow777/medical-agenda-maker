@@ -13,14 +13,15 @@ import {
 } from '../dist/logic/cancerDesignPresets.js';
 import { colorSchemes } from '../dist/logic/colorSchemes.js';
 import {
-  createContourGradient,
-  drawHeaderContour,
-  getHeaderContourBoundarySamples,
-  headerContourIds,
-  headerContourLabels,
-  renderContourPreview,
-  traceHeaderContourPath
+  CLASSIC_ROOF_BASE_WIDTH,
+  CLASSIC_ROOF_HEADER_HEIGHT,
+  CLASSIC_ROOF_LABEL,
+  classicRoofPathSignature,
+  drawClassicRoof,
+  renderClassicRoofPreview,
+  traceClassicRoofPath
 } from '../dist/logic/headerContours.js';
+import { defaultRoofStyleByCancer } from '../dist/logic/roofStyles.js';
 import {
   CANCER_MOTIF_SAFE_ZONE,
   OVERLAY_LAYER_ABOVE_HEADER,
@@ -62,6 +63,7 @@ function createRecordingContext() {
     },
     moveTo(...values) { currentPath.push(['M', ...values]); },
     lineTo(...values) { currentPath.push(['L', ...values]); },
+    quadraticCurveTo(...values) { currentPath.push(['Q', ...values]); },
     bezierCurveTo(...values) { currentPath.push(['C', ...values]); },
     closePath() { currentPath.push(['Z']); },
     arc(...values) { currentPath.push(['A', ...values]); },
@@ -72,18 +74,18 @@ function createRecordingContext() {
   return context;
 }
 
-function normalizedPath(path, width, height) {
+function normalizedClassicPath(path, width) {
   return path.map(command => [
     command[0],
-    ...command.slice(1).map((value, index) => Number((value / (index % 2 === 0 ? width : height)).toFixed(6)))
+    ...command.slice(1).map(value => Number((value / width).toFixed(6)))
   ]);
 }
 
-function recordCanonicalPath(contourId, width, height) {
+function recordClassicPath(width) {
   const context = createRecordingContext();
   context.beginPath();
-  traceHeaderContourPath(context, contourId, width, height);
-  return normalizedPath(context.paths[0], width, height);
+  traceClassicRoofPath(context, width);
+  return normalizedClassicPath(context.paths[0], width);
 }
 
 test('six cancer presets expose 18 unique approved transparent PNG assets', () => {
@@ -106,70 +108,52 @@ test('six cancer presets expose 18 unique approved transparent PNG assets', () =
   assert.equal(hashes.size, 18, 'motifs must be independently stored, not duplicated files');
 });
 
-test('default contour assignments cover all four native contour styles', () => {
-  assert.deepEqual(headerContourIds, ['soft-wave', 'arc-sweep', 'layered-ribbon', 'clean-diagonal']);
-  const defaults = new Map(cancerDesignPresetList.map(preset => [preset.id, preset.defaultContourId]));
-  assert.equal(defaults.get('lung'), 'soft-wave');
-  assert.equal(defaults.get('headneck'), 'arc-sweep');
-  assert.equal(defaults.get('urinary'), 'arc-sweep');
-  assert.equal(defaults.get('uterus'), 'layered-ribbon');
-  assert.equal(defaults.get('breast'), 'layered-ribbon');
-  assert.equal(defaults.get('colorectal'), 'clean-diagonal');
-});
-
-test('approved contour labels and geometry signatures stay stable and distinct', () => {
-  assert.deepEqual(headerContourLabels, {
-    'soft-wave': '免疫訊號',
-    'arc-sweep': '精準辨識',
-    'layered-ribbon': '協同網絡',
-    'clean-diagonal': '免疫級聯'
-  });
-
-  const signatures = headerContourIds.map(contourId => {
-    const samples = getHeaderContourBoundarySamples(contourId);
-    assert.equal(samples.length, 7);
-    assert.equal(samples[0][0], 0);
-    assert.equal(samples.at(-1)[0], 1);
-    samples.forEach(([x, y], index) => {
-      assert.ok(Number.isFinite(x) && Number.isFinite(y));
-      assert.ok(y >= 0.77 && y <= 0.97, `${contourId} boundary y is outside the approved range`);
-      if (index > 0) assert.ok(x > samples[index - 1][0], `${contourId} x knots must increase`);
-    });
-    return JSON.stringify(recordCanonicalPath(contourId, 800, 150));
-  });
-  assert.equal(new Set(signatures).size, 4);
-});
-
-test('canonical contour path is resolution-independent for preview, poster, clipping, and export', () => {
-  headerContourIds.forEach(contourId => {
-    const posterPath = recordCanonicalPath(contourId, 800, 150);
-    const exportPath = recordCanonicalPath(contourId, 2400, 450);
-    assert.deepEqual(exportPath, posterPath, `${contourId} changed at export scale`);
-
-    const context = createRecordingContext();
-    drawHeaderContour(context, contourId, 800, 150, '#123456');
-    assert.deepEqual(normalizedPath(context.paths[0], 800, 150), posterPath);
-
-    const previewContext = createRecordingContext();
-    const canvas = { width: 240, height: 76, getContext: () => previewContext };
-    renderContourPreview(canvas, contourId, ['#123456', '#789ABC', '#DDEEFF']);
-    assert.deepEqual(normalizedPath(previewContext.paths[0], 240, 76), recordCanonicalPath(contourId, 240, 76));
+test('fresh defaults point every cancer at its approved newest optical roof', () => {
+  assert.deepEqual(defaultRoofStyleByCancer, {
+    lung: 'optical-signal',
+    headneck: 'satin-arc',
+    urinary: 'waterlight',
+    colorectal: 'satin-arc',
+    breast: 'rose-satin',
+    uterus: 'coral-arch'
   });
 });
 
-test('all 24 cancer and contour combinations render with canonical three-color palettes', () => {
+test('classic label and path signature exactly match the first GitHub Pages wave', () => {
+  assert.equal(CLASSIC_ROOF_LABEL, '最初版波浪屋簷');
+  assert.equal(CLASSIC_ROOF_BASE_WIDTH, 800);
+  assert.equal(CLASSIC_ROOF_HEADER_HEIGHT, 120);
+  assert.deepEqual(classicRoofPathSignature, [
+    ['M', 0, 0], ['L', 800, 0], ['L', 800, 100],
+    ['Q', 600, 130, 400, 110], ['Q', 200, 90, 0, 120], ['Z']
+  ]);
+});
+
+test('canonical classic path is identical for preview, poster, clipping and 2400px export', () => {
+  const posterPath = recordClassicPath(800);
+  assert.deepEqual(recordClassicPath(2400), posterPath);
+
+  const context = createRecordingContext();
+  drawClassicRoof(context, 800, '#123456');
+  assert.deepEqual(normalizedClassicPath(context.paths[0], 800), posterPath);
+
+  const previewContext = createRecordingContext();
+  const canvas = { width: 240, height: 80, getContext: () => previewContext };
+  renderClassicRoofPreview(canvas, ['#123456', '#789ABC', '#DDEEFF']);
+  assert.deepEqual(normalizedClassicPath(previewContext.paths[0], 240), recordClassicPath(240));
+});
+
+test('all six cancer palettes render through the one canonical classic roof', () => {
   let rendered = 0;
   cancerDesignPresetList.forEach(preset => {
     assert.equal(preset.palette.length, 3);
-    headerContourIds.forEach(contourId => {
-      const context = createRecordingContext();
-      const fill = createContourGradient(context, preset.palette, 800, 150);
-      assert.doesNotThrow(() => drawHeaderContour(context, contourId, 800, 150, fill));
-      assert.ok(context.paths[0].length > 0);
-      rendered += 1;
-    });
+    const context = createRecordingContext();
+    const fill = context.createLinearGradient();
+    assert.doesNotThrow(() => drawClassicRoof(context, 800, fill));
+    assert.ok(context.paths[0].length > 0);
+    rendered += 1;
   });
-  assert.equal(rendered, 24);
+  assert.equal(rendered, 6);
 });
 
 test('six approved palettes keep roof, Agenda heading, and emphasis colors synchronized', () => {
@@ -199,7 +183,8 @@ test('switcher label and animation contract match the approved control behavior'
   const triggerMarkup = indexHtml.match(/<button id="designSwitcherTrigger"[\s\S]*?<\/button>/)?.[0] || '';
   const visibleText = triggerMarkup.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   assert.equal(visibleText, '切換 癌別/特效');
-  assert.match(indexHtml, /medical-agenda-build" content="immunotherapy-contours-v1"/);
+  assert.match(indexHtml, /medical-agenda-build" content="roof-default-consolidation-v1"/);
+  assert.doesNotMatch(indexHtml, /原有向量輪廓|使用原輪廓|designContourGrid/);
   assert.match(styles, /#667eea 0%[\s\S]*#764ba2 25%[\s\S]*#f093fb 50%[\s\S]*#f5576c 75%[\s\S]*#fda085 100%/);
   assert.match(styles, /designSwitcherBreathing 3\.6s ease-in-out infinite/);
   assert.match(styles, /designSwitcherDiscovery 900ms ease-in-out 3/);
@@ -215,18 +200,18 @@ test('agenda starts below the fixed motif safe zone', () => {
   assert.ok(CANCER_MOTIF_SAFE_ZONE.y + CANCER_MOTIF_SAFE_ZONE.height < AGENDA_START_Y);
 });
 
-test('v1 selection migrates while every other cancer receives v2 defaults', () => {
+test('v1 cancer selection migrates into the contour-free v3 motif state', () => {
   const defaults = createDefaultCancerDesignState();
   const migrated = normalizeCancerDesignState({
     presetId: 'headneck',
     motifId: 'headneck-oral-focus'
   });
-  assert.equal(migrated.version, 2);
+  assert.equal(migrated.version, 3);
   assert.equal(migrated.activePresetId, 'headneck');
   assert.notEqual(migrated.primaryMotifByCancer.headneck, defaults.primaryMotifByCancer.headneck);
   assert.equal(migrated.primaryMotifByCancer.headneck, 'headneck-motif-02-closed-lip-diagnostic');
   assert.equal(migrated.primaryMotifByCancer.lung, defaults.primaryMotifByCancer.lung);
-  assert.equal(migrated.contourByCancer.headneck, 'arc-sweep');
+  assert.equal('contourByCancer' in migrated, false);
 });
 
 test('primary replacement preserves layout and clears cropped source geometry', () => {

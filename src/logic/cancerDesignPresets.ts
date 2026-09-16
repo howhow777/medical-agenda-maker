@@ -1,4 +1,4 @@
-import { CancerDesignStateV2, HeaderContourId } from '../assets/types.js';
+import { CancerDesignState } from '../assets/types.js';
 
 export type CancerDesignPresetId = 'lung' | 'headneck' | 'uterus' | 'urinary' | 'colorectal' | 'breast';
 
@@ -14,7 +14,6 @@ export interface CancerDesignPreset {
   designName: string;
   colorScheme: string;
   palette: [string, string, string];
-  defaultContourId: HeaderContourId;
   motifs: [CancerMotifPreset, CancerMotifPreset, CancerMotifPreset];
 }
 
@@ -27,7 +26,7 @@ const motif = (id: string, name: string, filename: string): CancerMotifPreset =>
 export const cancerDesignPresets: Record<CancerDesignPresetId, CancerDesignPreset> = {
   lung: {
     id: 'lung', label: '肺癌', designName: '清透呼吸', colorScheme: 'cancer_lung',
-    palette: ['#347F91', '#55AABD', '#A7DDE1'], defaultContourId: 'soft-wave',
+    palette: ['#347F91', '#55AABD', '#A7DDE1'],
     motifs: [
       motif('lung-motif-01-tree-of-breath', '生命呼吸樹', 'lung-tree-of-breath.png'),
       motif('lung-motif-02-imaging-orbit', '影像精準軌道', 'lung-imaging-orbit.png'),
@@ -36,7 +35,7 @@ export const cancerDesignPresets: Record<CancerDesignPresetId, CancerDesignPrese
   },
   headneck: {
     id: 'headneck', label: '頭頸癌', designName: '口腔聚焦', colorScheme: 'cancer_headneck',
-    palette: ['#626CA9', '#8585C0', '#BCC9E8'], defaultContourId: 'arc-sweep',
+    palette: ['#626CA9', '#8585C0', '#BCC9E8'],
     motifs: [
       motif('headneck-xray-perspective-bounded-godray-v4-locked', '口腔透視光束', 'headneck-xray-diagnostic.png'),
       motif('headneck-motif-02-closed-lip-diagnostic', '閉唇診斷意象', 'headneck-closed-lip-diagnostic.png'),
@@ -45,7 +44,7 @@ export const cancerDesignPresets: Record<CancerDesignPresetId, CancerDesignPrese
   },
   uterus: {
     id: 'uterus', label: '婦癌', designName: '柔韌花瓣', colorScheme: 'cancer_endometrial',
-    palette: ['#9B587B', '#C8738E', '#E7AAB0'], defaultContourId: 'layered-ribbon',
+    palette: ['#9B587B', '#C8738E', '#E7AAB0'],
     motifs: [
       motif('gyn-motif-01-reproductive-garden', '生殖系統花園', 'gyn-reproductive-garden.png'),
       motif('gyn-motif-02-therapeutic-containment', '治療守護場域', 'gyn-therapeutic-containment.png'),
@@ -54,7 +53,7 @@ export const cancerDesignPresets: Record<CancerDesignPresetId, CancerDesignPrese
   },
   urinary: {
     id: 'urinary', label: '泌尿癌', designName: '水光臨床', colorScheme: 'cancer_urinary',
-    palette: ['#3A7B84', '#54A09E', '#9ACBC0'], defaultContourId: 'arc-sweep',
+    palette: ['#3A7B84', '#54A09E', '#9ACBC0'],
     motifs: [
       motif('urinary-motif-01-complete-system', '完整泌尿系統', 'urinary-complete-system.png'),
       motif('urinary-motif-02-precision-orbit', '雙腎精準軌道', 'urinary-precision-orbit.png'),
@@ -63,7 +62,7 @@ export const cancerDesignPresets: Record<CancerDesignPresetId, CancerDesignPrese
   },
   colorectal: {
     id: 'colorectal', label: '腸癌', designName: '冷光路徑', colorScheme: 'cancer_colorectal',
-    palette: ['#244F86', '#5F8FC4', '#76B8AE'], defaultContourId: 'clean-diagonal',
+    palette: ['#244F86', '#5F8FC4', '#76B8AE'],
     motifs: [
       motif('colorectal-motif-01-treatment-atlas-v5', '治療路徑圖譜', 'colorectal-treatment-atlas.png'),
       motif('colorectal-motif-02-screening-window', '篩檢視窗', 'colorectal-screening-window.png'),
@@ -72,7 +71,7 @@ export const cancerDesignPresets: Record<CancerDesignPresetId, CancerDesignPrese
   },
   breast: {
     id: 'breast', label: '乳癌', designName: '絲帶編輯', colorScheme: 'cancer_breast',
-    palette: ['#A65372', '#CE6F8B', '#E9A5B2'], defaultContourId: 'layered-ribbon',
+    palette: ['#A65372', '#CE6F8B', '#E9A5B2'],
     motifs: [
       motif('breast-motif-01-tissue-ribbon', '組織摺線絲帶', 'breast-tissue-ribbon.png'),
       motif('breast-motif-02-self-embrace', '自我守護', 'breast-self-embrace.png'),
@@ -108,24 +107,18 @@ export function isCancerDesignPresetId(value: string | null | undefined): value 
   return Boolean(value && Object.prototype.hasOwnProperty.call(cancerDesignPresets, value));
 }
 
-export function isHeaderContourId(value: unknown): value is HeaderContourId {
-  return ['soft-wave', 'arc-sweep', 'layered-ribbon', 'clean-diagonal'].includes(String(value));
-}
-
-export function createDefaultCancerDesignState(): CancerDesignStateV2 {
+export function createDefaultCancerDesignState(): CancerDesignState {
   const primaryMotifByCancer: Record<string, string> = {};
-  const contourByCancer: Record<string, HeaderContourId> = {};
   cancerDesignPresetList.forEach(preset => {
     primaryMotifByCancer[preset.id] = preset.motifs[0].id;
-    contourByCancer[preset.id] = preset.defaultContourId;
   });
-  return { version: 2, activePresetId: 'lung', primaryMotifByCancer, contourByCancer };
+  return { version: 3, activePresetId: 'lung', primaryMotifByCancer };
 }
 
-export function normalizeCancerDesignState(value: unknown): CancerDesignStateV2 {
+export function normalizeCancerDesignState(value: unknown): CancerDesignState {
   const defaults = createDefaultCancerDesignState();
   if (!value || typeof value !== 'object') return defaults;
-  const input = value as Partial<CancerDesignStateV2> & { presetId?: string; motifId?: string };
+  const input = value as Partial<CancerDesignState> & { presetId?: string; motifId?: string };
   const activePresetId = isCancerDesignPresetId(input.activePresetId)
     ? input.activePresetId
     : isCancerDesignPresetId(input.presetId) ? input.presetId : 'lung';
@@ -136,8 +129,6 @@ export function normalizeCancerDesignState(value: unknown): CancerDesignStateV2 
     if (selected && preset.motifs.some(item => item.id === selected)) {
       defaults.primaryMotifByCancer[preset.id] = selected;
     }
-    const contour = input.contourByCancer?.[preset.id];
-    if (isHeaderContourId(contour)) defaults.contourByCancer[preset.id] = contour;
   });
 
   const migratedMotifId = input.motifId ? legacyMotifMap[input.motifId] || input.motifId : undefined;

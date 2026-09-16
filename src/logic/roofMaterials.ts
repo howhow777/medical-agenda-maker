@@ -1,7 +1,7 @@
 import type { RoofColors, RoofSelection, RoofStyleId } from '../assets/roofTypes.js';
 import { buildRoofMaps, recolorRoofPixels, type RoofMaps } from './roofColorMath.js';
 import { getRoofAssetURL, getRoofPlacement, getRoofStyle, type RoofStyle } from './roofStyles.js';
-import { isRoofColors } from './roofSelection.js';
+import { isOpticalRoofSelection, isRoofColors } from './roofSelection.js';
 
 export interface RoofImage {
   width: number;
@@ -128,26 +128,31 @@ export class RoofMaterialLibrary {
 /** Renderer/UI only react to the latest selection, even in A/B/A completion order. */
 export class RoofLoadCoordinator {
   private revision = 0;
-  private selection: RoofSelection | undefined;
+  private selection?: RoofSelection;
+  private lastError?: Error;
   constructor(private library: RoofMaterialLibrary) {}
 
-  async select(selection: RoofSelection | undefined): Promise<{ current: boolean; error?: Error }> {
+  async select(selection: RoofSelection): Promise<{ current: boolean; error?: Error }> {
     const revision = ++this.revision;
-    this.selection = selection ? { ...selection, colors: [...selection.colors] } : undefined;
-    if (!selection) return { current: true };
+    this.selection = { ...selection, colors: [...selection.colors] };
+    this.lastError = undefined;
+    if (!isOpticalRoofSelection(selection)) return { current: true };
     try {
       await this.library.preload(selection.styleId);
       return { current: revision === this.revision };
     } catch (error) {
-      return { current: revision === this.revision, error: error instanceof Error ? error : new Error(String(error)) };
+      const failure = error instanceof Error ? error : new Error(String(error));
+      if (revision === this.revision) this.lastError = failure;
+      return { current: revision === this.revision, error: failure };
     }
   }
 
-  /** Export fails visibly if the selected roof is unavailable, never silently falls back. */
+  /** Export fails visibly after a load failure; retry is an explicit UI action. */
   async readyForExport(): Promise<RoofSelection | undefined> {
     const revision = this.revision;
     const selection = this.selection;
-    if (selection) await this.library.preload(selection.styleId);
+    if (this.lastError) throw this.lastError;
+    if (selection && isOpticalRoofSelection(selection)) await this.library.preload(selection.styleId);
     if (revision !== this.revision) throw new Error('屋簷選擇已改變，請重新下載');
     return selection ? { ...selection, colors: [...selection.colors] } : undefined;
   }

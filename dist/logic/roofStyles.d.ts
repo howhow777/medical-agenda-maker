@@ -22,6 +22,7 @@ export declare const approvedRoofPairs: {
     cancerId: CancerDesignPresetId;
     styleId: RoofStyleId;
 }[];
+export declare const defaultRoofStyleByCancer: Readonly<Record<CancerDesignPresetId, RoofStyleId>>;
 export declare function getRoofAssetURL(styleId: RoofStyleId): string;
 /** Return copies so selecting/customizing a roof cannot mutate legacy schemes. */
 export declare function getRecommendedRoofScheme(cancerId: CancerDesignPresetId, styleId: RoofStyleId): ColorScheme;

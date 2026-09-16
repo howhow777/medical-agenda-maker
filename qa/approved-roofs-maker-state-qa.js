@@ -1,18 +1,24 @@
 import { cancerDesignPresetList, cancerDesignPresets } from '../dist/logic/cancerDesignPresets.js';
-import { getRoofStylesForCancer, getRecommendedRoofScheme } from '../dist/logic/roofStyles.js';
+import { defaultRoofStyleByCancer, getRoofStylesForCancer, getRecommendedRoofScheme } from '../dist/logic/roofStyles.js';
+import { createClassicRoofSelectionState, createFreshRoofSelectionState } from '../dist/logic/roofSelection.js';
 import { roofFixture } from './approved-roofs-fixture.js';
 
 const STORAGE_KEYS = [
+  'agendaPoster.roofs.v2',
   'agendaPoster.opticalRoofs.v1',
+  'agendaPoster.roofs.unrecognized',
   'agendaPoster.opticalRoofs.unrecognized',
   'agendaPoster.autosave.v1',
   'medical-agenda-maker:cancer-design-selection:v1',
   'medical-agenda-maker:cancer-design-selection:v2',
+  'medical-agenda-maker:cancer-design-selection:v3',
   'medical-agenda-maker:update-notice:2026-07-09'
 ];
 const V1_KEY = 'medical-agenda-maker:cancer-design-selection:v1';
 const V2_KEY = 'medical-agenda-maker:cancer-design-selection:v2';
-const ROOF_KEY = 'agendaPoster.opticalRoofs.v1';
+const V3_KEY = 'medical-agenda-maker:cancer-design-selection:v3';
+const LEGACY_ROOF_KEY = 'agendaPoster.opticalRoofs.v1';
+const ROOF_KEY = 'agendaPoster.roofs.v2';
 const UPDATE_NOTICE_KEY = 'medical-agenda-maker:update-notice:2026-07-09';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -53,7 +59,8 @@ async function createMakerFrame(host, label) {
   await waitFor(() => frame.contentWindow?.app, `window.app ${label}`, 30000);
   const win = frame.contentWindow, doc = frame.contentDocument, app = win.app;
   await waitFor(() => doc.querySelectorAll('[data-preset-id]').length === 6 &&
-    doc.querySelectorAll('[data-roof-style-host="drawer"] [data-roof-style-id]').length === 3,
+    doc.querySelectorAll('[data-roof-style-host="drawer"] [data-roof-style-id]').length === 3 &&
+    doc.querySelectorAll('[data-roof-style-host="drawer"] [data-roof-choice-id="classic"]').length === 1,
   `Maker controls ${label}`, 30000);
   return { frame, win, doc, app };
 }
@@ -116,6 +123,17 @@ async function selectStyle(maker, cancerId, styleId) {
   const selected = maker.doc.querySelectorAll('[data-roof-style-host="drawer"] [data-roof-style-id][aria-pressed="true"]');
   assert(selected.length === 1 && selected[0].dataset.roofStyleId === styleId,
     `ARIA selection mismatch ${cancerId}/${styleId}`);
+}
+
+async function selectClassic(maker, cancerId) {
+  const selector = '[data-roof-style-host="drawer"] [data-roof-choice-id="classic"]';
+  const button = maker.doc.querySelector(selector);
+  assert(button, `Missing classic control ${cancerId}`); button.click();
+  await waitFor(() => maker.app.roofStyleControls.store.get(cancerId)?.kind === 'classic',
+    `stored classic ${cancerId}`);
+  await waitFor(() => maker.app.posterRenderer.roofSelection?.kind === 'classic',
+    `renderer classic ${cancerId}`);
+  assert(maker.doc.querySelector(selector).getAttribute('aria-pressed') === 'true', `Classic ARIA selection mismatch ${cancerId}`);
 }
 
 async function useCustomColors(maker, cancerId, colors) {
@@ -198,9 +216,11 @@ function makeLegacyPayload(payload) {
 
 export async function runMakerStateQA(host, onProgress = () => {}) {
   const before = storageBackup(), report = {
-    version: 1, startedAt: new Date().toISOString(), makerURL: new URL('../index.html', location.href).href,
-    noResearchQuery: true, combinations: [], persistenceByCancer: {}, contentPreserved: false,
-    paletteStateRestored: false, legacyMigrationPreserved: false, sameDocumentSwitchingVerified: false,
+    version: 2, startedAt: new Date().toISOString(), makerURL: new URL('../index.html', location.href).href,
+    noResearchQuery: true, combinations: [], classicCombinations: [], persistenceByCancer: {}, contentPreserved: false,
+    freshDefaultVerified: false, firstVisibleFrameOptical: false, paletteStateRestored: false,
+    legacyMigrationPreserved: false, v1PartialMigrationVerified: false, v2ContourMigrationVerified: false,
+    oldTemplateClassicVerified: false, newTemplateRoundTripVerified: false, sameDocumentSwitchingVerified: false,
     staleLoadCannotOverrideSelection: false, applicationConsoleErrors: 'unverified', applicationConsoleEvents: [],
     failures: []
   };
@@ -208,19 +228,24 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
   try {
     for (const key of STORAGE_KEYS) localStorage.removeItem(key);
     localStorage.setItem(UPDATE_NOTICE_KEY, 'dismissed');
-    localStorage.setItem(V1_KEY, JSON.stringify({ version: 1, presetId: 'headneck', motifId: 'headneck-oral-focus' }));
-    maker = await createMakerFrame(host, '十八組與狀態');
+    maker = await createMakerFrame(host, 'fresh 預設、24 組與狀態');
     assert(new URL(maker.frame.src).search === '', 'Formal Maker used a query parameter');
-    const migrated = JSON.parse(localStorage.getItem(V2_KEY));
-    assert(migrated.version === 2 && migrated.activePresetId === 'headneck' &&
-      migrated.primaryMotifByCancer.headneck === 'headneck-motif-02-closed-lip-diagnostic',
-    'CancerDesign v1 did not migrate through the real Maker');
-    assert(!localStorage.getItem(ROOF_KEY), 'Legacy load implicitly selected an optical roof');
+    const fresh = maker.app.roofStyleControls.store.getState();
+    assert(same(fresh, createFreshRoofSelectionState()), 'Fresh Maker did not seed the six approved optical defaults');
+    assert(same(JSON.parse(localStorage.getItem(ROOF_KEY)), createFreshRoofSelectionState()), 'Fresh defaults were not persisted as V2');
+    assert(fresh.byCancer.lung.styleId === defaultRoofStyleByCancer.lung &&
+      maker.app.posterRenderer.roofSelection?.styleId === defaultRoofStyleByCancer.lung,
+    'Fresh first visible poster was not the latest lung optical roof');
+    assert(!maker.doc.body.classList.contains('roof-initializing') &&
+      maker.win.getComputedStyle(maker.doc.getElementById('posterCanvas')).visibility !== 'hidden',
+    'Poster remained hidden after active roof initialization');
+    report.freshDefaultVerified = true;
+    report.firstVisibleFrameOptical = true;
     const fixture = setFixtureContent(maker);
-    const customByCancer = {}, expectedState = { version: 1, byCancer: {} };
+    const expectedState = { version: 2, byCancer: {} };
     for (let cancerIndex = 0; cancerIndex < cancerDesignPresetList.length; cancerIndex++) {
       const cancer = cancerDesignPresetList[cancerIndex];
-      onProgress(`真實 Maker：${cancer.label} 3款屋簷`);
+      onProgress(`真實 Maker：${cancer.label} 3款光影＋最初版`);
       await selectCancer(maker, cancer.id);
       const beforeContent = { fields: fieldSnapshot(maker.doc), agenda: structuredClone(maker.app.getAppState().agendaItems) };
       const styles = getRoofStylesForCancer(cancer.id);
@@ -230,21 +255,24 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
         report.combinations.push({ cancerId: cancer.id, styleId: style.id, ariaSelected: true,
           rendererStyleId: maker.app.posterRenderer.roofSelection.styleId, previewHasInk: true });
       }
+      await selectClassic(maker, cancer.id);
+      report.classicCombinations.push({ cancerId: cancer.id, kind: 'classic', ariaSelected: true, rendererKind: 'classic' });
       const finalStyle = styles[2].id;
+      await selectStyle(maker, cancer.id, finalStyle);
       const colors = [
         `#${(0x245080 + cancerIndex * 0x070303).toString(16).padStart(6, '0').slice(-6)}`,
         `#${(0x65A0C0 + cancerIndex * 0x030704).toString(16).padStart(6, '0').slice(-6)}`,
         `#${(0xB8E4E8 + cancerIndex * 0x020101).toString(16).padStart(6, '0').slice(-6)}`
       ].map(value => value.toLowerCase());
       await useCustomColors(maker, cancer.id, colors);
-      customByCancer[cancer.id] = colors;
       await restoreRecommended(maker, cancer.id, finalStyle);
       await useCustomColors(maker, cancer.id, colors);
-      expectedState.byCancer[cancer.id] = { styleId: finalStyle, mode: 'custom', colors };
+      expectedState.byCancer[cancer.id] = { kind: 'optical', styleId: finalStyle, mode: 'custom', colors };
       assert(same(beforeContent, { fields: fieldSnapshot(maker.doc), agenda: maker.app.getAppState().agendaItems }),
         `Cancer/style switching rewrote meeting content for ${cancer.id}`);
     }
     assert(report.combinations.length === 18, 'Real Maker did not exercise 18 combinations');
+    assert(report.classicCombinations.length === 6, 'Real Maker did not exercise six classic combinations');
     assert(same(maker.app.roofStyleControls.store.getState(), expectedState), 'Six cancer states were not independent');
     report.sameDocumentSwitchingVerified = true;
     report.staleLoad = await verifyPrimaryRace(maker);
@@ -264,6 +292,7 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
     assert(restoredPrimary.x === 617 && restoredPrimary.y === 241 && restoredPrimary.opacity === .73,
       'Agenda save/load lost organ settings');
     report.contentPreserved = true;
+    report.newTemplateRoundTripVerified = true;
     report.saveLoad = { version: payload.version, fields: fixture.fields, agendaRows: fixture.agenda.length,
       organ: restoredPrimary, roofStateRestored: true };
     report.applicationConsoleEvents.push(...diagnostics(maker));
@@ -285,16 +314,56 @@ export async function runMakerStateQA(host, onProgress = () => {}) {
 
     const legacyPayload = makeLegacyPayload(payload);
     await maker.app.dataManager.applyState(legacyPayload, maker.app.templateController.applyCustomState);
-    assert(Object.keys(maker.app.roofStyleControls.store.getState().byCancer).length === 0,
-      'Legacy agenda silently selected a new optical roof');
+    assert(same(maker.app.roofStyleControls.store.getState(), createClassicRoofSelectionState()),
+      'Legacy agenda without roof state did not restore explicit classic choices');
     assert(fieldSnapshot(maker.doc).conferenceTitle === fixture.fields.conferenceTitle &&
       same(maker.app.getAppState().agendaItems, fixture.agenda), 'Legacy agenda content did not load');
     const legacyDesign = maker.app.cancerDesignSwitcher.getState();
-    assert(legacyDesign.version === 2 && Object.keys(legacyDesign.contourByCancer).length === 6,
-      'Legacy agenda lost CancerDesign migration/defaults');
-    report.legacyMigrationPreserved = true;
-    report.legacy = { v1StorageMigrated: true, agendaV1LoadedWithoutOpticalDefault: true,
-      contourIds: [...new Set(Object.values(legacyDesign.contourByCancer))].sort() };
+    assert(legacyDesign.version === 3 && !('contourByCancer' in legacyDesign),
+      'Legacy agenda did not normalize to contour-free CancerDesign V3');
+    assert(maker.doc.querySelector('[data-roof-style-host="drawer"] [data-roof-choice-id="classic"]').getAttribute('aria-pressed') === 'true',
+      'Legacy agenda classic state was not visible in the UI');
+    report.oldTemplateClassicVerified = true;
+    report.applicationConsoleEvents.push(...diagnostics(maker));
+
+    maker.frame.remove(); maker = null;
+    for (const key of STORAGE_KEYS) localStorage.removeItem(key);
+    localStorage.setItem(UPDATE_NOTICE_KEY, 'dismissed');
+    localStorage.setItem(V1_KEY, JSON.stringify({ version: 1, presetId: 'headneck', motifId: 'headneck-oral-focus' }));
+    localStorage.setItem(LEGACY_ROOF_KEY, JSON.stringify({ version: 1, byCancer: {
+      lung: { styleId: 'waterlight', mode: 'custom', colors: ['#123456', '#789ABC', '#DDEEFF'] }
+    } }));
+    maker = await createMakerFrame(host, 'V1 partial migration');
+    const partial = maker.app.roofStyleControls.store.getState();
+    assert(partial.version === 2 && partial.byCancer.lung.kind === 'optical' &&
+      partial.byCancer.lung.styleId === 'waterlight' && same(partial.byCancer.lung.colors, ['#123456', '#789ABC', '#DDEEFF']),
+    'V1 partial explicit optical selection was not preserved');
+    for (const cancer of cancerDesignPresetList.filter(item => item.id !== 'lung')) {
+      assert(partial.byCancer[cancer.id].kind === 'classic', `V1 missing ${cancer.id} was not migrated to classic`);
+    }
+    const migratedDesign = JSON.parse(localStorage.getItem(V3_KEY));
+    assert(migratedDesign.version === 3 && migratedDesign.activePresetId === 'headneck' &&
+      migratedDesign.primaryMotifByCancer.headneck === 'headneck-motif-02-closed-lip-diagnostic',
+    'CancerDesign V1 did not migrate to V3 through the real Maker');
+    report.v1PartialMigrationVerified = true;
+    report.applicationConsoleEvents.push(...diagnostics(maker));
+
+    maker.frame.remove(); maker = null;
+    for (const key of STORAGE_KEYS) localStorage.removeItem(key);
+    localStorage.setItem(UPDATE_NOTICE_KEY, 'dismissed');
+    localStorage.setItem(V2_KEY, JSON.stringify({ version: 2, activePresetId: 'lung', primaryMotifByCancer: {}, contourByCancer: {
+      lung: 'soft-wave', headneck: 'arc-sweep', uterus: 'layered-ribbon', urinary: 'clean-diagonal',
+      colorectal: 'soft-wave', breast: 'arc-sweep'
+    } }));
+    maker = await createMakerFrame(host, 'V2 contour migration');
+    assert(same(maker.app.roofStyleControls.store.getState(), createClassicRoofSelectionState()),
+      'CancerDesign V2 contours did not migrate to all-classic');
+    const v3 = maker.app.cancerDesignSwitcher.getState();
+    assert(v3.version === 3 && !('contourByCancer' in v3), 'Retired contour IDs escaped into CancerDesign V3');
+    report.v2ContourMigrationVerified = true;
+    report.legacyMigrationPreserved = report.v1PartialMigrationVerified && report.v2ContourMigrationVerified && report.oldTemplateClassicVerified;
+    report.legacy = { v1PartialOpticalPreserved: true, v1MissingEntriesClassic: true,
+      v2RetiredContoursClassic: true, oldTemplateClassic: true };
     report.applicationConsoleEvents.push(...diagnostics(maker));
     report.applicationConsoleEvents = report.applicationConsoleEvents.filter((event, index, all) =>
       all.findIndex(other => same(other, event)) === index);

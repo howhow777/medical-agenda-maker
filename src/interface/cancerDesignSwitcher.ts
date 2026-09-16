@@ -1,4 +1,5 @@
-import { CancerDesignStateV2, HeaderContourId } from '../assets/types.js';
+import { CancerDesignState } from '../assets/types.js';
+import type { RoofSelectionStateV2 } from '../assets/roofTypes.js';
 import {
   CancerDesignPresetId,
   cancerDesignPresetList,
@@ -6,19 +7,19 @@ import {
   createDefaultCancerDesignState,
   normalizeCancerDesignState
 } from '../logic/cancerDesignPresets.js';
-import { headerContourIds, headerContourLabels, renderContourPreview } from '../logic/headerContours.js';
-import type { RoofSelectionStateV1 } from '../assets/roofTypes.js';
+import { CLASSIC_ROOF_LABEL, renderClassicRoofPreview } from '../logic/headerContours.js';
 import { roofMaterialLibrary } from '../logic/roofMaterials.js';
+import { createFreshRoofSelectionState, isOpticalRoofSelection } from '../logic/roofSelection.js';
 import { getRoofPlacement, getRoofStyle } from '../logic/roofStyles.js';
 
 export type CancerDesignAction =
   | { type: 'select-cancer'; presetId: CancerDesignPresetId }
   | { type: 'select-primary'; presetId: CancerDesignPresetId; motifId: string }
-  | { type: 'add-copy'; presetId: CancerDesignPresetId; motifId: string }
-  | { type: 'select-contour'; presetId: CancerDesignPresetId; contourId: HeaderContourId };
+  | { type: 'add-copy'; presetId: CancerDesignPresetId; motifId: string };
 
 type ActionHandler = (action: CancerDesignAction) => Promise<void>;
 
+export const CANCER_DESIGN_STORAGE_KEY = 'medical-agenda-maker:cancer-design-selection:v3';
 export const CANCER_DESIGN_STORAGE_KEY_V2 = 'medical-agenda-maker:cancer-design-selection:v2';
 export const CANCER_DESIGN_STORAGE_KEY_V1 = 'medical-agenda-maker:cancer-design-selection:v1';
 
@@ -30,10 +31,9 @@ export class CancerDesignSwitcher {
   private cardGrid: HTMLElement;
   private motifGrid: HTMLElement;
   private motifTitle: HTMLElement;
-  private contourGrid: HTMLElement;
-  private state: CancerDesignStateV2 = createDefaultCancerDesignState();
+  private state: CancerDesignState = createDefaultCancerDesignState();
   private lastFocusedElement: HTMLElement | null = null;
-  private roofSelections: RoofSelectionStateV1 = { version: 1, byCancer: {} };
+  private roofSelections: RoofSelectionStateV2 = createFreshRoofSelectionState();
 
   constructor(private onAction: ActionHandler) {
     this.trigger = this.requireElement<HTMLButtonElement>('designSwitcherTrigger');
@@ -43,7 +43,6 @@ export class CancerDesignSwitcher {
     this.cardGrid = this.requireElement<HTMLElement>('designPresetGrid');
     this.motifGrid = this.requireElement<HTMLElement>('designMotifGrid');
     this.motifTitle = this.requireElement<HTMLElement>('designMotifTitle');
-    this.contourGrid = this.requireElement<HTMLElement>('designContourGrid');
   }
 
   async initialize(): Promise<void> {
@@ -53,18 +52,14 @@ export class CancerDesignSwitcher {
     await this.onAction({ type: 'select-cancer', presetId: this.activePresetId });
   }
 
-  getState(): CancerDesignStateV2 {
-    return JSON.parse(JSON.stringify(this.state)) as CancerDesignStateV2;
+  getState(): CancerDesignState {
+    return JSON.parse(JSON.stringify(this.state)) as CancerDesignState;
   }
 
-  setRoofSelections(state: RoofSelectionStateV1): void {
-    this.roofSelections = state;
+  setRoofSelections(state: RoofSelectionStateV2): void {
+    this.roofSelections = JSON.parse(JSON.stringify(state)) as RoofSelectionStateV2;
     this.cardGrid.querySelectorAll<HTMLButtonElement>('[data-preset-id]').forEach(button => {
       this.renderPresetPreview(button, button.dataset.presetId as CancerDesignPresetId);
-    });
-    this.contourGrid.querySelectorAll<HTMLButtonElement>('[data-contour-id]').forEach(button => {
-      button.setAttribute('aria-pressed', String(!state.byCancer[this.activePresetId] &&
-        button.dataset.contourId === this.state.contourByCancer[this.activePresetId]));
     });
   }
 
@@ -74,29 +69,31 @@ export class CancerDesignSwitcher {
     const selection = this.roofSelections.byCancer[presetId];
     const motif = preset.motifs.find(item => item.id === this.state.primaryMotifByCancer[presetId]) || preset.motifs[0];
     const label = button.querySelector<HTMLElement>('.design-preset-label span');
-    if (!selection) {
-      if (label) label.textContent = `${headerContourLabels[this.state.contourByCancer[presetId]]} · ${motif.name}`;
-      button.querySelectorAll<HTMLElement>('.design-preset-palette i').forEach((swatch, index) => {
-        swatch.style.backgroundColor = preset.palette[index];
-      });
-      renderContourPreview(canvas, this.state.contourByCancer[presetId], preset.palette);
-      return;
-    }
-    if (label) label.textContent = `${getRoofStyle(selection.styleId)!.label} · ${motif.name}`;
     button.querySelectorAll<HTMLElement>('.design-preset-palette i').forEach((swatch, index) => {
       swatch.style.backgroundColor = selection.colors[index];
     });
+
+    if (!isOpticalRoofSelection(selection)) {
+      if (label) label.textContent = `${CLASSIC_ROOF_LABEL} · ${motif.name}`;
+      renderClassicRoofPreview(canvas, selection.colors);
+      return;
+    }
+
+    if (label) label.textContent = `${getRoofStyle(selection.styleId)!.label} · ${motif.name}`;
     void roofMaterialLibrary.preload(selection.styleId).then(() => {
-      if (!canvas.isConnected || JSON.stringify(this.roofSelections.byCancer[presetId]) !== JSON.stringify(selection)) return;
+      const current = this.roofSelections.byCancer[presetId];
+      if (!canvas.isConnected || !isOpticalRoofSelection(current) || JSON.stringify(current) !== JSON.stringify(selection)) return;
       const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       const placement = getRoofPlacement(selection.styleId, canvas.width);
       ctx.drawImage(roofMaterialLibrary.getSurface(selection.styleId, selection.colors)!, 0, 0, placement.width, placement.height);
-    }).catch(() => renderContourPreview(canvas, this.state.contourByCancer[presetId], preset.palette));
+    }).catch(() => renderClassicRoofPreview(canvas, selection.colors));
   }
 
-  restoreState(value: unknown, persist = true): CancerDesignStateV2 {
+  restoreState(value: unknown, persist = true): CancerDesignState {
     this.state = normalizeCancerDesignState(value);
     if (persist) this.saveSelection();
     this.render();
@@ -109,9 +106,7 @@ export class CancerDesignSwitcher {
 
   private bindEvents(): void {
     this.trigger.addEventListener('animationend', event => {
-      if (event.animationName === 'designSwitcherDiscovery') {
-        this.trigger.classList.remove('design-switcher-discovery');
-      }
+      if (event.animationName === 'designSwitcherDiscovery') this.trigger.classList.remove('design-switcher-discovery');
     });
     this.trigger.addEventListener('click', () => {
       this.trigger.classList.remove('design-switcher-discovery');
@@ -143,21 +138,23 @@ export class CancerDesignSwitcher {
 
       const preview = document.createElement('span');
       preview.className = 'design-preset-preview';
-      const contour = document.createElement('canvas');
-      contour.className = 'design-preset-contour';
-      contour.width = 300;
-      contour.height = 112;
+      const roof = document.createElement('canvas');
+      roof.className = 'design-preset-contour';
+      roof.width = 300;
+      roof.height = 112;
       const selectedMotifId = this.state.primaryMotifByCancer[preset.id];
       const selectedMotif = preset.motifs.find(item => item.id === selectedMotifId) || preset.motifs[0];
       const image = document.createElement('img');
       image.src = selectedMotif.src;
       image.alt = '';
       image.loading = 'eager';
-      preview.append(contour, image, this.createPalette(preset.palette));
+      preview.append(roof, image, this.createPalette(this.roofSelections.byCancer[preset.id].colors));
 
+      const selection = this.roofSelections.byCancer[preset.id];
+      const roofLabel = isOpticalRoofSelection(selection) ? getRoofStyle(selection.styleId)!.label : CLASSIC_ROOF_LABEL;
       const label = document.createElement('span');
       label.className = 'design-preset-label';
-      label.innerHTML = `<strong>${preset.label}</strong><span>${headerContourLabels[this.state.contourByCancer[preset.id]]} · ${selectedMotif.name}</span>`;
+      label.innerHTML = `<strong>${preset.label}</strong><span>${roofLabel} · ${selectedMotif.name}</span>`;
       button.append(preview, label);
       button.addEventListener('click', async () => {
         this.state.activePresetId = preset.id;
@@ -207,31 +204,6 @@ export class CancerDesignSwitcher {
       card.append(primaryButton, addButton);
       return card;
     }));
-
-    const activeContour = this.state.contourByCancer[this.activePresetId];
-    this.contourGrid.replaceChildren(...headerContourIds.map(contourId => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'design-contour-card';
-      button.dataset.contourId = contourId;
-      button.setAttribute('aria-pressed', String(!this.roofSelections.byCancer[this.activePresetId] && contourId === activeContour));
-      button.setAttribute('aria-label', `套用${headerContourLabels[contourId]}`);
-      const canvas = document.createElement('canvas');
-      canvas.width = 240;
-      canvas.height = 76;
-      canvas.setAttribute('aria-hidden', 'true');
-      const label = document.createElement('span');
-      label.textContent = headerContourLabels[contourId];
-      button.append(canvas, label);
-      button.addEventListener('click', async () => {
-        this.state.contourByCancer[this.activePresetId] = contourId;
-        this.saveSelection();
-        this.render();
-        await this.onAction({ type: 'select-contour', presetId: this.activePresetId, contourId });
-      });
-      window.requestAnimationFrame(() => renderContourPreview(canvas, contourId, selectedPreset.palette));
-      return button;
-    }));
   }
 
   private createPalette(colors: readonly string[]): HTMLElement {
@@ -271,37 +243,52 @@ export class CancerDesignSwitcher {
   }
 
   private trapFocus(event: KeyboardEvent): void {
-    const focusable = Array.from(this.drawer.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+    const focusable = Array.from(this.drawer.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      .filter(element => !element.hidden && element.offsetParent !== null);
     if (focusable.length === 0) return;
     const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusFirstAvailable = (candidates: HTMLElement[]): void => {
+      for (const candidate of candidates) {
+        candidate.focus({ preventScroll: true });
+        if (document.activeElement === candidate) return;
+      }
+    };
+    let last: HTMLElement | null = null;
+    for (const candidate of [...focusable].reverse()) {
+      candidate.focus({ preventScroll: true });
+      if (document.activeElement === candidate) { last = candidate; break; }
+    }
+    active?.focus({ preventScroll: true });
+    if (!last) return;
+    if (event.shiftKey && active === first) {
       event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
+      last.focus({ preventScroll: true });
+    } else if (!event.shiftKey && active === last) {
       event.preventDefault();
-      first.focus();
+      focusFirstAvailable(focusable);
     }
   }
 
-  private restoreSelection(): CancerDesignStateV2 {
+  private restoreSelection(): CancerDesignState {
     try {
-      const v2 = localStorage.getItem(CANCER_DESIGN_STORAGE_KEY_V2);
-      if (v2) return normalizeCancerDesignState(JSON.parse(v2));
-      const v1 = localStorage.getItem(CANCER_DESIGN_STORAGE_KEY_V1);
-      if (v1) {
-        const migrated = normalizeCancerDesignState(JSON.parse(v1));
-        localStorage.setItem(CANCER_DESIGN_STORAGE_KEY_V2, JSON.stringify(migrated));
+      const current = localStorage.getItem(CANCER_DESIGN_STORAGE_KEY);
+      if (current) return normalizeCancerDesignState(JSON.parse(current));
+      for (const key of [CANCER_DESIGN_STORAGE_KEY_V2, CANCER_DESIGN_STORAGE_KEY_V1]) {
+        const legacy = localStorage.getItem(key);
+        if (!legacy) continue;
+        const migrated = normalizeCancerDesignState(JSON.parse(legacy));
+        localStorage.setItem(CANCER_DESIGN_STORAGE_KEY, JSON.stringify(migrated));
         return migrated;
       }
     } catch {
-      localStorage.removeItem(CANCER_DESIGN_STORAGE_KEY_V2);
+      // Preserve unreadable bytes; continue with an in-memory safe default.
     }
     return createDefaultCancerDesignState();
   }
 
   private saveSelection(): void {
-    localStorage.setItem(CANCER_DESIGN_STORAGE_KEY_V2, JSON.stringify(this.state));
+    localStorage.setItem(CANCER_DESIGN_STORAGE_KEY, JSON.stringify(this.state));
   }
 
   private requireElement<T extends HTMLElement>(id: string): T {

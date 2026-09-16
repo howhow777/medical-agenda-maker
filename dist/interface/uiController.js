@@ -77,20 +77,21 @@ export class UIController {
                 this.cancerDesignSwitcher.setRoofSelections(this.roofStyleControls.store.getState());
                 this.updatePoster();
             });
+            this.cancerDesignSwitcher.setRoofSelections(this.roofStyleControls.store.getState());
             // 綁定事件
             this.bindEvents();
             // 初始化下載按鈕動態定位
             this.initializeDownloadButtonPosition();
             // 載入初始資料
             this.loadInitialData();
-            // 先算出實際海報高度，讓內建圖案能依最終畫布比例落在建議位置。
-            this.updatePoster();
             await this.cancerDesignSwitcher.initialize();
+            document.body.classList.remove('roof-initializing');
             // 註冊到全域以供 posterRenderer 訪問
             window.app = this;
             console.log('🎉 醫學會議海報製作器初始化完成');
         }
         catch (error) {
+            document.body.classList.remove('roof-initializing');
             console.error('❌ 初始化失敗:', error);
             throw error;
         }
@@ -106,7 +107,6 @@ export class UIController {
         this.overlayManager.setActiveCancerPresetId(preset.id);
         if (action.type === 'select-cancer') {
             const state = this.cancerDesignSwitcher.getState();
-            this.posterRenderer.setHeaderContour(state.contourByCancer[preset.id]);
             await this.roofStyleControls.setCancer(preset.id);
             if (!isCurrentAction())
                 return;
@@ -126,10 +126,6 @@ export class UIController {
             const motif = preset.motifs.find(item => item.id === action.motifId) || preset.motifs[0];
             const image = await this.loadImage(motif.src);
             this.overlayManager.addCancerCopy(preset.id, motif.id, image, motif.name, motif.src, isCurrentAction());
-        }
-        else if (action.type === 'select-contour') {
-            this.posterRenderer.setHeaderContour(action.contourId);
-            await this.roofStyleControls.useLegacy();
         }
         if (!isCurrentAction())
             return;
@@ -684,7 +680,6 @@ export class UIController {
         const presetId = designState.activePresetId;
         const preset = cancerDesignPresets[presetId];
         this.overlayManager.setActiveCancerPresetId(presetId);
-        this.posterRenderer.setHeaderContour(designState.contourByCancer[presetId]);
         this.formControls.setCurrentTemplate(presetId);
         this.formControls.setCurrentColorScheme(preset.colorScheme);
         this.roofStyleControls.store.restore(customState.roofSelectionState);

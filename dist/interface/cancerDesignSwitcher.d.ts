@@ -1,6 +1,6 @@
-import { CancerDesignStateV2, HeaderContourId } from '../assets/types.js';
+import { CancerDesignState } from '../assets/types.js';
+import type { RoofSelectionStateV2 } from '../assets/roofTypes.js';
 import { CancerDesignPresetId } from '../logic/cancerDesignPresets.js';
-import type { RoofSelectionStateV1 } from '../assets/roofTypes.js';
 export type CancerDesignAction = {
     type: 'select-cancer';
     presetId: CancerDesignPresetId;
@@ -12,12 +12,9 @@ export type CancerDesignAction = {
     type: 'add-copy';
     presetId: CancerDesignPresetId;
     motifId: string;
-} | {
-    type: 'select-contour';
-    presetId: CancerDesignPresetId;
-    contourId: HeaderContourId;
 };
 type ActionHandler = (action: CancerDesignAction) => Promise<void>;
+export declare const CANCER_DESIGN_STORAGE_KEY = "medical-agenda-maker:cancer-design-selection:v3";
 export declare const CANCER_DESIGN_STORAGE_KEY_V2 = "medical-agenda-maker:cancer-design-selection:v2";
 export declare const CANCER_DESIGN_STORAGE_KEY_V1 = "medical-agenda-maker:cancer-design-selection:v1";
 export declare class CancerDesignSwitcher {
@@ -29,16 +26,15 @@ export declare class CancerDesignSwitcher {
     private cardGrid;
     private motifGrid;
     private motifTitle;
-    private contourGrid;
     private state;
     private lastFocusedElement;
     private roofSelections;
     constructor(onAction: ActionHandler);
     initialize(): Promise<void>;
-    getState(): CancerDesignStateV2;
-    setRoofSelections(state: RoofSelectionStateV1): void;
+    getState(): CancerDesignState;
+    setRoofSelections(state: RoofSelectionStateV2): void;
     private renderPresetPreview;
-    restoreState(value: unknown, persist?: boolean): CancerDesignStateV2;
+    restoreState(value: unknown, persist?: boolean): CancerDesignState;
     private get activePresetId();
     private bindEvents;
     private render;

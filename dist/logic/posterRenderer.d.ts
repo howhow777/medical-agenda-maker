@@ -1,4 +1,4 @@
-import { AgendaItem, ColorScheme, CancerTemplate, CustomColors, HeaderContourId, Overlay } from '../assets/types.js';
+import { AgendaItem, ColorScheme, CancerTemplate, CustomColors, Overlay } from '../assets/types.js';
 import type { RoofSelection } from '../assets/roofTypes.js';
 import type { CancerDesignPresetId } from './cancerDesignPresets.js';
 export declare const AGENDA_START_Y = 350;
@@ -31,13 +31,11 @@ export declare class PosterRenderer {
     protected ctx: CanvasRenderingContext2D;
     protected useHighQualityOverlays: boolean;
     protected processedOverlayCache: Map<number, HTMLCanvasElement>;
-    private headerContourId;
     private roofSelection?;
     private roofCancerId;
     private lastRenderArgs?;
     constructor(canvas: HTMLCanvasElement);
-    setHeaderContour(contourId: HeaderContourId): void;
-    setRoofSelection(cancerId: CancerDesignPresetId, selection?: RoofSelection): void;
+    setRoofSelection(cancerId: CancerDesignPresetId, selection: RoofSelection): void;
     createGradient(w: number, h: number, colors: string[], direction: string): CanvasGradient;
     calculateTextLinesWithBreaks(text: string, maxWidth: number): number;
     wrapTextWithBreaks(text: string, x: number, y: number, maxWidth: number, lineHeight: number, align?: string): number;

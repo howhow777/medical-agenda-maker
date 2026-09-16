@@ -1,5 +1,70 @@
 # 核准屋簷 preview rollout / rollback
 
+## 2026-09-16｜預設屋簷收斂（最新光影＋最初版波浪）
+
+狀態：本機實作、migration、45項正式測試、46項研究回歸、瀏覽器QA及新安全tag的離線緊急回滾dry-run已通過。implementation commit及preview deployment完成後，實際完整hash、deployment version、deployment ID與線上結果寫入外置發布報告，避免反覆amend造成commit自引用。
+
+- 程式基準：`5d401cfad52e5afdf70836ea75f04b06c72c0bf8`
+- safety tag：`preview/before-default-roof-consolidation-20260916`
+- 基準preview version：`c9573652-6238-4342-bb1c-84402427be00`
+- 基準preview deployment：`78fce8cd-2d74-4d0a-828a-c9914197ae3e`
+- 基準bundle：67個已提交資產＋`build-info.json`，manifest SHA-256 `8158622735ae0293a3aeac6e80ab23fe9f219278cfc728775a7b29b3007b9d26`
+- GitHub Pages隔離基準：遠端`e786b82934417e8828b935d1c2b8dc593182934f`，公開index SHA-256 `a5aa242b6b9f3ef62a57ff54d3b9bd40a05085cb98cb13fa718fb2e45e0b9b92`
+- 規格與migration矩陣：`docs/development-logs/roof-default-consolidation-spec.md`
+- 外置發布報告：`/Users/promelink/Documents/ChatGPT/medical agenda maker/roof-integration-evidence/roof-default-consolidation-release-20260916/release-report.json`
+
+產品狀態收斂為每癌別三張已核准光影卡及一張「最初版波浪屋簷」卡。fresh storage使用各癌別最新光影預設；V1缺失癌別、四個V2中間輪廓ID及沒有屋簷欄位的舊模板遷移為explicit classic；新模板保存完整V2屋簷狀態。最初版波浪只使用GitHub Pages `e786b829...` 的canonical path，自訂三色不會因遷移或classic切換被覆寫。
+
+提交前驗收：
+
+- `npm test`：45 passed、0 failed、0 skipped。
+- 受保護研究worktree：46 passed、0 failed、0 skipped。
+- 正式Canvas：18/18光影＋6/6最初版；PNG 24/24、JPEG 24/24；另驗2400×1800 compact export。
+- 獨立compositor：96/96，`independentRelationsVerified: true`、`softCoverageVerified: true`。
+- Maker state：fresh、first-visible optical、V1 partial、V2四ID、old/new template、custom colors、競態及console 0 error全部通過。
+- 響應式：1400×900與390×844皆無水平溢出；抽屜、focus trap、Escape、ARIA、一般動畫與reduced-motion contract通過。
+- 原核准光學藝術回歸：以18張checkpoint-03 candidate roof逐像素重跑，門檻MAE 3，18/18通過，最大1.7622986891、平均0.6072796696；reference-set aggregate SHA-256 `450377b25f314a0c7c26085dad7c0a56a6ac316581e39fd9c43ed15fdf63f178`。
+
+本次離線緊急回滾dry-run從新safety tag建立獨立detached worktree，讀取前次已部署report中的67檔hash重建基準：
+
+- source：`5d401cfad52e5afdf70836ea75f04b06c72c0bf8`
+- `baselineVerified: true`
+- fileCount：67
+- bundle manifest SHA-256：`8158622735ae0293a3aeac6e80ab23fe9f219278cfc728775a7b29b3007b9d26`
+- report SHA-256：`cc246e436d007c1cf88e28652eef8dffcd6d309fbd906467c361ee30ff11ddec`
+- 沒有Cloudflare寫入；active branch/HEAD未移動；臨時worktree及bundle已移除；受保護研究worktree未接觸。
+
+正常Git回滾以外置發布報告取得唯一implementation commit：
+
+```sh
+implementation_commit=$(jq -r '.repository.implementationCommit' '/Users/promelink/Documents/ChatGPT/medical agenda maker/roof-integration-evidence/roof-default-consolidation-release-20260916/release-report.json')
+git revert "$implementation_commit"
+PATH=/Users/promelink/.local/bin:$PATH npm test
+PATH=/Users/promelink/.local/bin:$PATH ./node_modules/.bin/tsc --noEmit
+```
+
+若revert衝突即停止，不使用reset、checkout、force或歷史改寫。測試通過後才從新revert commit重新打包並部署同一個preview Worker。
+
+緊急preview復原不得移動目前分支：
+
+```sh
+rollback_worktree=$(mktemp -d /private/tmp/roof-default-emergency-rollback.XXXXXX)
+git worktree add --detach "$rollback_worktree" preview/before-default-roof-consolidation-20260916
+cd "$rollback_worktree"
+PATH=/Users/promelink/.local/bin:$PATH node scripts/approved-roofs-preview.mjs \
+  --profile baseline \
+  --source 5d401cfad52e5afdf70836ea75f04b06c72c0bf8 \
+  --baseline-manifest '/Users/promelink/Documents/ChatGPT/medical agenda maker/roof-integration-evidence/release-20260916/deployment-report-final.json' \
+  --output <全新暫存bundle目錄> \
+  --report <全新dry-run-report路徑>
+```
+
+必須先得到上述67檔manifest SHA；故障回復時使用已驗證的前版`release-20260916/preview-bundle-final/`（另含其已驗證`build-info.json`）部署同一`medical-agenda-preview` Worker。線上marker及68檔hash恢復後，確認臨時worktree乾淨，再由主工作區執行`git worktree remove <臨時路徑>`。不得force移除、不得動研究worktree或GitHub Pages。
+
+---
+
+## 2026-09-16｜六款核准光影屋簷初次整合
+
 狀態：本機QA與離線緊急回滾dry-run已通過；implementation commit及preview deployment完成後，實際完整hash、deployment version與線上結果只寫入外置發布報告，避免反覆amend造成commit自引用。
 
 外置證據根：`/Users/promelink/Documents/ChatGPT/medical agenda maker/roof-integration-evidence/`。

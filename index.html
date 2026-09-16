@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="./styles.css?v=20260820-poster-view-zoom-v3" />
   <link rel="stylesheet" href="src/assets/feedback-modal.css" />
 </head>
-<body>
+<body class="roof-initializing">
   <div class="container">
     <div class="header">
       <button id="menuToggle" class="menu-toggle-button" type="button" aria-expanded="true" aria-label="收合設定" aria-controls="controlPanel" title="收合設定">
@@ -353,7 +353,7 @@
     <div class="design-switcher-header">
       <div>
         <h2 id="designSwitcherTitle">快速切換設計</h2>
-        <p>選主圖、加入副本或切換輪廓；議程與上傳圖片不變</p>
+        <p>選主圖、加入副本或切換屋簷；議程與上傳圖片不變</p>
       </div>
       <button id="designSwitcherClose" class="design-switcher-close" type="button" aria-label="關閉快速切換設計">×</button>
     </div>
@@ -368,20 +368,13 @@
         <p>「＋加入」可建立多個獨立副本；每份都能拖曳、縮放、旋轉、裁切或刪除。</p>
       </section>
       <section class="roof-style-controls" data-roof-style-host="drawer" aria-label="切換屋簷款式"></section>
-      <section class="design-contour-section" aria-labelledby="designContourTitle">
-        <div class="design-motif-heading">
-          <h3 id="designContourTitle">原有向量輪廓</h3>
-          <span>預覽與海報一致</span>
-        </div>
-        <div id="designContourGrid" class="design-contour-grid" role="group" aria-label="頂部輪廓"></div>
-      </section>
     </div>
   </aside>
 
 
 
   <!-- 載入主程式 -->
-  <meta name="medical-agenda-build" content="immunotherapy-contours-v1">
+  <meta name="medical-agenda-build" content="roof-default-consolidation-v1">
   <script>
     (() => {
       const events = [];

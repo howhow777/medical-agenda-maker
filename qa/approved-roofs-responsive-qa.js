@@ -79,12 +79,22 @@ async function exerciseViewport(maker, width, height) {
     `${width}: drawer ARIA open state failed`);
   assert(doc.activeElement === doc.getElementById('designSwitcherClose'),
     `${width}: opening the drawer did not move focus to its close button`);
-  const focusable = [...drawer.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+  const focusable = [...drawer.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.offsetParent !== null);
   assert(focusable.length > 5, `${width}: drawer has no keyboard controls`);
-  focusable.at(-1).focus(); doc.dispatchEvent(key(win, 'Tab'));
+  let lastReachable;
+  for (const candidate of [...focusable].reverse()) {
+    candidate.focus({ preventScroll: true });
+    if (doc.activeElement === candidate) { lastReachable = candidate; break; }
+  }
+  assert(lastReachable, `${width}: drawer has no reachable end control`);
+  lastReachable.focus(); doc.dispatchEvent(key(win, 'Tab'));
   assert(doc.activeElement === focusable[0], `${width}: forward focus trap failed`);
   focusable[0].focus(); doc.dispatchEvent(key(win, 'Tab', true));
-  assert(doc.activeElement === focusable.at(-1), `${width}: reverse focus trap failed`);
+  assert(doc.activeElement === lastReachable, `${width}: reverse focus trap failed ${JSON.stringify({
+    first: focusable[0].outerHTML.slice(0, 180), last: lastReachable.outerHTML.slice(0, 180),
+    active: doc.activeElement?.outerHTML?.slice(0, 180) || String(doc.activeElement)
+  })}`);
   doc.dispatchEvent(key(win, 'Escape')); await wait(10);
   assert(drawer.getAttribute('aria-hidden') === 'true' && trigger.getAttribute('aria-expanded') === 'false' && doc.activeElement === trigger,
     `${width}: Escape/focus return failed`);

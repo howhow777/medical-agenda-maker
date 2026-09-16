@@ -2,9 +2,9 @@ import { PosterRenderer } from '../dist/logic/posterRenderer.js';
 import { OverlayManager } from '../dist/logic/overlayManager.js';
 import { roofMaterialLibrary } from '../dist/logic/roofMaterials.js';
 import { roofStyles, approvedRoofPairs, getRoofStyle, getRoofAssetURL, getRoofPlacement, getRecommendedRoofScheme } from '../dist/logic/roofStyles.js';
-import { recommendedRoofSelection } from '../dist/logic/roofSelection.js';
+import { recommendedClassicRoofSelection, recommendedRoofSelection } from '../dist/logic/roofSelection.js';
 import { cancerDesignPresets } from '../dist/logic/cancerDesignPresets.js';
-import { headerContourIds } from '../dist/logic/headerContours.js';
+import { colorSchemes } from '../dist/logic/colorSchemes.js';
 import { extractRoofCoverage, mixRoofCoverage } from '../dist/logic/roofCompositor.js';
 import { roofFixture, fixtureCustomColors } from './approved-roofs-fixture.js';
 import { runCompositorQA } from './approved-roofs-compositor-qa.js';
@@ -70,9 +70,14 @@ async function fixtureOverlays(cancerId, destination) {
 
 function renderFixture(renderer, cancerId, styleId, overlays, items = roofFixture.agenda) {
   const scheme = getRecommendedRoofScheme(cancerId, styleId);
-  renderer.setHeaderContour(cancerDesignPresets[cancerId].defaultContourId);
   renderer.setRoofSelection(cancerId, recommendedRoofSelection(cancerId, styleId));
   renderer.drawPoster(items, cancerId, 'optical_recommended', 'horizontal', fixtureCustomColors(scheme), roofFixture.conference, true, roofFixture.footer, overlays, 1);
+}
+
+function renderClassicFixture(renderer, cancerId, overlays, items = roofFixture.agenda) {
+  const preset = cancerDesignPresets[cancerId], scheme = colorSchemes[preset.colorScheme];
+  renderer.setRoofSelection(cancerId, recommendedClassicRoofSelection(cancerId));
+  renderer.drawPoster(items, cancerId, preset.colorScheme, 'horizontal', fixtureCustomColors(scheme), roofFixture.conference, true, roofFixture.footer, overlays, 1);
 }
 
 function coverageChecks(surface) {
@@ -101,8 +106,8 @@ runButton.addEventListener('click', async () => {
   urls.forEach(url => URL.revokeObjectURL(url)); urls = []; gallery.replaceChildren();
   typographyArtifacts = [];
   report = { version: 1, startedAt: new Date().toISOString(), pageURL: location.href, fixture: roofFixture,
-    materialAssetsLoaded: '0/6', approvedCombinationsRendered: '0/18', legacyCombinationsRendered: '0/24',
-    pngExportsVerified: '0/18', jpegExportsVerified: '0/18', sourceAssetHashesMatch: 'unverified',
+    materialAssetsLoaded: '0/6', approvedCombinationsRendered: '0/18', classicCombinationsRendered: '0/6',
+    totalCombinationsRendered: '0/24', pngExportsVerified: '0/24', jpegExportsVerified: '0/24', sourceAssetHashesMatch: 'unverified',
     paletteStateRestored: 'unverified', legacyMigrationPreserved: 'unverified', sameDocumentSwitchingVerified: 'unverified',
     staleLoadCannotOverrideSelection: 'unverified', independentRelationsVerified: 'unverified', softCoverageVerified: 'unverified',
     approvedReferenceRoofMAE: 'unverified', applicationConsoleErrors: 'unverified', horizontalOverflowCases: 'unverified',
@@ -178,7 +183,7 @@ runButton.addEventListener('click', async () => {
       }
       report.combinations.push(metrics);
       report.approvedCombinationsRendered = `${report.combinations.length}/18`;
-      report.pngExportsVerified = `${pngCount}/18`; report.jpegExportsVerified = `${jpegCount}/18`; publish(); await nextFrame();
+      report.pngExportsVerified = `${pngCount}/24`; report.jpegExportsVerified = `${jpegCount}/24`; publish(); await nextFrame();
     }
     report.sameDocumentSwitchingVerified = new Set(report.combinations.map(item => item.styleId)).size === 6 && report.combinations.length === 18;
     report.approvedReferenceRoofMAE = approvedReference.cases.map(item => ({ cancerId: item.cancerId, styleId: item.styleId,
@@ -194,14 +199,33 @@ runButton.addEventListener('click', async () => {
       agendaInkPassed: report.combinations.every(item => item.typography.agendaInkPassed),
       artifactCount: typographyArtifacts.length
     };
-    let legacyCount = 0;
-    for (const preset of Object.values(cancerDesignPresets)) for (const contour of headerContourIds) {
-      renderer.setRoofSelection(preset.id, undefined); renderer.setHeaderContour(contour);
-      renderer.drawPoster(roofFixture.agenda, preset.id, preset.colorScheme, 'horizontal', fixtureCustomColors(getRecommendedRoofScheme(preset.id, approvedRoofPairs.find(p => p.cancerId === preset.id).styleId)), roofFixture.conference, true, roofFixture.footer, [], 1);
+    let classicCount = 0;
+    for (const preset of Object.values(cancerDesignPresets)) {
+      status.textContent = `最初版波浪／輸出 ${classicCount + 1}/6：${preset.label}`;
+      const overlays = await fixtureOverlays(preset.id, destination);
+      renderClassicFixture(renderer, preset.id, overlays);
       const pixels = destination.getContext('2d').getImageData(0, 0, 800, 150).data;
-      assert(pixels.some(v => v > 0 && v < 255), `legacy ${preset.id}/${contour} empty`); legacyCount++;
+      assert(pixels.some(v => v > 0 && v < 255), `classic ${preset.id} empty`);
+      const card = document.createElement('article'), heading = document.createElement('h2');
+      heading.textContent = `${preset.label} · 最初版波浪屋簷`; card.append(heading);
+      const normal = canvas(destination.width, destination.height); normal.getContext('2d').drawImage(destination, 0, 0); card.append(normal); gallery.append(card);
+      const exports = [];
+      for (const format of ['png', 'jpeg']) {
+        const result = await renderer.exportHighQuality(format, .95, 3), image = await decodeBlob(result.blob);
+        assert(image.naturalWidth === 2400 && image.naturalHeight === 2490, `classic ${preset.id} export size mismatch`);
+        const item = { format, width: image.naturalWidth, height: image.naturalHeight, bytes: result.blob.size, pass: result.blob.size > 0 };
+        assert(item.pass, `classic ${preset.id}/${format} empty export`); exports.push(item);
+        const url = URL.createObjectURL(result.blob); urls.push(url);
+        const link = document.createElement('a'); link.href = url; link.download = `${preset.id}-classic.${format === 'jpeg' ? 'jpg' : 'png'}`;
+        link.textContent = `下載 2400×2490 ${format.toUpperCase()}`; card.append(link);
+        if (format === 'png') pngCount++; else jpegCount++;
+      }
+      report.combinations.push({ cancerId: preset.id, kind: 'classic', palette: preset.palette, exports });
+      classicCount++;
+      report.classicCombinationsRendered = `${classicCount}/6`;
+      report.totalCombinationsRendered = `${18 + classicCount}/24`;
+      report.pngExportsVerified = `${pngCount}/24`; report.jpegExportsVerified = `${jpegCount}/24`; publish(); await nextFrame();
     }
-    report.legacyCombinationsRendered = `${legacyCount}/24`;
     // 600px fixture tests the non-truncated 2400x1800 export contract separately.
     destination.height = 600;
     renderFixture(renderer, 'lung', 'optical-signal', [], []);
@@ -211,7 +235,7 @@ runButton.addEventListener('click', async () => {
     report.rawConsoleEvents = [...errors];
     // Error source attribution and responsive tests remain separately required.
     report.finishedAt = new Date().toISOString();
-    status.textContent = `完成渲染 ${report.approvedCombinationsRendered}，PNG ${report.pngExportsVerified}、JPEG ${report.jpegExportsVerified}。已記錄 ${report.failures.length} 個數值失敗；其他未驗收項仍為 unverified。`;
+    status.textContent = `完成渲染 ${report.totalCombinationsRendered}（光影 ${report.approvedCombinationsRendered}、最初版 ${report.classicCombinationsRendered}），PNG ${report.pngExportsVerified}、JPEG ${report.jpegExportsVerified}。已記錄 ${report.failures.length} 個數值失敗；其他未驗收項仍為 unverified。`;
   } catch (error) {
     report.failures.push({ message: String(error), stack: error.stack || '' });
     status.textContent = `本次驗證中止：${error.message}`;
@@ -263,7 +287,7 @@ document.getElementById('downloadCompositorArtifacts').addEventListener('click',
 
 document.getElementById('runMakerStateQA').addEventListener('click', async event => {
   const button = event.currentTarget, makerOutput = document.getElementById('makerStateReport');
-  button.disabled = true; status.textContent = '正在以無研究參數的正式 Maker 驗證十八組 UI 與狀態…';
+  button.disabled = true; status.textContent = '正在以無研究參數的正式 Maker 驗證 18 組光影、6 組最初版與 migration…';
   try {
     makerStateReport = await runMakerStateQA(document.getElementById('makerStateHost'), message => { status.textContent = message; });
     makerOutput.textContent = JSON.stringify(makerStateReport, null, 2);
@@ -279,7 +303,7 @@ document.getElementById('runMakerStateQA').addEventListener('click', async event
     }
     status.textContent = makerStateReport.failures.length
       ? `正式 Maker 狀態驗證有 ${makerStateReport.failures.length} 個失敗。`
-      : '正式 Maker：18/18 UI、六癌別還原、legacy 與非同步競態全部通過。';
+      : '正式 Maker：18/18 光影、6/6 最初版、fresh／V1／V2／模板 migration 與非同步競態全部通過。';
   } catch (error) {
     makerStateReport = { failures: [{ message: String(error), stack: error.stack || '' }] };
     makerOutput.textContent = JSON.stringify(makerStateReport, null, 2);

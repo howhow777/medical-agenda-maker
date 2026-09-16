@@ -1,6 +1,6 @@
 import { buildRoofMaps, recolorRoofPixels } from './roofColorMath.js';
 import { getRoofAssetURL, getRoofPlacement, getRoofStyle } from './roofStyles.js';
-import { isRoofColors } from './roofSelection.js';
+import { isOpticalRoofSelection, isRoofColors } from './roofSelection.js';
 export async function decodeRoofImage(style) {
     const image = new Image();
     image.src = getRoofAssetURL(style.id);
@@ -140,22 +140,28 @@ export class RoofLoadCoordinator {
     }
     async select(selection) {
         const revision = ++this.revision;
-        this.selection = selection ? { ...selection, colors: [...selection.colors] } : undefined;
-        if (!selection)
+        this.selection = { ...selection, colors: [...selection.colors] };
+        this.lastError = undefined;
+        if (!isOpticalRoofSelection(selection))
             return { current: true };
         try {
             await this.library.preload(selection.styleId);
             return { current: revision === this.revision };
         }
         catch (error) {
-            return { current: revision === this.revision, error: error instanceof Error ? error : new Error(String(error)) };
+            const failure = error instanceof Error ? error : new Error(String(error));
+            if (revision === this.revision)
+                this.lastError = failure;
+            return { current: revision === this.revision, error: failure };
         }
     }
-    /** Export fails visibly if the selected roof is unavailable, never silently falls back. */
+    /** Export fails visibly after a load failure; retry is an explicit UI action. */
     async readyForExport() {
         const revision = this.revision;
         const selection = this.selection;
-        if (selection)
+        if (this.lastError)
+            throw this.lastError;
+        if (selection && isOpticalRoofSelection(selection))
             await this.library.preload(selection.styleId);
         if (revision !== this.revision)
             throw new Error('屋簷選擇已改變，請重新下載');

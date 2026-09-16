@@ -3,6 +3,11 @@ export const CANCER_MOTIF_SAFE_ZONE = { x: 560, y: 145, width: 200, height: 170 
 export const OVERLAY_LAYER_BELOW_TABLE = -1;
 export const OVERLAY_LAYER_BETWEEN_TABLE_AND_HEADER = 0;
 export const OVERLAY_LAYER_ABOVE_HEADER = 1;
+let lastOverlayId = 0;
+function createOverlayId() {
+    lastOverlayId = Math.max(lastOverlayId + 1, Date.now() * 1000);
+    return lastOverlayId;
+}
 export function getOverlayFixedRelations(overlay) {
     const legacyRelations = overlay.zIndex < 0
         ? { aboveTable: false, aboveHeader: false }
@@ -57,7 +62,7 @@ export class OverlayManager {
     // 新增圖層
     addOverlay(img, name, src, metadata = {}) {
         const overlay = {
-            id: Date.now() + Math.random(),
+            id: createOverlayId(),
             name: name || 'overlay.png',
             img,
             src: src || '',
@@ -145,7 +150,7 @@ export class OverlayManager {
         const offsets = [[0, 0], [12, -12], [-12, 12], [12, 12], [-12, -12], [0, 12], [12, 0]];
         const offset = offsets[offsetIndex % offsets.length];
         return {
-            id: Date.now() + Math.random(),
+            id: createOverlayId(),
             name: `${metadata.motifRole === 'primary' ? '內建主圖' : '內建副本'}｜${name}`,
             img,
             src,

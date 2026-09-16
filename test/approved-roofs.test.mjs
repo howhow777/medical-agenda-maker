@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
-import { cancerDesignPresetList, cancerDesignPresets, createDefaultCancerDesignState, normalizeCancerDesignState } from '../dist/logic/cancerDesignPresets.js';
+import { cancerDesignPresetList, cancerDesignPresets } from '../dist/logic/cancerDesignPresets.js';
 import { colorSchemes } from '../dist/logic/colorSchemes.js';
-import { roofStyles, approvedRoofPairs, getRoofStyle, getRoofStylesForCancer, isApprovedRoofPair, getRoofPlacement, getRecommendedRoofScheme, getRoofAssetURL } from '../dist/logic/roofStyles.js';
-import { RoofSelectionStore, recommendedRoofSelection, parseRoofSelectionState, isRoofColors, ROOF_SELECTION_STORAGE_KEY, ROOF_SELECTION_DIAGNOSTIC_KEY } from '../dist/logic/roofSelection.js';
+import { roofStyles, approvedRoofPairs, defaultRoofStyleByCancer, getRoofStyle, getRoofStylesForCancer, isApprovedRoofPair, getRoofPlacement, getRecommendedRoofScheme, getRoofAssetURL } from '../dist/logic/roofStyles.js';
+import { RoofSelectionStore, createClassicRoofSelectionState, createFreshRoofSelectionState, hasLegacyContourSelection, recommendedClassicRoofSelection, recommendedRoofSelection, parseRoofSelectionState, isRoofColors, isOpticalRoofSelection, LEGACY_ROOF_SELECTION_STORAGE_KEY_V1, ROOF_SELECTION_STORAGE_KEY, ROOF_SELECTION_DIAGNOSTIC_KEY } from '../dist/logic/roofSelection.js';
 import { RoofMaterialLibrary, RoofLoadCoordinator, RoofSurfaceCache, roofSurfaceKey } from '../dist/logic/roofMaterials.js';
 import { buildRoofMaps, recolorRoofPixels, rgbToLab, labToRGB, transferRoofChroma } from '../dist/logic/roofColorMath.js';
 import { extractRoofCoverage, mixRoofCoverage } from '../dist/logic/roofCompositor.js';
@@ -46,7 +46,7 @@ test('B07 color input commits to its originating cancer before an immediate canc
   try {
     const controls = new RoofStyleControls(store, form, () => {});
     inputs.get('headerC1').value = '#12ABCD'; inputs.get('headerC1').dispatchEvent(new Event('input'));
-    assert.deepEqual(store.get('lung'), { styleId: 'optical-signal', mode: 'custom', colors: ['#12ABCD', '#55AABD', '#A7DDE1'] });
+    assert.deepEqual(store.get('lung'), { kind: 'optical', styleId: 'optical-signal', mode: 'custom', colors: ['#12ABCD', '#55AABD', '#A7DDE1'] });
     await controls.setCancer('uterus');
     assert.deepEqual(store.get('uterus'), warm);
     assert.deepEqual(store.get('lung').colors, ['#12ABCD', '#55AABD', '#A7DDE1']);
@@ -136,7 +136,6 @@ test('B04 delayed cancer primary loads cannot overwrite the newest motif or stea
   let activePresetId = 'lung';
   const state = {
     activePresetId,
-    contourByCancer: { lung: 'soft-wave', breast: 'layered-ribbon' },
     primaryMotifByCancer: {
       lung: 'lung-motif-01-tree-of-breath',
       breast: 'breast-motif-01-tissue-ribbon'
@@ -145,8 +144,8 @@ test('B04 delayed cancer primary loads cannot overwrite the newest motif or stea
   controller.overlayManager = manager;
   controller.formControls = { setCurrentTemplate() {}, setCurrentColorScheme() {} };
   controller.cancerDesignSwitcher = { getState: () => ({ ...state, activePresetId }) };
-  controller.roofStyleControls = { async setCancer() {}, async useLegacy() {} };
-  controller.posterRenderer = { setHeaderContour() {} };
+  controller.roofStyleControls = { async setCancer() {} };
+  controller.posterRenderer = {};
   controller.refreshOverlayList = () => {};
   controller.syncOverlayControls = () => {};
   controller.updatePoster = () => {};
@@ -198,11 +197,12 @@ test('B05 404/decode/offline failures are visible and retryable; failed or stale
   const coordinator = new RoofLoadCoordinator(new RoofMaterialLibrary(() => image.promise));
   const selection = coordinator.select(recommendedRoofSelection('lung', 'optical-signal'));
   const exporting = coordinator.readyForExport();
-  await coordinator.select(undefined);
+  const classic = recommendedClassicRoofSelection('lung');
+  await coordinator.select(classic);
   image.resolve(fakeImage(getRoofStyle('optical-signal')));
   assert.equal((await selection).current, false);
   await assert.rejects(exporting, /選擇已改變/);
-  assert.equal(await coordinator.readyForExport(), undefined);
+  assert.deepEqual(await coordinator.readyForExport(), classic);
 });
 
 test('B05 wrong-size decoded artwork is rejected without poisoning retry', async () => {
@@ -214,28 +214,93 @@ test('B05 wrong-size decoded artwork is rejected without poisoning retry', async
   assert.equal(library.isReady('satin-arc'), true);
 });
 
-test('B06 legacy defaults and V1 migration retain exact old meaning and never select an optical roof implicitly', () => {
-  const legacy = createDefaultCancerDesignState();
+test('B06 a truly fresh browser persists the exact six newest optical defaults', () => {
   const storage = memoryStorage();
-  storage.setItem('legacy-canary', JSON.stringify(legacy));
   const store = new RoofSelectionStore(storage);
-  assert.deepEqual(store.getState(), { version: 1, byCancer: {} });
-  for (const cancer of cancerDesignPresetList) assert.equal(store.get(cancer.id), undefined);
-  assert.equal(storage.getItem(ROOF_SELECTION_STORAGE_KEY), null);
-  store.select('lung', recommendedRoofSelection('lung', 'waterlight'));
-  assert.equal(storage.getItem('legacy-canary'), JSON.stringify(legacy));
-  assert.deepEqual(createDefaultCancerDesignState(), legacy);
-  const migrated = normalizeCancerDesignState({ version: 1, presetId: 'urinary', motifId: 'urinary-system' });
-  assert.equal(migrated.contourByCancer.urinary, 'arc-sweep');
+  assert.deepEqual(store.getState(), createFreshRoofSelectionState());
+  for (const cancer of cancerDesignPresetList) {
+    const selection = store.get(cancer.id);
+    assert.equal(isOpticalRoofSelection(selection), true);
+    assert.equal(selection.styleId, defaultRoofStyleByCancer[cancer.id]);
+  }
+  assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), createFreshRoofSelectionState());
+});
+
+test('B06 partial V1 roof storage preserves explicit optical choices and maps every missing cancer to classic', () => {
+  const storage = memoryStorage();
+  const custom = { styleId: 'waterlight', mode: 'custom', colors: ['#123456', '#789ABC', '#DDEEFF'] };
+  storage.setItem(LEGACY_ROOF_SELECTION_STORAGE_KEY_V1, JSON.stringify({ version: 1, byCancer: { lung: custom } }));
+  const store = new RoofSelectionStore(storage);
+  assert.deepEqual(store.get('lung'), { kind: 'optical', ...custom });
+  for (const cancer of cancerDesignPresetList.filter(item => item.id !== 'lung')) {
+    assert.deepEqual(store.get(cancer.id), recommendedClassicRoofSelection(cancer.id));
+  }
+  assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), store.getState());
+});
+
+test('B06 all four retired vector contour IDs migrate to explicit classic without escaping current state', () => {
+  const legacyContours = {
+    lung: 'soft-wave', headneck: 'arc-sweep', uterus: 'layered-ribbon',
+    urinary: 'clean-diagonal', colorectal: 'soft-wave', breast: 'arc-sweep'
+  };
+  assert.equal(hasLegacyContourSelection({ contourByCancer: legacyContours }), true);
+  for (const contourId of ['soft-wave', 'arc-sweep', 'layered-ribbon', 'clean-diagonal']) {
+    assert.equal(hasLegacyContourSelection({ contourByCancer: { lung: contourId } }), true);
+  }
+  const storage = memoryStorage();
+  storage.setItem('medical-agenda-maker:cancer-design-selection:v2', JSON.stringify({
+    version: 2, activePresetId: 'lung', contourByCancer: legacyContours, primaryMotifByCancer: {}
+  }));
+  const store = new RoofSelectionStore(storage);
+  assert.deepEqual(store.getState(), createClassicRoofSelectionState());
+  assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), createClassicRoofSelectionState());
+  assert.equal(JSON.stringify(store.getState()).includes('soft-wave'), false);
+});
+
+test('B06 old templates without roof state restore all six classic choices idempotently', () => {
+  const storage = memoryStorage();
+  const store = new RoofSelectionStore(storage);
   store.restore(undefined);
-  assert.deepEqual(store.getState(), { version: 1, byCancer: {} });
+  assert.deepEqual(store.getState(), createClassicRoofSelectionState());
+  store.restore(null);
+  assert.deepEqual(store.getState(), createClassicRoofSelectionState());
+  assert.deepEqual(JSON.parse(storage.getItem(ROOF_SELECTION_STORAGE_KEY)), createClassicRoofSelectionState());
+});
+
+test('B06 retired contour IDs are isolated to the migration parser and absent from current runtime modules', () => {
+  const sourceRoot = new URL('../src/', import.meta.url);
+  const files = [];
+  const walk = directory => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = new URL(entry.name + (entry.isDirectory() ? '/' : ''), directory);
+      if (entry.isDirectory()) walk(path);
+      else if (/\.ts$/.test(entry.name)) files.push(path);
+    }
+  };
+  walk(sourceRoot);
+  const retired = /soft-wave|arc-sweep|layered-ribbon|clean-diagonal/;
+  for (const file of files) {
+    if (file.pathname.endsWith('/logic/roofSelection.ts')) continue;
+    assert.doesNotMatch(readFileSync(file, 'utf8'), retired, file.pathname);
+  }
+});
+
+test('B06 first visible poster is gated until async roof initialization settles', () => {
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const controller = readFileSync(new URL('../src/interface/uiController.ts', import.meta.url), 'utf8');
+  assert.match(index, /<body class="roof-initializing">/);
+  assert.match(styles, /\.roof-initializing\s+#posterCanvas\s*\{[^}]*visibility:\s*hidden/);
+  const wait = controller.indexOf('await this.cancerDesignSwitcher.initialize();');
+  const reveal = controller.indexOf("document.body.classList.remove('roof-initializing');", wait);
+  assert.ok(wait >= 0 && reveal > wait, 'the Canvas must only reveal after the active roof preload path settles');
 });
 
 test('B07 six cancer selections independently round-trip through reload with exact custom HEX and no shared references', () => {
   const storage = memoryStorage(), store = new RoofSelectionStore(storage);
   cancerDesignPresetList.forEach((cancer, index) => {
     const style = getRoofStylesForCancer(cancer.id)[index % 3];
-    const selection = index % 2 ? { styleId: style.id, mode: 'custom', colors: ['#aA135E', '#FFB080', '#fffCe0'] }
+    const selection = index % 2 ? { kind: 'optical', styleId: style.id, mode: 'custom', colors: ['#aA135E', '#FFB080', '#fffCe0'] }
       : recommendedRoofSelection(cancer.id, style.id);
     store.select(cancer.id, selection);
     assert.deepEqual(store.get(cancer.id), selection);
@@ -244,16 +309,34 @@ test('B07 six cancer selections independently round-trip through reload with exa
   assert.deepEqual(reloaded.getState(), snapshot);
   const cloned = store.get('lung'); cloned.colors[0] = '#000000';
   assert.deepEqual(store.getState(), snapshot);
-  store.select('lung', undefined);
+  store.select('lung', recommendedClassicRoofSelection('lung'));
+  assert.deepEqual(store.get('lung'), recommendedClassicRoofSelection('lung'));
   for (const cancer of cancerDesignPresetList.filter(c => c.id !== 'lung')) assert.deepEqual(store.get(cancer.id), snapshot.byCancer[cancer.id]);
 });
 
+test('B07 classic custom colors round-trip for all six cancers without becoming an optical style', () => {
+  const storage = memoryStorage(), store = new RoofSelectionStore(storage);
+  cancerDesignPresetList.forEach((cancer, index) => {
+    const colors = [`#${String(index + 1).repeat(6)}`, '#A1B2C3', '#F0E1D2'];
+    store.select(cancer.id, { kind: 'classic', mode: 'custom', colors });
+  });
+  const before = store.getState();
+  const reloaded = new RoofSelectionStore(storage);
+  assert.deepEqual(reloaded.getState(), before);
+  for (const cancer of cancerDesignPresetList) {
+    const selection = reloaded.get(cancer.id);
+    assert.equal(selection.kind, 'classic');
+    assert.equal('styleId' in selection, false);
+    assert.equal(selection.mode, 'custom');
+  }
+});
+
 test('B07 invalid JSON/version/style survives reads and is backed up before explicit changes; storage errors do not erase it', () => {
-  for (const raw of ['{broken', JSON.stringify({ version: 900, byCancer: {} }), JSON.stringify({ version: 1, byCancer: { lung: { styleId: 'coral-arch', mode: 'custom', colors: ['#FFFFFF', '#FFFFFF', '#FFFFFF'] } } })]) {
+  for (const raw of ['{broken', JSON.stringify({ version: 900, byCancer: {} }), JSON.stringify({ version: 2, byCancer: { lung: { kind: 'optical', styleId: 'coral-arch', mode: 'custom', colors: ['#FFFFFF', '#FFFFFF', '#FFFFFF'] } } })]) {
     const storage = memoryStorage(); storage.setItem(ROOF_SELECTION_STORAGE_KEY, raw);
     const store = new RoofSelectionStore(storage);
     assert.equal(storage.getItem(ROOF_SELECTION_STORAGE_KEY), raw);
-    assert.ok(store.issues.length); assert.equal(store.get('lung'), undefined);
+    assert.ok(store.issues.length); assert.deepEqual(store.get('lung'), recommendedClassicRoofSelection('lung'));
     store.select('lung', recommendedRoofSelection('lung', 'satin-arc'));
     assert.equal(storage.getItem(ROOF_SELECTION_DIAGNOSTIC_KEY), raw);
     assert.equal(new RoofSelectionStore(storage).get('lung').styleId, 'satin-arc');

@@ -2,12 +2,13 @@ import { colorSchemes, gradientDirections } from './colorSchemes.js';
 import { templates } from './templates.js';
 import { OverlayProcessor } from './overlay-processor.js';
 import { CanvasUtils } from './canvas-utils.js';
-import { drawHeaderContour, traceHeaderContourPath } from './headerContours.js';
+import { drawClassicRoof, traceClassicRoofPath } from './headerContours.js';
 import { getOverlayFixedRelations } from './overlayManager.js';
 import { getRecommendedRoofScheme, isApprovedRoofPair } from './roofStyles.js';
 import { roofMaterialLibrary } from './roofMaterials.js';
 import { compositeOpticalRoof } from './roofCompositor.js';
 import { getRoofTitleInk, getRoofAgendaInk } from './roofTypography.js';
+import { isOpticalRoofSelection } from './roofSelection.js';
 export const AGENDA_START_Y = 350;
 export const AGENDA_START_Y_WITH_MEETUP = 380;
 export function partitionOverlayLayers(overlays) {
@@ -22,19 +23,16 @@ export class PosterRenderer {
     constructor(canvas) {
         this.useHighQualityOverlays = false;
         this.processedOverlayCache = new Map();
-        this.headerContourId = 'soft-wave';
         this.roofCancerId = 'lung';
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d', { willReadFrequently: true });
     }
-    setHeaderContour(contourId) {
-        this.headerContourId = contourId;
-    }
     setRoofSelection(cancerId, selection) {
-        if (selection && !isApprovedRoofPair(cancerId, selection.styleId))
+        if (isOpticalRoofSelection(selection) && !isApprovedRoofPair(cancerId, selection.styleId)) {
             throw new Error('不適用的屋簷款式');
+        }
         this.roofCancerId = cancerId;
-        this.roofSelection = selection ? { ...selection, colors: [...selection.colors] } : undefined;
+        this.roofSelection = { ...selection, colors: [...selection.colors] };
     }
     // 創建梯度效果
     createGradient(w, h, colors, direction) {
@@ -253,9 +251,9 @@ export class PosterRenderer {
             this.ctx.globalAlpha = 1;
         }
     }
-    // The same native Canvas geometry is used by the drawer previews.
+    // The exact GitHub Pages wave is the sole non-optical fallback/classic geometry.
     drawPresetHeader(_templateId, scheme, W, direction) {
-        drawHeaderContour(this.ctx, this.headerContourId, W, 150, this.createGradient(W, 150, scheme.header.colors, direction));
+        drawClassicRoof(this.ctx, W, this.createGradient(W, 150, scheme.header.colors, direction));
     }
     drawHeaderText(text, x, y, font, fill, edge, lineWidth) {
         this.ctx.save();
@@ -344,14 +342,14 @@ export class PosterRenderer {
         const tableBounds = agendaItems.length > 0
             ? { x: 40, y: agendaStartY - 8, width: W - 80, height: agendaEndY - agendaStartY + 8 }
             : null;
-        const material = this.roofSelection
+        const material = this.roofSelection && isOpticalRoofSelection(this.roofSelection)
             ? roofMaterialLibrary.getSurface(this.roofSelection.styleId, this.roofSelection.colors)
             : null;
         // 固定物件以外只繪製一次；屋簷與表格範圍則依各自的獨立關係分開合成。
         this.drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds, Boolean(material));
         if (tableBounds)
             this.drawOverlaysClippedToRect(overlayLayers.belowTable, tableBounds);
-        if (material && this.roofSelection) {
+        if (material && this.roofSelection && isOpticalRoofSelection(this.roofSelection)) {
             const originalContext = this.ctx;
             compositeOpticalRoof(this.ctx, material, this.roofSelection.styleId, W, inside => {
                 this.ctx = inside;
@@ -411,7 +409,7 @@ export class PosterRenderer {
     }
     drawPosterTitle(conferenceData, template, scheme, W, material) {
         const title = conferenceData.title || `${template.title}醫學會議`;
-        const opticalInk = material && this.roofSelection
+        const opticalInk = material && this.roofSelection && isOpticalRoofSelection(this.roofSelection)
             ? getRoofTitleInk(this.roofSelection.styleId, this.roofSelection.colors, material) : null;
         this.ctx.fillStyle = scheme.header.text;
         let titleSize = 36;
@@ -480,8 +478,9 @@ export class PosterRenderer {
         this.ctx.font = 'bold 16px Microsoft JhengHei';
         this.ctx.textAlign = 'center';
         const setHeaderInk = (x) => {
-            if (this.roofSelection)
+            if (this.roofSelection && isOpticalRoofSelection(this.roofSelection)) {
                 this.ctx.fillStyle = getRoofAgendaInk(scheme.header.colors, (x - tableOuterLeft) / (W - 80), scheme.agenda.accent);
+            }
         };
         setHeaderInk(cTime);
         this.ctx.fillText('Time', cTime, yPos + 15);
@@ -628,10 +627,12 @@ export class PosterRenderer {
     }
     // 取得當前配色方案
     getActiveColorScheme(currentColorScheme, customColors, tableOpacity = 1.0) {
-        if (this.roofSelection?.mode === 'recommended') {
+        if (this.roofSelection && isOpticalRoofSelection(this.roofSelection) && this.roofSelection.mode === 'recommended') {
             return { ...getRecommendedRoofScheme(this.roofCancerId, this.roofSelection.styleId), tableOpacity };
         }
-        if (currentColorScheme === 'custom') {
+        // A failed optical load keeps its palette while the renderer shows the explicit
+        // classic fallback. `optical_recommended` has no global colorSchemes entry.
+        if (currentColorScheme === 'custom' || currentColorScheme === 'optical_recommended') {
             return {
                 name: '自訂配色',
                 header: {
@@ -689,7 +690,7 @@ export class PosterRenderer {
         this.ctx.beginPath();
         this.ctx.rect(0, 0, W, H);
         if (!optical)
-            traceHeaderContourPath(this.ctx, this.headerContourId, W, 150);
+            traceClassicRoofPath(this.ctx, W);
         if (tableBounds) {
             this.ctx.rect(tableBounds.x, tableBounds.y, tableBounds.width, tableBounds.height);
         }
@@ -708,7 +709,7 @@ export class PosterRenderer {
     drawOverlaysClippedToHeader(overlays, W) {
         this.ctx.save();
         this.ctx.beginPath();
-        traceHeaderContourPath(this.ctx, this.headerContourId, W, 150);
+        traceClassicRoofPath(this.ctx, W);
         this.ctx.clip();
         this.drawOverlays(overlays);
         this.ctx.restore();
@@ -770,8 +771,9 @@ export class PosterRenderer {
      */
     async exportHighQuality(format = 'png', quality = 0.95, scaleFactor = 2) {
         const roofAtStart = JSON.stringify(this.roofSelection);
-        if (this.roofSelection)
+        if (this.roofSelection && isOpticalRoofSelection(this.roofSelection)) {
             await roofMaterialLibrary.preload(this.roofSelection.styleId);
+        }
         if (typeof document !== 'undefined')
             await document.fonts?.ready;
         if (roofAtStart !== JSON.stringify(this.roofSelection))

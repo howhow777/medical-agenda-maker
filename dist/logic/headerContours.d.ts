@@ -1,10 +1,10 @@
-import { HeaderContourId } from '../assets/types.js';
-export declare const headerContourIds: HeaderContourId[];
-export declare const headerContourLabels: Record<HeaderContourId, string>;
-type BoundaryKnot = readonly [x: number, y: number];
-export declare function getHeaderContourBoundarySamples(contourId: HeaderContourId): readonly BoundaryKnot[];
-export declare function createContourGradient(ctx: CanvasRenderingContext2D, colors: readonly string[], width: number, height: number): CanvasGradient;
-export declare function traceHeaderContourPath(ctx: CanvasRenderingContext2D, contourId: HeaderContourId, width: number, height: number): void;
-export declare function drawHeaderContour(ctx: CanvasRenderingContext2D, contourId: HeaderContourId, width: number, height: number, fill: string | CanvasGradient): void;
-export declare function renderContourPreview(canvas: HTMLCanvasElement, contourId: HeaderContourId, colors: readonly string[]): void;
-export {};
+/** Exact geometry from GitHub Pages commit e786b829 at an 800px logical width. */
+export declare const CLASSIC_ROOF_LABEL = "\u6700\u521D\u7248\u6CE2\u6D6A\u5C4B\u7C37";
+export declare const CLASSIC_ROOF_BASE_WIDTH = 800;
+export declare const CLASSIC_ROOF_HEADER_HEIGHT = 120;
+export declare const CLASSIC_ROOF_MAX_Y = 130;
+export declare const classicRoofPathSignature: readonly [readonly ["M", 0, 0], readonly ["L", 800, 0], readonly ["L", 800, 100], readonly ["Q", 600, 130, 400, 110], readonly ["Q", 200, 90, 0, 120], readonly ["Z"]];
+/** One canonical path shared by preview, poster, clipping, fallback and export. */
+export declare function traceClassicRoofPath(ctx: CanvasRenderingContext2D, width: number): void;
+export declare function drawClassicRoof(ctx: CanvasRenderingContext2D, width: number, fill: string | CanvasGradient | CanvasPattern): void;
+export declare function renderClassicRoofPreview(canvas: HTMLCanvasElement, colors: readonly string[]): void;

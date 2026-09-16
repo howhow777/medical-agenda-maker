@@ -5,11 +5,21 @@
   "sourceProvenanceSHA256": "60706bf3d779d5450cdd44db4e0d353edeabe3770ab563fed5a18b303598951a",
   "sourceStable": true,
   "approvedReferenceVerified": true,
+  "candidateArchitectureAudit": {
+    "verifiedAt": "2026-09-16T12:44:00+08:00",
+    "baselineCommit": "5d401cfad52e5afdf70836ea75f04b06c72c0bf8",
+    "referenceSetAggregateSHA256": "450377b25f314a0c7c26085dad7c0a56a6ac316581e39fd9c43ed15fdf63f178",
+    "caseCount": 18,
+    "thresholdMAE": 3,
+    "maximumMAE": 1.7622986891385768,
+    "meanMAE": 0.607279669581239,
+    "allPassed": true
+  },
   "candidateFiles": [
-    { "url": "../dist/logic/posterRenderer.js", "sha256": "315a942362954ead335ec1288b7fc22309b3d1e56e5dcb861b6268a9602f1d00" },
+    { "url": "../dist/logic/posterRenderer.js", "sha256": "dc881e90aaea97f3c11669966f6613fb6b1593aaadc0585b2f8eb5996bddcea2" },
     { "url": "../dist/logic/roofTypography.js", "sha256": "8bc5aaa50c92f57e40447ed98c19c9b95eba22535fb56c6d36ae1ef9949a3fb8" },
-    { "url": "../dist/logic/roofStyles.js", "sha256": "02a1c889788b3d2bce58e153a63fb358bb60d1e9b6bd511cd2d2add7b37d6685" },
-    { "url": "../dist/logic/roofMaterials.js", "sha256": "752ec7f13ec9284efeb3c4d8c075058b17f65d22afcad6ffa8933549a15dc134" },
+    { "url": "../dist/logic/roofStyles.js", "sha256": "068761c4583e7f686d56097c0824f962d5e2c333f0eb3407d64ed7dc959bedcf" },
+    { "url": "../dist/logic/roofMaterials.js", "sha256": "f2f8cf80fce2c2b92c903c63712025538dce1ed25efb1d7aa2e6bae94c33385f" },
     { "url": "../dist/logic/roofCompositor.js", "sha256": "46168bd10de6d9a3a29753c48412442897f63201033e3ce111ef5118195032b2" },
     { "url": "./approved-roofs-fixture.js", "sha256": "85c83cea9121c1e42fcc8c7123da9803f10ed33490838e2dcf27874b390bd934" }
   ],

@@ -39,6 +39,14 @@ export function isApprovedRoofPair(cancerId, styleId) {
         getRoofStylesForCancer(cancer.id).some(style => style.id === styleId));
 }
 export const approvedRoofPairs = cancerDesignPresetList.flatMap(cancer => getRoofStylesForCancer(cancer.id).map(style => ({ cancerId: cancer.id, styleId: style.id })));
+export const defaultRoofStyleByCancer = {
+    lung: 'optical-signal',
+    headneck: 'satin-arc',
+    urinary: 'waterlight',
+    colorectal: 'satin-arc',
+    breast: 'rose-satin',
+    uterus: 'coral-arch'
+};
 export function getRoofAssetURL(styleId) {
     const style = getRoofStyle(styleId);
     if (!style)

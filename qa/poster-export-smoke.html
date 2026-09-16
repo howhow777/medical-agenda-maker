@@ -6,7 +6,9 @@
 <script type="module">
   import { PosterRenderer } from '../dist/logic/posterRenderer.js';
   import { cancerDesignPresetList } from '../dist/logic/cancerDesignPresets.js';
-  import { headerContourIds } from '../dist/logic/headerContours.js';
+  import { approvedRoofPairs, getRecommendedRoofScheme, roofStyles } from '../dist/logic/roofStyles.js';
+  import { roofMaterialLibrary } from '../dist/logic/roofMaterials.js';
+  import { recommendedClassicRoofSelection, recommendedRoofSelection } from '../dist/logic/roofSelection.js';
 
   const canvas = document.querySelector('canvas');
   const renderer = new PosterRenderer(canvas);
@@ -20,13 +22,26 @@
     title: '2026 年精準醫療與跨領域癌症免疫治療最新進展國際研討會',
     subtitle: 'Cancer Forum', date: '2026/08/19', time: '09:00–12:00', location: 'Taipei'
   };
+  const colorsFor = scheme => ({
+    headerC1: scheme.header.colors[0], headerC2: scheme.header.colors[1], headerC3: scheme.header.colors[2],
+    agendaBg: scheme.agenda.background, agendaBorder: scheme.agenda.border, agendaAccent: scheme.agenda.accent,
+    bgC1: '#ffffff', bgC2: '#ffffff', bgGradientDir: 'none'
+  });
   let renderedVariants = 0;
+  for (const style of roofStyles) await roofMaterialLibrary.preload(style.id);
+  for (const pair of approvedRoofPairs) {
+    const scheme = getRecommendedRoofScheme(pair.cancerId, pair.styleId);
+    renderer.setRoofSelection(pair.cancerId, recommendedRoofSelection(pair.cancerId, pair.styleId));
+    renderer.drawPoster(agendaItems, pair.cancerId, 'optical_recommended', 'horizontal', colorsFor(scheme), conferenceData, false, '', [], 1);
+    renderedVariants += 1;
+  }
   for (const preset of cancerDesignPresetList) {
-    for (const contourId of headerContourIds) {
-      renderer.setHeaderContour(contourId);
-      renderer.drawPoster(agendaItems, preset.id, preset.colorScheme, 'horizontal', customColors, conferenceData, false, '', [], 1);
-      renderedVariants += 1;
-    }
+    renderer.setRoofSelection(preset.id, recommendedClassicRoofSelection(preset.id));
+    const scheme = getRecommendedRoofScheme(preset.id, approvedRoofPairs.find(pair => pair.cancerId === preset.id).styleId);
+    renderer.drawPoster(agendaItems, preset.id, preset.colorScheme, 'horizontal', { ...colorsFor(scheme),
+      headerC1: preset.palette[0], headerC2: preset.palette[1], headerC3: preset.palette[2]
+    }, conferenceData, false, '', [], 1);
+    renderedVariants += 1;
   }
 
   const layerSourceCanvas = document.createElement('canvas');
@@ -47,7 +62,7 @@
     rotation: 0, opacity: 1, visible: true, lockAspect: true, zIndex: 1,
     aboveTable: false, aboveHeader: true
   };
-  renderer.setHeaderContour('soft-wave');
+  renderer.setRoofSelection('lung', recommendedClassicRoofSelection('lung'));
   renderer.drawPoster(agendaItems, 'lung', 'cancer_lung', 'horizontal', customColors, conferenceData, false, '', [compositorTestOverlay], 1);
   const reverseHeaderPixel = Array.from(canvas.getContext('2d').getImageData(20, 20, 1, 1).data);
   const reverseTablePixel = Array.from(canvas.getContext('2d').getImageData(400, 360, 1, 1).data);
@@ -70,15 +85,18 @@
     getConferenceData: () => conferenceData,
     formControls: { getTableOpacity: () => 1 }
   };
-  renderer.setHeaderContour('soft-wave');
-  const exported = await renderer.exportHighQuality('jpeg', 0.95, 3);
-  const bitmap = await createImageBitmap(exported.blob);
+  renderer.setRoofSelection('lung', recommendedClassicRoofSelection('lung'));
+  const png = await renderer.exportHighQuality('png', 0.95, 3);
+  const jpeg = await renderer.exportHighQuality('jpeg', 0.95, 3);
+  const pngBitmap = await createImageBitmap(png.blob), jpegBitmap = await createImageBitmap(jpeg.blob);
   document.querySelector('#result').textContent = JSON.stringify({
     renderedVariants,
-    mime: exported.blob.type,
-    original: exported.originalSize,
-    highQuality: exported.highQualitySize,
-    bitmap: { width: bitmap.width, height: bitmap.height },
+    exports: [
+      { mime: png.blob.type, bytes: png.blob.size, original: png.originalSize, highQuality: png.highQualitySize,
+        bitmap: { width: pngBitmap.width, height: pngBitmap.height } },
+      { mime: jpeg.blob.type, bytes: jpeg.blob.size, original: jpeg.originalSize, highQuality: jpeg.highQualitySize,
+        bitmap: { width: jpegBitmap.width, height: jpegBitmap.height } }
+    ],
     independentRelationsVerified,
     reverseHeaderPixel,
     reverseTablePixel,

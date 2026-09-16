@@ -37,13 +37,14 @@ export declare class RoofMaterialLibrary {
 export declare class RoofLoadCoordinator {
     private library;
     private revision;
-    private selection;
+    private selection?;
+    private lastError?;
     constructor(library: RoofMaterialLibrary);
-    select(selection: RoofSelection | undefined): Promise<{
+    select(selection: RoofSelection): Promise<{
         current: boolean;
         error?: Error;
     }>;
-    /** Export fails visibly if the selected roof is unavailable, never silently falls back. */
+    /** Export fails visibly after a load failure; retry is an explicit UI action. */
     readyForExport(): Promise<RoofSelection | undefined>;
 }
 export declare const roofMaterialLibrary: RoofMaterialLibrary;

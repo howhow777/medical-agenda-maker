@@ -11,6 +11,12 @@ export type OverlayFixedRelations = {
   aboveHeader: boolean;
 };
 
+let lastOverlayId = 0;
+function createOverlayId(): number {
+  lastOverlayId = Math.max(lastOverlayId + 1, Date.now() * 1000);
+  return lastOverlayId;
+}
+
 export function getOverlayFixedRelations(overlay: Pick<Overlay, 'zIndex' | 'aboveTable' | 'aboveHeader'>): OverlayFixedRelations {
   const legacyRelations: OverlayFixedRelations = overlay.zIndex < 0
     ? { aboveTable: false, aboveHeader: false }
@@ -89,7 +95,7 @@ export class OverlayManager {
     metadata: Partial<Pick<Overlay, 'sourceKind' | 'cancerPresetId' | 'motifId' | 'motifRole'>> = {}
   ): Overlay {
     const overlay: Overlay = {
-      id: Date.now() + Math.random(),
+      id: createOverlayId(),
       name: name || 'overlay.png',
       img,
       src: src || '',
@@ -202,7 +208,7 @@ export class OverlayManager {
     const offsets = [[0, 0], [12, -12], [-12, 12], [12, 12], [-12, -12], [0, 12], [12, 0]];
     const offset = offsets[offsetIndex % offsets.length];
     return {
-      id: Date.now() + Math.random(),
+      id: createOverlayId(),
       name: `${metadata.motifRole === 'primary' ? '內建主圖' : '內建副本'}｜${name}`,
       img,
       src,

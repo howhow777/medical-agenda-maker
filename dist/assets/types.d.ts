@@ -1,4 +1,4 @@
-import type { RoofSelectionStateV1 } from './roofTypes.js';
+import type { RoofSelectionStateV2 } from './roofTypes.js';
 export interface AgendaItem {
     time: string;
     topic: string;
@@ -25,7 +25,6 @@ export interface ColorScheme {
     };
     tableOpacity: number;
 }
-export type HeaderContourId = 'soft-wave' | 'arc-sweep' | 'layered-ribbon' | 'clean-diagonal';
 export type OverlaySourceKind = 'upload' | 'cancer-preset';
 export type MotifRole = 'primary' | 'copy';
 export interface Overlay {
@@ -104,8 +103,8 @@ export interface TemplateData {
         time: string;
         location: string;
     };
-    cancerDesignState?: CancerDesignStateV2;
-    roofSelectionState?: RoofSelectionStateV1;
+    cancerDesignState?: CancerDesignState;
+    roofSelectionState?: RoofSelectionStateV2;
 }
 export interface Template {
     id: string;
@@ -137,11 +136,10 @@ export interface OverlayData {
     motifId?: string;
     motifRole?: MotifRole;
 }
-export interface CancerDesignStateV2 {
-    version: 2;
+export interface CancerDesignState {
+    version: 3;
     activePresetId: string;
     primaryMotifByCancer: Record<string, string>;
-    contourByCancer: Record<string, HeaderContourId>;
 }
 export interface AppState {
     agendaItems: AgendaItem[];

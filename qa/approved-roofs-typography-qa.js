@@ -1,5 +1,4 @@
 import { PosterRenderer, AGENDA_START_Y } from '../dist/logic/posterRenderer.js';
-import { cancerDesignPresets } from '../dist/logic/cancerDesignPresets.js';
 import { getRecommendedRoofScheme } from '../dist/logic/roofStyles.js';
 import { recommendedRoofSelection } from '../dist/logic/roofSelection.js';
 import { roofFixture, fixtureCustomColors } from './approved-roofs-fixture.js';
@@ -36,7 +35,6 @@ function installTextCapture(context, suppress = false) {
 
 function render(renderer, cancerId, styleId, overlays) {
   const scheme = getRecommendedRoofScheme(cancerId, styleId);
-  renderer.setHeaderContour(cancerDesignPresets[cancerId].defaultContourId);
   renderer.setRoofSelection(cancerId, recommendedRoofSelection(cancerId, styleId));
   renderer.drawPoster(roofFixture.agenda, cancerId, 'optical_recommended', 'horizontal', fixtureCustomColors(scheme),
     roofFixture.conference, true, roofFixture.footer, overlays, 1);

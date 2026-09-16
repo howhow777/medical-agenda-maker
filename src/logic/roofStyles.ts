@@ -62,6 +62,15 @@ export function isApprovedRoofPair(cancerId: unknown, styleId: unknown): boolean
 export const approvedRoofPairs = cancerDesignPresetList.flatMap(cancer =>
   getRoofStylesForCancer(cancer.id).map(style => ({ cancerId: cancer.id, styleId: style.id })));
 
+export const defaultRoofStyleByCancer: Readonly<Record<CancerDesignPresetId, RoofStyleId>> = {
+  lung: 'optical-signal',
+  headneck: 'satin-arc',
+  urinary: 'waterlight',
+  colorectal: 'satin-arc',
+  breast: 'rose-satin',
+  uterus: 'coral-arch'
+};
+
 export function getRoofAssetURL(styleId: RoofStyleId): string {
   const style = getRoofStyle(styleId);
   if (!style) throw new Error('未知屋簷款式');
