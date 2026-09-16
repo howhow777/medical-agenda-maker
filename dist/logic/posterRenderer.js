@@ -4,6 +4,10 @@ import { OverlayProcessor } from './overlay-processor.js';
 import { CanvasUtils } from './canvas-utils.js';
 import { drawHeaderContour, traceHeaderContourPath } from './headerContours.js';
 import { getOverlayFixedRelations } from './overlayManager.js';
+import { getRecommendedRoofScheme, isApprovedRoofPair } from './roofStyles.js';
+import { roofMaterialLibrary } from './roofMaterials.js';
+import { compositeOpticalRoof } from './roofCompositor.js';
+import { getRoofTitleInk, getRoofAgendaInk } from './roofTypography.js';
 export const AGENDA_START_Y = 350;
 export const AGENDA_START_Y_WITH_MEETUP = 380;
 export function partitionOverlayLayers(overlays) {
@@ -19,11 +23,18 @@ export class PosterRenderer {
         this.useHighQualityOverlays = false;
         this.processedOverlayCache = new Map();
         this.headerContourId = 'soft-wave';
+        this.roofCancerId = 'lung';
         this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
+        this.ctx = canvas.getContext('2d', { willReadFrequently: true });
     }
     setHeaderContour(contourId) {
         this.headerContourId = contourId;
+    }
+    setRoofSelection(cancerId, selection) {
+        if (selection && !isApprovedRoofPair(cancerId, selection.styleId))
+            throw new Error('不適用的屋簷款式');
+        this.roofCancerId = cancerId;
+        this.roofSelection = selection ? { ...selection, colors: [...selection.colors] } : undefined;
     }
     // 創建梯度效果
     createGradient(w, h, colors, direction) {
@@ -310,6 +321,9 @@ export class PosterRenderer {
     }
     // 主要海報繪製方法
     drawPoster(agendaItems, currentTemplate, currentColorScheme, currentGradientDirection, customColors, conferenceData, showFooter, footerText, overlays = [], tableOpacity = 1.0) {
+        this.lastRenderArgs = [agendaItems.map(item => ({ ...item })), currentTemplate, currentColorScheme,
+            currentGradientDirection, { ...customColors }, { ...conferenceData }, showFooter, footerText,
+            overlays.map(overlay => ({ ...overlay })), tableOpacity];
         const W = this.canvas.width;
         const H = this.canvas.height;
         const scheme = this.getActiveColorScheme(currentColorScheme, customColors, tableOpacity);
@@ -330,11 +344,28 @@ export class PosterRenderer {
         const tableBounds = agendaItems.length > 0
             ? { x: 40, y: agendaStartY - 8, width: W - 80, height: agendaEndY - agendaStartY + 8 }
             : null;
+        const material = this.roofSelection
+            ? roofMaterialLibrary.getSurface(this.roofSelection.styleId, this.roofSelection.colors)
+            : null;
         // 固定物件以外只繪製一次；屋簷與表格範圍則依各自的獨立關係分開合成。
-        this.drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds);
+        this.drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds, Boolean(material));
         if (tableBounds)
             this.drawOverlaysClippedToRect(overlayLayers.belowTable, tableBounds);
-        this.drawOverlaysClippedToHeader(overlayLayers.belowHeader, W);
+        if (material && this.roofSelection) {
+            const originalContext = this.ctx;
+            compositeOpticalRoof(this.ctx, material, this.roofSelection.styleId, W, inside => {
+                this.ctx = inside;
+                try {
+                    this.drawPosterTitle(conferenceData, template, scheme, W, material);
+                    this.drawOverlays(overlayLayers.aboveHeader);
+                }
+                finally {
+                    this.ctx = originalContext;
+                }
+            });
+        }
+        else
+            this.drawOverlaysClippedToHeader(overlayLayers.belowHeader, W);
         // 日期地點資訊
         const infoCardY = 140;
         this.ctx.fillStyle = '#333';
@@ -369,8 +400,19 @@ export class PosterRenderer {
         // this.ctx.fillStyle = scheme.agenda.background;
         // this.ctx.fillRect(0, H - 60, W, 60);
         // 屋簷是獨立固定物件。
-        this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
+        if (!material) {
+            this.drawPresetHeader(currentTemplate, scheme, W, currentGradientDirection);
+            this.drawPosterTitle(conferenceData, template, scheme, W);
+        }
+        if (tableBounds)
+            this.drawOverlaysClippedToRect(overlayLayers.aboveTable, tableBounds);
+        if (!material)
+            this.drawOverlaysClippedToHeader(overlayLayers.aboveHeader, W);
+    }
+    drawPosterTitle(conferenceData, template, scheme, W, material) {
         const title = conferenceData.title || `${template.title}醫學會議`;
+        const opticalInk = material && this.roofSelection
+            ? getRoofTitleInk(this.roofSelection.styleId, this.roofSelection.colors, material) : null;
         this.ctx.fillStyle = scheme.header.text;
         let titleSize = 36;
         while (titleSize > 24) {
@@ -379,13 +421,10 @@ export class PosterRenderer {
                 break;
             titleSize -= 1;
         }
-        this.drawHeaderText(title, W / 2, 50, `bold ${titleSize}px Microsoft JhengHei`, scheme.header.text, scheme.agenda.accent, 3 * (W / 800));
+        this.drawHeaderText(title, W / 2, 50, `bold ${titleSize}px Microsoft JhengHei`, opticalInk?.fill || scheme.header.text, opticalInk?.edge || scheme.agenda.accent, (opticalInk ? 1.8 : 3) * (W / 800));
         if (conferenceData.subtitle) {
-            this.drawHeaderText(conferenceData.subtitle, W / 2, 85, '20px Microsoft JhengHei', scheme.header.text, scheme.agenda.accent, 2.5 * (W / 800));
+            this.drawHeaderText(conferenceData.subtitle, W / 2, 85, '20px Microsoft JhengHei', opticalInk?.fill || scheme.header.text, opticalInk?.edge || scheme.agenda.accent, (opticalInk ? 1.5 : 2.5) * (W / 800));
         }
-        if (tableBounds)
-            this.drawOverlaysClippedToRect(overlayLayers.aboveTable, tableBounds);
-        this.drawOverlaysClippedToHeader(overlayLayers.aboveHeader, W);
     }
     /**
      * 生成集合地點顯示文字
@@ -440,10 +479,18 @@ export class PosterRenderer {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.font = 'bold 16px Microsoft JhengHei';
         this.ctx.textAlign = 'center';
+        const setHeaderInk = (x) => {
+            if (this.roofSelection)
+                this.ctx.fillStyle = getRoofAgendaInk(scheme.header.colors, (x - tableOuterLeft) / (W - 80), scheme.agenda.accent);
+        };
+        setHeaderInk(cTime);
         this.ctx.fillText('Time', cTime, yPos + 15);
+        setHeaderInk(cTopic);
         this.ctx.fillText('Content', cTopic, yPos + 15);
+        setHeaderInk(cSpeaker);
         this.ctx.fillText('Speaker', cSpeaker, yPos + 15);
         if (!hideModerator) {
+            setHeaderInk(cModerator);
             this.ctx.fillText('Moderator', cModerator, yPos + 15);
         }
         yPos += 45;
@@ -581,6 +628,9 @@ export class PosterRenderer {
     }
     // 取得當前配色方案
     getActiveColorScheme(currentColorScheme, customColors, tableOpacity = 1.0) {
+        if (this.roofSelection?.mode === 'recommended') {
+            return { ...getRecommendedRoofScheme(this.roofCancerId, this.roofSelection.styleId), tableOpacity };
+        }
         if (currentColorScheme === 'custom') {
             return {
                 name: '自訂配色',
@@ -634,11 +684,12 @@ export class PosterRenderer {
             this.ctx.restore();
         });
     }
-    drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds) {
+    drawOverlaysOutsideFixedObjects(overlays, W, H, tableBounds, optical = false) {
         this.ctx.save();
         this.ctx.beginPath();
         this.ctx.rect(0, 0, W, H);
-        traceHeaderContourPath(this.ctx, this.headerContourId, W, 150);
+        if (!optical)
+            traceHeaderContourPath(this.ctx, this.headerContourId, W, 150);
         if (tableBounds) {
             this.ctx.rect(tableBounds.x, tableBounds.y, tableBounds.width, tableBounds.height);
         }
@@ -718,6 +769,13 @@ export class PosterRenderer {
      * @param scaleFactor - 解析度倍數（預設 2 倍）
      */
     async exportHighQuality(format = 'png', quality = 0.95, scaleFactor = 2) {
+        const roofAtStart = JSON.stringify(this.roofSelection);
+        if (this.roofSelection)
+            await roofMaterialLibrary.preload(this.roofSelection.styleId);
+        if (typeof document !== 'undefined')
+            await document.fonts?.ready;
+        if (roofAtStart !== JSON.stringify(this.roofSelection))
+            throw new Error('屋簷選擇已改變，請重新下載');
         const originalWidth = this.canvas.width;
         const originalHeight = this.canvas.height;
         const highQualityWidth = originalWidth * scaleFactor;
@@ -803,10 +861,15 @@ export class PosterRenderer {
         // 臨時切換到高解析度 Canvas
         this.ctx = ctx;
         try {
-            // 取得當前海報的所有數據（從 DOM 或全域狀態）
+            // Export the exact last render, including transparent table and optical state.
+            if (this.lastRenderArgs) {
+                this.drawPoster(...this.lastRenderArgs);
+                return;
+            }
+            // 未曾繪製時才沿用舊 DOM／全域來源。
             const posterData = this.getCurrentPosterData();
             // 重新繪製整個海報
-            this.drawPoster(posterData.agendaItems, posterData.currentTemplate, posterData.currentColorScheme, posterData.currentGradientDirection, posterData.customColors, posterData.conferenceData, posterData.showFooter, posterData.footerText, posterData.overlays, posterData.tableOpacity || 1.0);
+            this.drawPoster(posterData.agendaItems, posterData.currentTemplate, posterData.currentColorScheme, posterData.currentGradientDirection, posterData.customColors, posterData.conferenceData, posterData.showFooter, posterData.footerText, posterData.overlays, posterData.tableOpacity ?? 1.0);
         }
         finally {
             // 恢復原始 Canvas 和 Context

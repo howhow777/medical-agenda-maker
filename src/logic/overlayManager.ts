@@ -121,7 +121,8 @@ export class OverlayManager {
     motifId: string,
     img: HTMLImageElement,
     name: string,
-    src: string
+    src: string,
+    select = true
   ): Overlay {
     const metadata: CancerOverlayMetadata = {
       sourceKind: 'cancer-preset', cancerPresetId: presetId, motifId, motifRole: 'primary'
@@ -158,7 +159,7 @@ export class OverlayManager {
       overlay = this.createCancerOverlay(img, name, src, metadata, 0);
       this.overlays.push(overlay);
     }
-    this.selectedIndex = this.overlays.indexOf(overlay);
+    if (select) this.selectedIndex = this.overlays.indexOf(overlay);
     return overlay;
   }
 
@@ -167,7 +168,8 @@ export class OverlayManager {
     motifId: string,
     img: HTMLImageElement,
     name: string,
-    src: string
+    src: string,
+    select = true
   ): Overlay {
     const existingCopies = this.overlays.filter(item =>
       item.sourceKind === 'cancer-preset' && item.cancerPresetId === presetId && item.motifRole === 'copy'
@@ -176,7 +178,7 @@ export class OverlayManager {
       sourceKind: 'cancer-preset', cancerPresetId: presetId, motifId, motifRole: 'copy'
     }, existingCopies + 1);
     this.overlays.push(overlay);
-    this.selectedIndex = this.overlays.length - 1;
+    if (select) this.selectedIndex = this.overlays.length - 1;
     return overlay;
   }
 

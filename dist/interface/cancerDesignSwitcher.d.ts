@@ -1,5 +1,6 @@
 import { CancerDesignStateV2, HeaderContourId } from '../assets/types.js';
 import { CancerDesignPresetId } from '../logic/cancerDesignPresets.js';
+import type { RoofSelectionStateV1 } from '../assets/roofTypes.js';
 export type CancerDesignAction = {
     type: 'select-cancer';
     presetId: CancerDesignPresetId;
@@ -31,9 +32,12 @@ export declare class CancerDesignSwitcher {
     private contourGrid;
     private state;
     private lastFocusedElement;
+    private roofSelections;
     constructor(onAction: ActionHandler);
     initialize(): Promise<void>;
     getState(): CancerDesignStateV2;
+    setRoofSelections(state: RoofSelectionStateV1): void;
+    private renderPresetPreview;
     restoreState(value: unknown, persist?: boolean): CancerDesignStateV2;
     private get activePresetId();
     private bindEvents;

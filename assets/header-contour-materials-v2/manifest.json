@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "catalog": "approved-roofs-20260916",
+  "originalBytesPreserved": true,
+  "assets": [
+    {"styleId":"optical-signal","file":"signal-mother-v4.png","width":2167,"height":726,"bytes":1111674,"sha256":"ac7361f47e39043b7a5ad161c77e6a62175c0297ce93eab0ee9612aea46980bd","sourceColors":["#186878","#35adbf","#abe6db"],"approvedFor":["lung","urinary","headneck","colorectal"],"approvalRecords":["cool-roof-series-20260915.md","shared-roofs-20260916.md"]},
+    {"styleId":"satin-arc","file":"lung-satin-arc-v1.png","width":2172,"height":724,"bytes":1095733,"sha256":"3b5f9e8bbcc2207736a53200187ac0f8670ed72669af694069aa30f2ecf679a2","sourceColors":["#186878","#35adbf","#abe6db"],"approvedFor":["lung","urinary","headneck","colorectal"],"approvalRecords":["cool-roof-series-20260915.md","shared-roofs-20260916.md"]},
+    {"styleId":"waterlight","file":"urinary-waterlight-v1.png","width":2172,"height":724,"bytes":1315389,"sha256":"d67d51cd6c90ec512dbb777f3b6f2b8b24160610db5fa02c9998b47fd0479a88","sourceColors":["#186878","#35adbf","#abe6db"],"approvedFor":["lung","urinary","headneck","colorectal"],"approvalRecords":["cool-roof-series-20260915.md","shared-roofs-20260916.md"]},
+    {"styleId":"rose-satin","file":"breast-rose-satin-v1.png","width":2172,"height":724,"bytes":1199248,"sha256":"6333fb6102cc036d7db6b885b7547aa23f964f4ab2a4dbdc9d19cc18fe707d9b","sourceColors":["#F36AA5","#FF9CA9","#FFE4CE"],"approvedFor":["breast","uterus"],"approvalRecords":["breast-roof-20260916.md","shared-roofs-20260916.md"]},
+    {"styleId":"coral-arch","file":"gyn-coral-arch-v1.png","width":2172,"height":724,"bytes":1071261,"sha256":"3fe7a009c0900cfb34151920942a74e803ade2df4452d4b37227ac1f8a2e9ce7","sourceColors":["#F66B79","#FFAD74","#FFE9B5"],"approvedFor":["breast","uterus"],"approvalRecords":["gyn-roof-20260916.md","shared-roofs-20260916.md"]},
+    {"styleId":"peach-flow","file":"warm-peach-flow-v1.png","width":2172,"height":724,"bytes":1246201,"sha256":"6e53994e5023bd8fd5fc9d62c40125bf76c1dd7fa3848fcc1e222bdb2b385d8c","sourceColors":["#EE718E","#F7B3A0","#FFF0D0"],"approvedFor":["breast","uterus"],"approvalRecords":["shared-roofs-20260916.md"]}
+  ]
+}

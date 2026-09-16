@@ -1,3 +1,4 @@
+import type { RoofSelectionStateV1 } from './roofTypes.js';
 export interface AgendaItem {
     time: string;
     topic: string;
@@ -104,6 +105,7 @@ export interface TemplateData {
         location: string;
     };
     cancerDesignState?: CancerDesignStateV2;
+    roofSelectionState?: RoofSelectionStateV1;
 }
 export interface Template {
     id: string;

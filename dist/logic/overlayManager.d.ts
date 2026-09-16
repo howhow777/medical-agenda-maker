@@ -31,8 +31,8 @@ export declare class OverlayManager {
     setSelectedIndex(index: number): void;
     getSelectedOverlay(): Overlay | null;
     addOverlay(img: HTMLImageElement, name: string, src: string, metadata?: Partial<Pick<Overlay, 'sourceKind' | 'cancerPresetId' | 'motifId' | 'motifRole'>>): Overlay;
-    upsertCancerPrimary(presetId: string, motifId: string, img: HTMLImageElement, name: string, src: string): Overlay;
-    addCancerCopy(presetId: string, motifId: string, img: HTMLImageElement, name: string, src: string): Overlay;
+    upsertCancerPrimary(presetId: string, motifId: string, img: HTMLImageElement, name: string, src: string, select?: boolean): Overlay;
+    addCancerCopy(presetId: string, motifId: string, img: HTMLImageElement, name: string, src: string, select?: boolean): Overlay;
     private createCancerOverlay;
     upsertManagedOverlay(managedId: string, img: HTMLImageElement, name: string, src: string, placement: {
         x: number;

@@ -15,6 +15,9 @@ export declare class UIController {
     private cropController;
     private feedbackController;
     private cancerDesignSwitcher;
+    private roofStyleControls;
+    private cancerDesignActionVersion;
+    private primaryMotifRequestVersions;
     private canvas;
     private ctx;
     constructor();

@@ -61,6 +61,7 @@ export class TemplateManager {
                             footerSettings: template.data.footerSettings, // 🆕 恢復頁尾設定
                             moderatorDisplaySettings: template.data.moderatorDisplaySettings,
                             cancerDesignState: template.data.cancerDesignState,
+                            roofSelectionState: template.data.roofSelectionState,
                             basicInfo: template.data.basicInfo // 🆕 恢復基本資訊
                         }
                     }, customStateCallback);
@@ -121,6 +122,7 @@ export class TemplateManager {
                 mergeSameModerator: false
             },
             cancerDesignState: customState?.cancerDesignState,
+            roofSelectionState: customState?.roofSelectionState,
             basicInfo: customState?.basicInfo || {
                 title: '',
                 subtitle: '',

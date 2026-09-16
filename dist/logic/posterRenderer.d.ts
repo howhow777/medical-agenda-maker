@@ -1,4 +1,6 @@
 import { AgendaItem, ColorScheme, CancerTemplate, CustomColors, HeaderContourId, Overlay } from '../assets/types.js';
+import type { RoofSelection } from '../assets/roofTypes.js';
+import type { CancerDesignPresetId } from './cancerDesignPresets.js';
 export declare const AGENDA_START_Y = 350;
 export declare const AGENDA_START_Y_WITH_MEETUP = 380;
 type PosterRenderOptions = {
@@ -30,8 +32,12 @@ export declare class PosterRenderer {
     protected useHighQualityOverlays: boolean;
     protected processedOverlayCache: Map<number, HTMLCanvasElement>;
     private headerContourId;
+    private roofSelection?;
+    private roofCancerId;
+    private lastRenderArgs?;
     constructor(canvas: HTMLCanvasElement);
     setHeaderContour(contourId: HeaderContourId): void;
+    setRoofSelection(cancerId: CancerDesignPresetId, selection?: RoofSelection): void;
     createGradient(w: number, h: number, colors: string[], direction: string): CanvasGradient;
     calculateTextLinesWithBreaks(text: string, maxWidth: number): number;
     wrapTextWithBreaks(text: string, x: number, y: number, maxWidth: number, lineHeight: number, align?: string): number;
@@ -41,6 +47,7 @@ export declare class PosterRenderer {
     private drawHeaderText;
     calculateRequiredHeight(agendaItems: AgendaItem[], showFooter: boolean, footerText: string, W: number, renderOptions?: PosterRenderOptions): number;
     drawPoster(agendaItems: AgendaItem[], currentTemplate: string, currentColorScheme: string, currentGradientDirection: string, customColors: CustomColors, conferenceData: ConferencePosterData, showFooter: boolean, footerText: string, overlays?: Overlay[], tableOpacity?: number): void;
+    private drawPosterTitle;
     /**
      * 生成集合地點顯示文字
      */

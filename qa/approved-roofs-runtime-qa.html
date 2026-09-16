@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>核准屋簷｜正式 Canvas 驗證</title>
+  <style>
+    body{margin:0;padding:24px;background:#f3f6fa;color:#223047;font:15px/1.6 system-ui,sans-serif}main{max-width:1400px;margin:auto}h1{font-size:26px}button,a{font:inherit}button,select{min-height:44px;padding:8px 14px;margin:4px;border:1px solid #a9b6c8;border-radius:8px;background:white}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#fff;padding:16px;border:1px solid #d5deea}#gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:18px}article{min-width:0;background:white;padding:12px;border:1px solid #d5deea;border-radius:12px}canvas{width:100%;height:auto;display:block}article a{display:inline-block;margin:8px}details{margin:12px 0}.warning{color:#8b4323;background:#fff1df;padding:12px}#status{white-space:pre-wrap}button:focus-visible,a:focus-visible{outline:3px solid #6753a8}
+  </style>
+</head>
+<body><main>
+  <h1>核准屋簷｜正式 Canvas 驗證</h1>
+  <p>使用正式 PosterRenderer、相同六張素材及固定會議資料。不會改寫 Maker 存檔或目前選擇。</p>
+  <p class="warning">本頁驗證仍在建置。沒有實際執行的驗收欄位顯示 unverified；18組渲染成功不等於完整藝術、文字或上線驗收通過。</p>
+  <button id="runQA" type="button">執行 18 組與高畫質輸出</button>
+  <button id="runCompositorQA" type="button">驗證柔邊與四種圖層關係</button>
+  <button id="runMakerStateQA" type="button">驗證正式 Maker 狀態與競態</button>
+  <button id="runResponsiveQA" type="button">驗證桌面／手機／鍵盤與動態規格</button>
+  <button id="downloadCompositorArtifacts" type="button" disabled>下載柔邊驗證圖集</button>
+  <button id="downloadTypographyArtifacts" type="button" disabled>下載字形遮罩圖集</button>
+  <button id="downloadReport" type="button" disabled>下載本次 JSON 報告</button>
+  <a href="../index.html">開啟正式 Maker（無研究參數）</a>
+  <p id="status" role="status" aria-live="polite">尚未執行</p>
+  <details open><summary>機器可讀驗證結果</summary><pre id="report">unverified</pre></details>
+  <details><summary>柔邊與獨立圖層驗證</summary><pre id="compositorReport">unverified</pre><section id="compositorGallery"></section></details>
+  <details><summary>正式 Maker UI／狀態驗證</summary><pre id="makerStateReport">unverified</pre><section id="makerStateHost"></section></details>
+  <details><summary>桌面／手機／鍵盤與動態驗證</summary><pre id="responsiveReport">unverified</pre><section id="responsiveHost"></section></details>
+  <section id="gallery" aria-label="18組正式Canvas與輸出"></section>
+</main><script type="module" src="./approved-roofs-runtime-qa.js"></script></body>
+</html>

@@ -194,9 +194,11 @@
           </div>
           <div class="accordion-content">
             <!-- 配色方案 -->
+            <section class="roof-style-controls" data-roof-style-host="panel" aria-label="視覺設計屋簷"></section>
             <h3 class="sub-section-title">🎨 配色方案</h3>
             <div class="row">
               <select id="colorScheme">
+                <option value="optical_recommended" disabled>所選屋簷｜建議配色</option>
                 <option value="medical_green">經典醫療綠</option>
                 <option value="business_green">專業商務綠</option>
                 <option value="tech_green">現代科技綠</option>
@@ -365,9 +367,10 @@
         <div id="designMotifGrid" class="design-motif-grid" role="radiogroup" aria-label="癌別搭配圖案"></div>
         <p>「＋加入」可建立多個獨立副本；每份都能拖曳、縮放、旋轉、裁切或刪除。</p>
       </section>
+      <section class="roof-style-controls" data-roof-style-host="drawer" aria-label="切換屋簷款式"></section>
       <section class="design-contour-section" aria-labelledby="designContourTitle">
         <div class="design-motif-heading">
-          <h3 id="designContourTitle">頂部輪廓</h3>
+          <h3 id="designContourTitle">原有向量輪廓</h3>
           <span>預覽與海報一致</span>
         </div>
         <div id="designContourGrid" class="design-contour-grid" role="group" aria-label="頂部輪廓"></div>
@@ -379,6 +382,21 @@
 
   <!-- 載入主程式 -->
   <meta name="medical-agenda-build" content="immunotherapy-contours-v1">
+  <script>
+    (() => {
+      const events = [];
+      Object.defineProperty(window, '__medicalAgendaDiagnostics', { value: events, enumerable: false });
+      const record = (kind, values, source = '') => {
+        if (events.length >= 50) return;
+        const message = values.map(value => value instanceof Error ? `${value.name}: ${value.message}` : String(value)).join(' ');
+        events.push({ kind, message, source, at: new Date().toISOString() });
+      };
+      const originalError = console.error.bind(console);
+      console.error = (...values) => { record('console.error', values); originalError(...values); };
+      window.addEventListener('error', event => record('error', [event.message], event.filename || ''));
+      window.addEventListener('unhandledrejection', event => record('unhandledrejection', [event.reason]));
+    })();
+  </script>
   <script type="module" src="./dist/main.js?v=20260820-poster-view-zoom-v3"></script>
 </body>
 </html>

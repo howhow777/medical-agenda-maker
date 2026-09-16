@@ -83,7 +83,7 @@ export class OverlayManager {
         this.selectedIndex = this.overlays.length - 1;
         return overlay;
     }
-    upsertCancerPrimary(presetId, motifId, img, name, src) {
+    upsertCancerPrimary(presetId, motifId, img, name, src, select = true) {
         const metadata = {
             sourceKind: 'cancer-preset', cancerPresetId: presetId, motifId, motifRole: 'primary'
         };
@@ -117,16 +117,18 @@ export class OverlayManager {
             overlay = this.createCancerOverlay(img, name, src, metadata, 0);
             this.overlays.push(overlay);
         }
-        this.selectedIndex = this.overlays.indexOf(overlay);
+        if (select)
+            this.selectedIndex = this.overlays.indexOf(overlay);
         return overlay;
     }
-    addCancerCopy(presetId, motifId, img, name, src) {
+    addCancerCopy(presetId, motifId, img, name, src, select = true) {
         const existingCopies = this.overlays.filter(item => item.sourceKind === 'cancer-preset' && item.cancerPresetId === presetId && item.motifRole === 'copy').length;
         const overlay = this.createCancerOverlay(img, name, src, {
             sourceKind: 'cancer-preset', cancerPresetId: presetId, motifId, motifRole: 'copy'
         }, existingCopies + 1);
         this.overlays.push(overlay);
-        this.selectedIndex = this.overlays.length - 1;
+        if (select)
+            this.selectedIndex = this.overlays.length - 1;
         return overlay;
     }
     createCancerOverlay(img, name, src, metadata, offsetIndex) {

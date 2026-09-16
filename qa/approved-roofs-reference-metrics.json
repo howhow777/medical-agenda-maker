@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-16T04:20:40.636Z",
+  "finishedAt": "2026-09-16T04:21:12.680Z",
+  "sourceProvenanceSHA256": "60706bf3d779d5450cdd44db4e0d353edeabe3770ab563fed5a18b303598951a",
+  "sourceStable": true,
+  "approvedReferenceVerified": true,
+  "candidateFiles": [
+    { "url": "../dist/logic/posterRenderer.js", "sha256": "315a942362954ead335ec1288b7fc22309b3d1e56e5dcb861b6268a9602f1d00" },
+    { "url": "../dist/logic/roofTypography.js", "sha256": "8bc5aaa50c92f57e40447ed98c19c9b95eba22535fb56c6d36ae1ef9949a3fb8" },
+    { "url": "../dist/logic/roofStyles.js", "sha256": "02a1c889788b3d2bce58e153a63fb358bb60d1e9b6bd511cd2d2add7b37d6685" },
+    { "url": "../dist/logic/roofMaterials.js", "sha256": "752ec7f13ec9284efeb3c4d8c075058b17f65d22afcad6ffa8933549a15dc134" },
+    { "url": "../dist/logic/roofCompositor.js", "sha256": "46168bd10de6d9a3a29753c48412442897f63201033e3ce111ef5118195032b2" },
+    { "url": "./approved-roofs-fixture.js", "sha256": "85c83cea9121c1e42fcc8c7123da9803f10ed33490838e2dcf27874b390bd934" }
+  ],
+  "cases": [
+    { "cancerId": "lung", "styleId": "optical-signal", "rawRoofMAE": 1.0198234200743495, "glyphExcludedMAE": 0.8613892303422023, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(18,44,51,.98)" },
+    { "cancerId": "lung", "styleId": "satin-arc", "rawRoofMAE": 0.9002590511860175, "glyphExcludedMAE": 0.7470938753214224, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(18,44,51,.98)" },
+    { "cancerId": "lung", "styleId": "waterlight", "rawRoofMAE": 0.9512453183520599, "glyphExcludedMAE": 0.8122859959763913, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(18,44,51,.98)" },
+    { "cancerId": "headneck", "styleId": "optical-signal", "rawRoofMAE": 1.3805638166047087, "glyphExcludedMAE": 0.8566556961021452, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(29,39,61,.98)" },
+    { "cancerId": "headneck", "styleId": "satin-arc", "rawRoofMAE": 1.237521847690387, "glyphExcludedMAE": 0.7660761154855643, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(29,39,61,.98)" },
+    { "cancerId": "headneck", "styleId": "waterlight", "rawRoofMAE": 1.2086735330836453, "glyphExcludedMAE": 0.8084822201793304, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(29,39,61,.98)" },
+    { "cancerId": "uterus", "styleId": "rose-satin", "rawRoofMAE": 0.9743180399500624, "glyphExcludedMAE": 0.8262670370518406, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(255,255,255,.85)" },
+    { "cancerId": "uterus", "styleId": "coral-arch", "rawRoofMAE": 0.9392524968789013, "glyphExcludedMAE": 0.8253976977497102, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(255,255,255,.85)" },
+    { "cancerId": "uterus", "styleId": "peach-flow", "rawRoofMAE": 0.9619288389513109, "glyphExcludedMAE": 0.8427311909615359, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(255,255,255,.85)" },
+    { "cancerId": "urinary", "styleId": "optical-signal", "rawRoofMAE": 1.5085145600991325, "glyphExcludedMAE": 1.0509437328997977, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(20,43,46,.98)" },
+    { "cancerId": "urinary", "styleId": "satin-arc", "rawRoofMAE": 1.2884956304619226, "glyphExcludedMAE": 0.8756794835924697, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(20,43,46,.98)" },
+    { "cancerId": "urinary", "styleId": "waterlight", "rawRoofMAE": 1.2791354556803995, "glyphExcludedMAE": 0.9414128595600677, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(20,43,46,.98)" },
+    { "cancerId": "colorectal", "styleId": "optical-signal", "rawRoofMAE": 1.6164807930607188, "glyphExcludedMAE": 1.1466619083495249, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(13,28,47,.98)" },
+    { "cancerId": "colorectal", "styleId": "satin-arc", "rawRoofMAE": 1.3610471285892634, "glyphExcludedMAE": 0.982959617357475, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(13,28,47,.98)" },
+    { "cancerId": "colorectal", "styleId": "waterlight", "rawRoofMAE": 1.3403714107365792, "glyphExcludedMAE": 1.0209507441011498, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(13,28,47,.98)" },
+    { "cancerId": "breast", "styleId": "rose-satin", "rawRoofMAE": 0.8177153558052435, "glyphExcludedMAE": 0.6591423851206416, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(255,255,255,.85)" },
+    { "cancerId": "breast", "styleId": "coral-arch", "rawRoofMAE": 0.7849438202247191, "glyphExcludedMAE": 0.6607211852325566, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(255,255,255,.85)" },
+    { "cancerId": "breast", "styleId": "peach-flow", "rawRoofMAE": 0.8096457553058677, "glyphExcludedMAE": 0.6802163688929747, "glyphMaskExcludedPixels": 13448, "candidateTitleEdge": "rgba(255,255,255,.85)" }
+  ]
+}

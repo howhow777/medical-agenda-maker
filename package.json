@@ -10,7 +10,8 @@
     "dev:serve": "npm run build && npm run serve & npm run dev",
     "clean": "rmdir /s /q dist 2>nul || echo \"Clean completed\"",
     "serve": "npx http-server . -p 3001 -a 0.0.0.0 -c-1 -o index.html",
-    "test": "npm run build && node --experimental-default-type=module --test test/cancer-design-presets.test.mjs"
+    "test": "npm run build && node --experimental-default-type=module --test test/*.test.mjs",
+    "preview:approved-roofs": "node scripts/approved-roofs-preview.mjs"
   },
   "dependencies": {
     "http-server": "^14.1.1"

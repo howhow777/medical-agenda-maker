@@ -13,8 +13,12 @@ import { CropController } from './cropController-fixed.js';
 import { FeedbackController } from './feedbackController.js';
 import { CancerDesignSwitcher } from './cancerDesignSwitcher.js';
 import { cancerDesignPresets, normalizeCancerDesignState } from '../logic/cancerDesignPresets.js';
+import { RoofSelectionStore } from '../logic/roofSelection.js';
+import { RoofStyleControls } from './roofStyleControls.js';
 export class UIController {
     constructor() {
+        this.cancerDesignActionVersion = 0;
+        this.primaryMotifRequestVersions = new Map();
         // 初始化狀態
         this.appState = {
             agendaItems: [],
@@ -54,13 +58,25 @@ export class UIController {
             if (!this.canvas) {
                 throw new Error('找不到 posterCanvas 元素');
             }
-            this.ctx = this.canvas.getContext('2d');
+            // Optical composition reads/replaces pixels every render. Establish the
+            // backing mode on the first context request, before other controllers.
+            this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
             if (!this.ctx) {
                 throw new Error('無法取得 Canvas 2D 上下文');
             }
             // 初始化所有模組
             this.initializeModules();
             this.cancerDesignSwitcher = new CancerDesignSwitcher(action => this.handleCancerDesignAction(action));
+            let roofStorage;
+            try {
+                roofStorage = window.localStorage;
+            }
+            catch { /* Private modes may deny storage. */ }
+            this.roofStyleControls = new RoofStyleControls(new RoofSelectionStore(roofStorage), this.formControls, (cancerId, selection) => {
+                this.posterRenderer.setRoofSelection(cancerId, selection);
+                this.cancerDesignSwitcher.setRoofSelections(this.roofStyleControls.store.getState());
+                this.updatePoster();
+            });
             // 綁定事件
             this.bindEvents();
             // 初始化下載按鈕動態定位
@@ -80,40 +96,57 @@ export class UIController {
         }
     }
     async handleCancerDesignAction(action) {
+        const actionVersion = ++this.cancerDesignActionVersion;
         const preset = cancerDesignPresets[action.presetId];
+        const isCurrentAction = () => actionVersion === this.cancerDesignActionVersion &&
+            this.cancerDesignSwitcher.getState().activePresetId === preset.id;
         this.formControls.setCurrentTemplate(preset.id);
-        this.formControls.setCurrentColorScheme(preset.colorScheme);
+        if (action.type === 'select-cancer')
+            this.formControls.setCurrentColorScheme(preset.colorScheme);
         this.overlayManager.setActiveCancerPresetId(preset.id);
         if (action.type === 'select-cancer') {
             const state = this.cancerDesignSwitcher.getState();
             this.posterRenderer.setHeaderContour(state.contourByCancer[preset.id]);
+            await this.roofStyleControls.setCancer(preset.id);
+            if (!isCurrentAction())
+                return;
             const hasPrimary = this.overlayManager.getOverlays().some(overlay => overlay.sourceKind === 'cancer-preset' && overlay.cancerPresetId === preset.id && overlay.motifRole === 'primary');
             if (!hasPrimary) {
                 const motifId = state.primaryMotifByCancer[preset.id];
-                await this.insertCancerPrimary(preset.id, motifId);
+                await this.insertCancerPrimary(preset.id, motifId, () => false);
             }
+            if (!isCurrentAction())
+                return;
             this.overlayManager.setSelectedIndex(-1);
         }
         else if (action.type === 'select-primary') {
-            await this.insertCancerPrimary(action.presetId, action.motifId);
+            await this.insertCancerPrimary(action.presetId, action.motifId, isCurrentAction);
         }
         else if (action.type === 'add-copy') {
             const motif = preset.motifs.find(item => item.id === action.motifId) || preset.motifs[0];
             const image = await this.loadImage(motif.src);
-            this.overlayManager.addCancerCopy(preset.id, motif.id, image, motif.name, motif.src);
+            this.overlayManager.addCancerCopy(preset.id, motif.id, image, motif.name, motif.src, isCurrentAction());
         }
         else if (action.type === 'select-contour') {
             this.posterRenderer.setHeaderContour(action.contourId);
+            await this.roofStyleControls.useLegacy();
         }
+        if (!isCurrentAction())
+            return;
         this.refreshOverlayList();
         this.syncOverlayControls();
         this.updatePoster();
     }
-    async insertCancerPrimary(presetId, motifId) {
+    async insertCancerPrimary(presetId, motifId, shouldSelect) {
+        const requestVersion = (this.primaryMotifRequestVersions.get(presetId) || 0) + 1;
+        this.primaryMotifRequestVersions.set(presetId, requestVersion);
         const preset = cancerDesignPresets[presetId];
         const motif = preset.motifs.find(item => item.id === motifId) || preset.motifs[0];
         const image = await this.loadImage(motif.src);
-        this.overlayManager.upsertCancerPrimary(preset.id, motif.id, image, motif.name, motif.src);
+        if (this.primaryMotifRequestVersions.get(presetId) !== requestVersion)
+            return false;
+        this.overlayManager.upsertCancerPrimary(preset.id, motif.id, image, motif.name, motif.src, shouldSelect());
+        return true;
     }
     loadImage(src) {
         return new Promise((resolve, reject) => {
@@ -215,7 +248,10 @@ export class UIController {
         this.dataManager = new DataManager();
         // 初始化互動層模組
         this.canvasInteractions = new CanvasInteractions(this.canvas, this.overlayManager, () => this.updatePoster(), () => this.syncOverlayControls(), () => this.refreshOverlayList());
-        this.formControls = new FormControls(() => this.updatePoster());
+        this.formControls = new FormControls(() => {
+            this.roofStyleControls?.syncCustomColors();
+            this.updatePoster();
+        });
         this.formControls.setOverlayManager(this.overlayManager);
         // 初始化範本控制器
         this.templateController = new TemplateController();
@@ -260,6 +296,7 @@ export class UIController {
                     mergeSameModerator: this.formControls.getMergeSameModerator()
                 },
                 cancerDesignState: this.cancerDesignSwitcher.getState(),
+                roofSelectionState: this.roofStyleControls.store.getState(),
                 basicInfo: {
                     title: document.getElementById('conferenceTitle')?.value || '',
                     subtitle: document.getElementById('conferenceSubtitle')?.value || '',
@@ -452,6 +489,7 @@ export class UIController {
      */
     async downloadPoster() {
         try {
+            await this.roofStyleControls.readyForExport();
             // 先更新海報確保最新內容
             this.updatePoster();
             // 使用高解析度渲染（3倍高品質JPEG，檔案更小且適合所有用途）
@@ -468,6 +506,7 @@ export class UIController {
         }
         catch (error) {
             console.error('❌ 下載海報失敗:', error);
+            alert(`海報尚未下載：${error instanceof Error ? error.message : '未知錯誤'}`);
         }
     }
     /**
@@ -648,6 +687,8 @@ export class UIController {
         this.posterRenderer.setHeaderContour(designState.contourByCancer[presetId]);
         this.formControls.setCurrentTemplate(presetId);
         this.formControls.setCurrentColorScheme(preset.colorScheme);
+        this.roofStyleControls.store.restore(customState.roofSelectionState);
+        await this.roofStyleControls.setCancer(presetId);
         this.overlayManager.setSelectedIndex(-1);
         this.refreshOverlayList();
         this.syncOverlayControls();
